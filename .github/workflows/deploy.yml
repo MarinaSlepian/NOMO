@@ -25,11 +25,11 @@ jobs:
         run: npm run build -- --configuration production --base-href /NOMO/
 
       - name: Copy index.html to 404.html
-        run: cp dist/essentials/index.html dist/essentials/404.html
+        run: cp dist/essentials/browser/index.html dist/essentials/browser/404.html
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages
-          folder: dist/essentials
+          folder: dist/essentials/browser/
           token: ${{ secrets.GITHUB_TOKEN }}
