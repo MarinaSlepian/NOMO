@@ -3,7 +3,7 @@ name: Deploy Angular App to GitHub Pages
 on:
   push:
     branches:
-      - main  # change to 'master' if your main branch is named that
+      - main  # or 'master' if your main branch is named that
 
 jobs:
   build-and-deploy:
@@ -28,4 +28,4 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages
-          folder: dist/NOMO
+          folder: dist/essentials
