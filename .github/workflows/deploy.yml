@@ -3,7 +3,7 @@ name: Deploy Angular App to GitHub Pages
 on:
   push:
     branches:
-      - main  # or 'master' if your main branch is named that
+      - main
 
 jobs:
   build-and-deploy:
@@ -29,3 +29,4 @@ jobs:
         with:
           branch: gh-pages
           folder: dist/essentials
+          token: ${{ secrets.GITHUB_TOKEN }}  # 👈 this is the key
