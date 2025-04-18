@@ -1,0 +1,98 @@
+div {
+    border-radius: 6px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+  
+  button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.5rem;
+    background-color: #5c3481;
+    color: #c3b3d1;
+    border: none;
+    font: inherit;div {
+      border-radius: 6px;
+      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    
+    button {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.5rem;
+      background-color: #433352;
+      color: #c3b3d1;
+      border: none;
+      font: inherit;
+      cursor: pointer;
+      width: 100%;
+      min-width: 10rem;
+      text-align: left;
+    }
+    
+    button:hover,
+    button:active,
+    .active {
+      background-color: #9965dd;
+      color: #150722;
+    }
+    
+    img {
+      width: 7rem;
+      object-fit: contain;
+      border-radius: 0%;
+      box-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
+    }
+    
+    span {
+      margin: 0;
+      padding: 0;
+      font-size: 0.8rem;
+      font-weight: normal;
+    }
+    cursor: pointer;
+    width: 100%;
+    min-width: 8rem;
+    text-align: left;
+  }
+  
+  button:hover,
+  button:active,
+  .active {
+    background-color: #9965dd;
+    color: #150722;
+  }
+  
+  img {
+    width: 100%;
+    object-fit: contain;
+    border-radius: 0%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+  
+  span {
+    margin: 0;
+    padding: 0;
+    font-size: 0.8rem;
+    font-weight: normal;
+  }
+
+  @media (max-width: 768px) {
+    button {
+      min-width: unset;
+      width: 100%;
+      font-size: 0.9rem;
+    }
+  
+    img {
+      width: 4rem;
+    }
+  
+    span {
+      font-size: 0.9rem;
+    }
+  }
+  

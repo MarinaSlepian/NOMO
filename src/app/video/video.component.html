@@ -1,0 +1,15 @@
+
+<div class="backdrop" (click)="onCancel()"></div>
+<dialog open>
+   <!-- Video player -->
+  <video #videoPlayer width="100%" height="auto" controls autoplay loop>
+    <source [src]="videoPath" type="video/mp4" />
+    Your browser does not support the video tag.
+  </video>
+
+  <p class="actions">
+    <button type="button" (click)="onCancel()">Close</button>
+    <button type="button" (click)="onSwitchVideo(videoPlayer)">Switch</button>
+  </p>
+</dialog>
+

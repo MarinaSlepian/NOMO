@@ -1,0 +1,46 @@
+<!--<header>
+    <img src="assets/Splash.jpg" alt="A todo list"/>
+    <div>
+        <h1> {{selectedUser.name}}</h1>
+        <p>Enterprise-level task management without friction</p>
+    </div>
+</header>!-->
+
+<!--<header>
+    <div class="header-content">
+      <div class="buttons-column">
+        <button>
+          <span>Что не так?</span>
+        </button>
+        <button>
+          <span>Хорошо и Плохо</span>
+        </button>
+        <button>
+            <span>Глаголы</span>
+          </button>
+          <button>
+            <span>Эмоции</span>
+          </button>
+      </div>
+      <img src="assets/splashes/Splash1.jpg" alt="A todo list" />
+    </div>
+  </header>!-->
+
+  <header>
+    <div class="header-content">
+      <div class="buttons-column">
+        <app-app-chooser [appName]="'Что не так?'" [id]="'1'" (select)="selectApp($event)">
+        </app-app-chooser>
+          
+        <app-app-chooser [appName]="'Хорошо и Плохо'" [id]="'2'" (select)="selectApp($event)">
+        </app-app-chooser>
+        
+        <app-app-chooser [appName]="'Живые действия'" [id]="'3'" (select)="selectApp($event) ">
+          </app-app-chooser>
+
+          <app-app-chooser [appName]="'Живые Эмоции'" [id]="'4'" (select)="selectApp($event)">
+          </app-app-chooser>
+      </div>
+      <img [src]="'assets/splashes/Splash' + selectedApp + '.jpg'" alt="Splash" />
+    </div>
+  </header>

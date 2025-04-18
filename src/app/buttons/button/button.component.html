@@ -1,0 +1,14 @@
+<div>
+    <button (click)="onSelectButton()">
+        <img
+        [src] = "imagePath"
+        [alt] = "user.name"
+        />
+        <span>{{ user.name }}</span>
+    </button>
+</div>
+@if(isShowVideo){
+    <app-video [videoPath]="fullVideoPath" (cancel)="onCancelVideo()" numOfVideos="'2'"/>
+
+}
+

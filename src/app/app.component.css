@@ -1,0 +1,58 @@
+
+main {
+  width: 90%;
+  max-width: 768px;/*was 50rem*/
+  margin: 2rem auto;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: auto;
+  gap: 2rem;
+}
+  
+
+#users {
+  display: grid;
+  grid-template-columns: repeat(7, auto); /* ✅ don't stretch */
+  grid-auto-rows: auto;
+  gap: 0.5rem;
+  margin: 0 auto;                         /* ✅ center on X-axis */
+  padding: 0;
+  list-style: none;
+  width: max-content;                     /* ✅ shrink to fit */
+
+  
+}
+
+
+#fallback {
+  font-weight: bold;
+  font-size: 1.15rem;
+  margin: 0;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  main {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+}
+@media (max-width: 768px) {
+  #users {
+    grid-template-columns: repeat(2, 1fr); /* or even 1fr for one-per-row */
+    width: 100%;
+    justify-content: center;
+  }
+
+  main {
+    width: 100%;
+    padding: 1rem;
+  }
+
+  li {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+}

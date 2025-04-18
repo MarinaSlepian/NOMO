@@ -1,0 +1,46 @@
+header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  width: 100%;
+  margin-bottom: 2rem;
+  text-align: center;
+  background-color: white;
+  padding: 1rem;
+}
+
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* ⬅️ центрирует контент по горизонтали */
+  gap: 2rem;                /* расстояние между кнопками и изображением */
+  flex-wrap: wrap;          /* ⬅️ полезно на маленьких экранах */
+}
+
+.buttons-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;      /* ⬅️ выравнивает кнопки по центру */
+}
+
+img {
+  max-width: 35%;
+  height: auto;
+}
+
+
+
+
+@media (max-width: 600px) {
+  .header-content {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  img {
+    max-width: 80%;
+  }
+}

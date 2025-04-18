@@ -1,0 +1,14 @@
+
+<app-header (selectNewApp)="onSelectAppButton($event)"></app-header>
+<main>
+    <ul id="users">
+        @for (b of buttons; track b.id) {
+            <li>
+                <app-button 
+                    [user]="b"
+                    [videoPath]="currentVideosPath"
+                    [currentApp]="currentApp"
+                />
+        }
+    </ul>
+</main>

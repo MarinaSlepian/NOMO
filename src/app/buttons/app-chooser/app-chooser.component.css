@@ -1,0 +1,32 @@
+button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.5rem;
+    background-color: #5c3481;
+    color: #c3b3d1;
+    border: none;
+    font: inherit;
+    cursor: pointer;
+    width: 100%;
+    min-width: 10rem;
+    text-align: center;
+    border-radius: 6px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  button:hover,
+  button:active,
+  .active {
+    background-color: #9965dd;
+    color: #150722;
+  }
+  
+  button:disabled {
+    background-color: #ccc;      /* grey background */
+    color: #666;                 /* dimmed text */
+    cursor: not-allowed;         /* shows a “no” cursor on hover */
+    opacity: 0.6;                /* slightly transparent */
+    border: 1px solid #999;      /* optional: visible border */
+  }
