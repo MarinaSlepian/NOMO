@@ -19,7 +19,6 @@ export class SettingsDialogComponent {
     this.translate.use(lang);
     this.dialogRef.close(lang); // ✅ pass the selected language back
   }
-  
 
   close(): void {
     this.dialogRef.close();
