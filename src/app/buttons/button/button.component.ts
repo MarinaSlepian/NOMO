@@ -11,6 +11,7 @@ interface User {
   id: string;
   avatar: string;
   name: string;
+  numVideos: string;
 }
 
 @Component({
@@ -35,6 +36,8 @@ export class ButtonComponent {
       return 'assets/button-icons/right-wrong/' + this.user.avatar;
     if(this.currentApp === '2')
       return 'assets/button-icons/good-bad/' + this.user.avatar;
+    if(this.currentApp === '3')
+      return 'assets/button-icons/actions/' + this.user.avatar;
     return 'assets/button-icons/good-bad/' + this.user.avatar;
   }
 

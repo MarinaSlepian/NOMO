@@ -28,6 +28,11 @@
 
   <header>
     <div class="header-content">
+      <div>
+        <button class="icon-button" (click)="onSettingsButton()">
+          <img src="assets/settings.png" alt="Settings" />
+        </button>
+      </div>
       <div class="buttons-column">
         <app-app-chooser [appName]="'Что не так?'" [id]="'1'" (select)="selectApp($event)">
         </app-app-chooser>

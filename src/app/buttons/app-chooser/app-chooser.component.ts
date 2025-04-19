@@ -15,7 +15,7 @@ export class AppChooserComponent implements OnInit {
     isDisabled = true;
   
     ngOnInit() {
-      this.isDisabled = !(this.id === '1' || this.id === '2');
+      this.isDisabled = !(this.id === '1' || this.id === '2' || this.id === '3');
     }
     onSelectApp()//buttonClick
     { 

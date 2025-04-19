@@ -24,6 +24,9 @@ export class HeaderComponent
     this.selectedApp = id;
     this.selectNewApp.emit(id); 
   }
- 
+  onSettingsButton()
+  {
+    
+  }
 
 } 

@@ -8,7 +8,7 @@
     </button>
 </div>
 @if(isShowVideo){
-    <app-video [videoPath]="fullVideoPath" (cancel)="onCancelVideo()" numOfVideos="'2'"/>
+    <app-video [videoPath]="fullVideoPath" (cancel)="onCancelVideo()" [numOfVideos]="user.numVideos"/>
 
 }
 
