@@ -34,18 +34,18 @@
         </button>
       </div>
       <div class="buttons-column">
-        <app-app-chooser [appName]="'Что не так?'" [id]="'1'" (select)="selectApp($event)">
-        </app-app-chooser>
-          
-        <app-app-chooser [appName]="'Хорошо и Плохо'" [id]="'2'" (select)="selectApp($event)">
+        <app-app-chooser [appName]="'APP_NAMES.WHAT_WRONG' | translate" [id]="'1'" (select)="selectApp($event)">
         </app-app-chooser>
         
-        <app-app-chooser [appName]="'Живые действия'" [id]="'3'" (select)="selectApp($event) ">
-          </app-app-chooser>
-
-          <app-app-chooser [appName]="'Живые Эмоции'" [id]="'4'" (select)="selectApp($event)">
-          </app-app-chooser>
+        <app-app-chooser [appName]="'APP_NAMES.GOOD_BAD' | translate" [id]="'2'" (select)="selectApp($event)">
+        </app-app-chooser>
+        
+        <app-app-chooser [appName]="'APP_NAMES.ACTIONS' | translate" [id]="'3'" (select)="selectApp($event)">
+        </app-app-chooser>
+        
+        <app-app-chooser [appName]="'APP_NAMES.EMOTIONS' | translate" [id]="'4'" (select)="selectApp($event)">
+        </app-app-chooser>
       </div>
-      <img [src]="'assets/splashes/Splash' + selectedApp + '.jpg'" alt="Splash" />
+      <img [src]="'assets/splashes/Splash' + selectedSplash + '.jpg'" alt="Splash" />
     </div>
   </header>

@@ -1,8 +1,8 @@
 {
-    "tooltips": {
-      "whatWrong": "Что не так?",
-      "goodBad": "Хорошо и Плохо",
-      "verbs": "Живые действия",
-      "emotions": "Живые эмоции"
-    }
+  "APP_NAMES": {
+    "WHAT_WRONG": "Что не так?",
+    "GOOD_BAD": "Хорошо и Плохо",
+    "ACTIONS": "Живые действия",
+    "EMOTIONS": "Живые Эмоции"
   }
+}
