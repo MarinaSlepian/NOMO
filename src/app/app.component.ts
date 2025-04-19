@@ -36,7 +36,7 @@ export class AppComponent {
     else if(id === '2'){
       this.buttons = BUTTONS_GOOD_BAD_ICONS;
       this.currentVideosPath = 'assets/videos/good-bad/video-';
-    } if(id === '3')
+    } else if(id === '3')
     {
       this.buttons = BUTTONS_ACTIONS_ICONS;
       this.currentVideosPath = 'assets/videos/actions/video-';
