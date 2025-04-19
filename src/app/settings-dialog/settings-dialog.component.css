@@ -1,0 +1,15 @@
+.language-options {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+  
+  mat-dialog-content {
+    text-align: center;
+  }
+  
+  mat-dialog-actions {
+    margin-top: 1rem;
+  }
+  

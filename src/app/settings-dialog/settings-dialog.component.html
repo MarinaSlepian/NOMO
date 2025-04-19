@@ -1,0 +1,11 @@
+<h2 mat-dialog-title>Select Language</h2>
+
+<div mat-dialog-content class="language-options">
+  <button mat-raised-button color="primary" (click)="changeLanguage('en')">English</button>
+  <button mat-raised-button color="accent" (click)="changeLanguage('ru')">Русский</button>
+  <button mat-raised-button color="accent" (click)="changeLanguage('he')">עברית</button>
+</div>
+
+<div mat-dialog-actions align="end">
+  <button mat-button (click)="close()">Close</button>
+</div>
