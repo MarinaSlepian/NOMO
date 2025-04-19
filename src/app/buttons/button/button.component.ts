@@ -38,6 +38,8 @@ export class ButtonComponent {
       return 'assets/button-icons/good-bad/' + this.user.avatar;
     if(this.currentApp === '3')
       return 'assets/button-icons/actions/' + this.user.avatar;
+    if(this.currentApp === '4')
+      return 'assets/button-icons/emotions/' + this.user.avatar;
     return 'assets/button-icons/good-bad/' + this.user.avatar;
   }
 

@@ -4,6 +4,7 @@ import { ButtonComponent } from "./buttons/button/button.component";
 import { BUTTONS_GOOD_BAD_ICONS } from './buttons/buttons-good-bad-icons';
 import { BUTTONS_RIGHT_WRONG_ICONS } from './buttons/buttons-write-wrong-icons';
 import { BUTTONS_ACTIONS_ICONS } from './buttons/buttons-actions-icons';
+import { BUTTONS_EMOTIONS_ICONS } from './buttons/buttons-emotions-icons';
 
 
 
@@ -40,6 +41,10 @@ export class AppComponent {
     {
       this.buttons = BUTTONS_ACTIONS_ICONS;
       this.currentVideosPath = 'assets/videos/actions/video-';
+    } else if(id==='4')
+    {
+      this.buttons = BUTTONS_EMOTIONS_ICONS;
+      this.currentVideosPath = 'assets/videos/emotions/video-';
     }
     else {//temporary
      this.buttons = BUTTONS_RIGHT_WRONG_ICONS;
