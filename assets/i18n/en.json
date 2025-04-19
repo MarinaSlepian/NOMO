@@ -1,8 +1,8 @@
 {
-    "tooltips": {
-      "whatWrong": "What's wrong?",
-      "goodBad": "Good and Bad",
-      "verbs": "Live Verbs",
-      "emotions": "Live Emotions"
-    }
+  "APP_NAMES": {
+    "WHAT_WRONG": "What's wrong?",
+    "GOOD_BAD": "Good and Bad",
+    "ACTIONS": "Live Actions",
+    "EMOTIONS": "Live Emotions"
   }
+}
