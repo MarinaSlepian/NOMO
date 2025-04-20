@@ -1,98 +1,71 @@
-div {
-    border-radius: 6px;
-    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-  }
-  
-  button {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.35rem 0.5rem;
-    background-color: #5c3481;
-    color: #c3b3d1;
-    border: none;
-    font: inherit;div {
-      border-radius: 6px;
-      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-    }
-    
-    button {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.35rem 0.5rem;
-      background-color: #433352;
-      color: #c3b3d1;
-      border: none;
-      font: inherit;
-      cursor: pointer;
-      width: 100%;
-      min-width: 10rem;
-      text-align: left;
-    }
-    
-    button:hover,
-    button:active,
-    .active {
-      background-color: #9965dd;
-      color: #150722;
-    }
-    
-    img {
-      width: 7rem;
-      object-fit: contain;
-      border-radius: 0%;
-      box-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
-    }
-    
-    span {
-      margin: 0;
-      padding: 0;
-      font-size: 0.8rem;
-      font-weight: normal;
-    }
-    cursor: pointer;
-    width: 100%;
-    min-width: 8rem;
-    text-align: left;
-  }
-  
-  button:hover,
-  button:active,
-  .active {
-    background-color: #9965dd;
-    color: #150722;
-  }
-  
-  img {
-    width: 100%;
-    object-fit: contain;
-    border-radius: 0%;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  }
-  
-  span {
-    margin: 0;
-    padding: 0;
-    font-size: 0.8rem;
-    font-weight: normal;
-  }
+.button-container {
+  border-radius: 6px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
 
-  @media (max-width: 768px) {
-    button {
-      min-width: unset;
-      width: 100%;
-      font-size: 0.9rem;
-    }
-  
-    img {
-      width: 4rem;
-    }
-  
-    span {
-      font-size: 0.9rem;
-    }
-  }
-  
+button {
+  display: flex;
+  align-items: stretch; /* let children fill height */
+  justify-content: space-between;
+  padding: 0;
+  background-color: #5c3481;
+  border: none;
+  color: #c3b3d1;
+  width: 9rem;
+  height: 8rem;
+  cursor: pointer;
+  font: inherit;
+}
+
+/* Hover effect */
+button:hover,
+button:active,
+.active {
+  background-color: #9965dd;
+  color: #150722;
+}
+
+/* Left side image */
+.image-with-subtext {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  height: 100%;
+  width: 8rem;
+  padding: 0.3rem;
+}
+
+.image-with-subtext img {
+  height: 7rem;
+  width: auto;
+  object-fit: contain;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  margin: 0;
+  padding: 0;
+}
+
+/* subtext below image */
+.subtext {
+  font-size: 0.75rem;
+  color: #cfcfcf;
+  margin-top: 0.3rem;
+  text-align: center;
+  max-width: 6rem;
+}
+/* Right side name centered */
+.name-wrapper {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+}
+/* Text beside the image */
+/* name beside image */
+.name {
+  font-size: 1rem;
+  text-align: center;
+}

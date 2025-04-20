@@ -26,6 +26,7 @@ export class ButtonComponent {
   @Input({required:true}) user!: User;
   @Input({required:true}) videoPath!: string;
   @Input({required:true}) currentApp!: string;
+  @Input({required:true}) isSubtextNeeded!: boolean;
 
   fullVideoPath = '';
   
