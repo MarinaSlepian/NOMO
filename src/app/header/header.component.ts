@@ -1,10 +1,9 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { AppChooserComponent } from "../buttons/app-chooser/app-chooser.component";
 import { TranslateService,TranslateModule } from '@ngx-translate/core';
 import { SettingsDialogComponent } from '../settings-dialog/settings-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
 import { MatDialogModule } from '@angular/material/dialog';
-import { ThisReceiver } from '@angular/compiler';
 import { AppConfig } from '../app-config.model';
 
 
@@ -19,7 +18,7 @@ import { AppConfig } from '../app-config.model';
 
 
 
-export class HeaderComponent
+export class HeaderComponent implements OnInit
 {
   @Output() selectNewApp = new EventEmitter<string>();
   @Output() newConfig = new EventEmitter<AppConfig>();
@@ -36,12 +35,25 @@ export class HeaderComponent
 
   constructor(private translate: TranslateService, private dialog: MatDialog) 
   {
-    this.translate.setDefaultLang('en'); // sets fallback if no translation is found
-    this.translate.use('en'); // sets the active language
-    this.selectedSplash = this.selectedApp+'en';  
-    this.currentConfig.selectedLang = 'en';   
+ 
   }
   
+  ngOnInit(): void {
+    const saved = localStorage.getItem('appConfig');
+    if (saved) {
+      this.currentConfig = JSON.parse(saved);
+    }
+    else{
+      this.currentConfig = {
+        selectedLang: 'en',
+        needSubtext: true,
+        needAudio: false
+      };
+    }
+    this.translate.setDefaultLang(this.currentConfig.selectedLang); 
+    this.translate.use(this.currentConfig.selectedLang); // sets the active language
+    this.selectedSplash = this.selectedApp+this.currentConfig.selectedLang;  
+  }
 
   selectApp(id: string)
   {
@@ -59,11 +71,8 @@ export class HeaderComponent
        height: '400px',          // 🔹 fixed height
        minHeight: '200px',       // 🔹 optional: prevent shrinking
        maxHeight: '90vh',        // 🔹 optional: prevent overflow 
-       data: {
-        selectedLang: this.currentConfig.selectedLang,
-        needSubtext: this.currentConfig.needSubtext,
-        needAudio: this.currentConfig.needAudio
-      }});
+       panelClass: 'settings-dialog-purple',
+      });
   
     dialogRef.afterClosed().subscribe((result: AppConfig | undefined) => {
       if (result) {
