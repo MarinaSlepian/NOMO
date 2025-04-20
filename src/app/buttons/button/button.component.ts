@@ -1,6 +1,7 @@
-import { Component ,EventEmitter,Input, Output} from '@angular/core';
+import { Component ,Input} from '@angular/core';
 import { VideoComponent } from '../../video/video.component';
-
+import { TranslateService } from '@ngx-translate/core';
+import { TranslateModule } from '@ngx-translate/core';
 
 //type User =  {
 //  id: string;
@@ -12,12 +13,13 @@ interface User {
   avatar: string;
   name: string;
   numVideos: string;
+  subtextKey: string;
 }
 
 @Component({
   selector: 'app-button',
   standalone: true,
-  imports: [VideoComponent],
+  imports: [VideoComponent, TranslateModule],
   templateUrl: './button.component.html',
   styleUrls: ['./button.component.css']
 })
@@ -29,9 +31,10 @@ export class ButtonComponent {
   @Input({required:true}) isSubtextNeeded!: boolean;
 
   fullVideoPath = '';
-  
   isShowVideo = false;
   
+  constructor(public translate: TranslateService) {}
+
   get imagePath() {
     if(this.currentApp === '1')
       return 'assets/button-icons/right-wrong/' + this.user.avatar;

@@ -55,7 +55,15 @@ export class HeaderComponent
   onSettingsButton(): void 
   {
     const dialogRef = this.dialog.open(SettingsDialogComponent, {
-      width: '300px'});
+       width: '300px',
+       height: '400px',          // 🔹 fixed height
+       minHeight: '200px',       // 🔹 optional: prevent shrinking
+       maxHeight: '90vh',        // 🔹 optional: prevent overflow 
+       data: {
+        selectedLang: this.currentConfig.selectedLang,
+        needSubtext: this.currentConfig.needSubtext,
+        needAudio: this.currentConfig.needAudio
+      }});
   
     dialogRef.afterClosed().subscribe((result: AppConfig | undefined) => {
       if (result) {
