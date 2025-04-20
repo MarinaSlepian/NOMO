@@ -1,14 +1,17 @@
-<div>
-    <button (click)="onSelectButton()">
-        <img
-        [src] = "imagePath"
-        [alt] = "user.name"
-        />
-        <span>{{ user.name }}</span>
+<div class="button-container">
+    <button (click)="onSelectButton()" [style.height]="isSubtextNeeded ? '9rem' : '8rem'">
+      <div class="image-with-subtext">
+        <img [src]="imagePath" [alt]="user.name" />
+        <div class="subtext">TEST</div>
+      </div>
+      <div class="name-wrapper">
+        <span class="name">{{ user.name }}</span>
+      </div>
     </button>
-</div>
-@if(isShowVideo){
-    <app-video [videoPath]="fullVideoPath" (cancel)="onCancelVideo()" [numOfVideos]="user.numVideos"/>
-
-}
-
+  </div>
+    
+  
+  @if(isShowVideo){
+    <app-video [videoPath]="fullVideoPath" (cancel)="onCancelVideo()" [numOfVideos]="user.numVideos" />
+  }
+  

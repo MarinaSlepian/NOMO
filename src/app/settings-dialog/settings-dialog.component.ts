@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { TranslateService } from '@ngx-translate/core';
+import { AppConfig } from '../app-config.model';
 
 @Component({
   selector: 'app-settings-dialog',
@@ -16,8 +17,13 @@ export class SettingsDialogComponent {
   ) {}
 
   changeLanguage(lang: string): void {
+    const config: AppConfig = {
+      selectedLang: lang,
+      needSubtext: true, // or get from form/input
+      needAudio: false
+    };
     this.translate.use(lang);
-    this.dialogRef.close(lang); // ✅ pass the selected language back
+    this.dialogRef.close(config); // ✅ pass the selected language back
   }
 
   close(): void {

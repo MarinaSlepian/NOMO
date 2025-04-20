@@ -1,5 +1,6 @@
 
-<app-header (selectNewApp)="onSelectAppButton($event)"></app-header>
+<app-header (selectNewApp)="onSelectAppButton($event)"
+            (newConfig) = "onUpdateNewConfig($event)"></app-header>
 <main>
     <ul id="users">
         @for (b of buttons; track b.id) {
@@ -8,6 +9,7 @@
                     [user]="b"
                     [videoPath]="currentVideosPath"
                     [currentApp]="currentApp"
+                    [isSubtextNeeded]="isSubTextNeeded"
                 />
         }
     </ul>
