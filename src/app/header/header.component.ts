@@ -62,6 +62,7 @@ export class HeaderComponent
         // ✅ Add logic to update image or do anything else here
         this.currentConfig.selectedLang = result.selectedLang;
         this.updateSplashForLanguage();
+        this.currentConfig = result;
         this.newConfig.emit(this.currentConfig);
       }
     });

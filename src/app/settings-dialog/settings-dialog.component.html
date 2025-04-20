@@ -1,11 +1,20 @@
 <h2 mat-dialog-title>Select Language</h2>
 
 <div mat-dialog-content class="language-options">
-  <button mat-raised-button color="primary" (click)="changeLanguage('en')">English</button>
-  <button mat-raised-button color="accent" (click)="changeLanguage('ru')">Русский</button>
-  <button mat-raised-button color="accent" (click)="changeLanguage('he')">עברית</button>
+  <mat-form-field appearance="fill">
+    <mat-label>Language</mat-label>
+    <mat-select [(value)]="selectedLang">
+      @for (lang of languages; track lang.code) {
+        <mat-option [value]="lang.code">{{ lang.label }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-checkbox [(ngModel)]="needSubtext">Show Subtext</mat-checkbox>
+  <mat-checkbox [(ngModel)]="needAudio">Enable Audio</mat-checkbox>
+
 </div>
 
 <div mat-dialog-actions align="end">
-  <button mat-button (click)="close()">Close</button>
+  <button mat-button (click)="close()">Cancel</button>
+  <button mat-flat-button color="primary" (click)="save()">Save</button>
 </div>
