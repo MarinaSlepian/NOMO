@@ -9,8 +9,6 @@ import { AppConfig } from './app-config.model';
 
 
 
-
-
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -18,6 +16,8 @@ import { AppConfig } from './app-config.model';
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
+
+
 export class AppComponent {
   buttons = BUTTONS_RIGHT_WRONG_ICONS;
   currentApp = '1';  
@@ -30,7 +30,7 @@ export class AppComponent {
   };
 
   constructor(){
-  this.onSelectAppButton('1');
+   this.onSelectAppButton('1');
 
   }
 

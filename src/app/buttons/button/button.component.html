@@ -2,16 +2,18 @@
     <button (click)="onSelectButton()" [style.height]="isSubtextNeeded ? '9rem' : '8rem'">
       <div class="image-with-subtext">
         <img [src]="imagePath" [alt]="user.name" />
-        <div class="subtext">TEST</div>
+        @if (isSubtextNeeded) {
+          <div class="subtext">{{ (user.subtextKey) | translate }}</div>
+        }
       </div>
       <div class="name-wrapper">
         <span class="name">{{ user.name }}</span>
       </div>
-    </button>
+    </button> 
   </div>
-    
-  
-  @if(isShowVideo){
+       
+   
+  @if(isShowVideo){  
     <app-video [videoPath]="fullVideoPath" (cancel)="onCancelVideo()" [numOfVideos]="user.numVideos" />
   }
-  
+    
