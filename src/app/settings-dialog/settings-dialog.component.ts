@@ -9,7 +9,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatOptionModule } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+
 
 
 
@@ -33,6 +33,11 @@ export class SettingsDialogComponent implements OnInit{
   selectedLang = 'en';
   needSubtext = true;
   needAudio = false;
+  currentConfig: AppConfig = {
+                selectedLang: this.selectedLang,
+                needSubtext: this.needSubtext,
+                needAudio: this.needAudio
+               };
 
   languages = [
     { code: 'en', label: 'English' },
@@ -42,32 +47,41 @@ export class SettingsDialogComponent implements OnInit{
 
   constructor(
     public dialogRef: MatDialogRef<SettingsDialogComponent>,
-    private translate: TranslateService,
-    @Inject(MAT_DIALOG_DATA) public data: AppConfig
+    private translate: TranslateService
   ) {}
 
-  ngOnInit() {
-    if (this.data) {
-      this.selectedLang = this.data.selectedLang;
-      this.needSubtext = this.data.needSubtext;
-      this.needAudio = this.data.needAudio;
-    }
-    //const saved = localStorage.getItem('appConfig');
-    console.log('Languages:', this.languages);
+  ngOnInit() 
+  {
+    
+  const saved = localStorage.getItem('appConfig');
+  if (saved) {
+    this.currentConfig = JSON.parse(saved);
   }
+  else {
+    this.currentConfig = {
+      selectedLang: 'en',
+      needSubtext: true,
+      needAudio: false
+    };
+  }
+  this.selectedLang = this.currentConfig.selectedLang;
+  this.needSubtext = this.currentConfig.needSubtext;
+  this.needAudio = this.currentConfig.needAudio;
+  } 
+    
+  
   
   save(): void {
-    const config: AppConfig = {
-      selectedLang: this.selectedLang,
-      needSubtext: this.needSubtext,
-      needAudio: this.needAudio
-    };
-    console.log('needSubtext:', this.needSubtext);
+
+    this.currentConfig.needAudio = this.needAudio;
+    this.currentConfig.needSubtext = this.needSubtext;
+    this.currentConfig.selectedLang = this.selectedLang;
+    
     this.translate.use(this.selectedLang);
     
   // ✅ Save to localStorage
-    //localStorage.setItem('appConfig', JSON.stringify(config));
-    this.dialogRef.close(config);
+    localStorage.setItem('appConfig', JSON.stringify(this.currentConfig));
+    this.dialogRef.close(this.currentConfig);
   }
   close(): void {
     this.dialogRef.close();
