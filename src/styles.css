@@ -19,3 +19,13 @@ html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 
 
+
+
+::ng-deep .settings-dialog-purple .mat-mdc-dialog-surface,
+::ng-deep .settings-dialog-purple .mdc-dialog__surface {
+  background-color: white !important;
+  color: black !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}

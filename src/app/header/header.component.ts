@@ -68,7 +68,7 @@ export class HeaderComponent implements OnInit
   {
     const dialogRef = this.dialog.open(SettingsDialogComponent, {
        width: '300px',
-       height: '400px',          // 🔹 fixed height
+       height: '350px',          // 🔹 fixed height
        minHeight: '200px',       // 🔹 optional: prevent shrinking
        maxHeight: '90vh',        // 🔹 optional: prevent overflow 
        panelClass: 'settings-dialog-purple',
@@ -86,11 +86,11 @@ export class HeaderComponent implements OnInit
 
   }
 
-
+ 
   updateSplashForLanguage()
   {
     this.selectedSplash = this.selectedApp + this.currentConfig.selectedLang;  
   }
   
-
+  
 } 
