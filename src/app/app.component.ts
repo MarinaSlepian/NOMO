@@ -32,7 +32,11 @@ export class AppComponent {
 
   constructor(){
    this.onSelectAppButton('1');
-
+   const saved = localStorage.getItem('appConfig');
+   if (saved) {
+     this.currentConfig = JSON.parse(saved);
+     this.onUpdateNewConfig(this.currentConfig);
+   }
   }
 
   onUpdateNewConfig(newAppConfig: AppConfig)
