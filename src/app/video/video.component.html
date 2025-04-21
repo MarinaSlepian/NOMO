@@ -8,8 +8,12 @@
   </video>
 
   <p class="actions">
-    <button type="button" (click)="onCancel()">Close</button>
-    <button type="button" (click)="onSwitchVideo(videoPlayer)">Switch</button>
+    <button type="button" (click)="onCancel()">
+      <img src="assets/icons/close.png" alt="Close" width="40" height="40" />
+    </button>
+    <button type="button" (click)="onSwitchVideo(videoPlayer)" class="icon-button">
+      <img src="assets/icons/switch.png" alt="Switch Video" width="40" height="40"/>
+    </button>
   </p>
 </dialog>
 

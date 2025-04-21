@@ -23,6 +23,7 @@ export class AppComponent {
   currentApp = '1';  
   currentVideosPath = 'aassets/videos/right-wrong/video-';
   isSubTextNeeded = false;
+  isAudioNeeded = false;
   currentConfig: AppConfig = {
     selectedLang: 'en',
     needSubtext: true,
@@ -37,12 +38,17 @@ export class AppComponent {
   onUpdateNewConfig(newAppConfig: AppConfig)
   {
     this.isSubTextNeeded = newAppConfig.needSubtext;
+
     this.currentConfig = newAppConfig;
-    //subtext only relevant for emotions and actions
-    if(this.currentApp === '1' || this.currentApp === '2')
+    //subtext and audio only relevant for emotions and actions
+    if(this.currentApp === '1' || this.currentApp === '2'){
       this.isSubTextNeeded = false;
-    else 
+      this.isAudioNeeded = false;
+    }
+    else {
       this.isSubTextNeeded = this.currentConfig.needSubtext;
+      this.isAudioNeeded = this.currentConfig.needAudio;
+    }
   }
 
   onSelectAppButton(id: string)
@@ -53,26 +59,31 @@ export class AppComponent {
       this.buttons = BUTTONS_RIGHT_WRONG_ICONS;
       this.currentVideosPath = 'assets/videos/right-wrong/video-';
       this.isSubTextNeeded = false;
+      this.isAudioNeeded = false;
     }
     else if(id === '2'){
       this.buttons = BUTTONS_GOOD_BAD_ICONS;
       this.currentVideosPath = 'assets/videos/good-bad/video-';
       this.isSubTextNeeded = false;
+      this.isAudioNeeded = false;
     } else if(id === '3')
     {
       this.buttons = BUTTONS_ACTIONS_ICONS;
       this.currentVideosPath = 'assets/videos/actions/video-';
       this.isSubTextNeeded = this.currentConfig.needSubtext;
+      this.isAudioNeeded = this.currentConfig.needAudio;
     } else if(id==='4')
     {
       this.buttons = BUTTONS_EMOTIONS_ICONS;
       this.currentVideosPath = 'assets/videos/emotions/video-';
       this.isSubTextNeeded = this.currentConfig.needSubtext;
+      this.isAudioNeeded = this.currentConfig.needAudio;
     }
     else {//temporary
      this.buttons = BUTTONS_RIGHT_WRONG_ICONS;
      this.currentVideosPath = 'assets/videos/right-wrong/video-';
      this.isSubTextNeeded = false;
+     this.isAudioNeeded = false;
     }
   }
 }
