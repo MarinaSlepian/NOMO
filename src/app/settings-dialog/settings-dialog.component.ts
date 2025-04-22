@@ -42,8 +42,10 @@ export class SettingsDialogComponent implements OnInit{
   languages = [
     { code: 'en', label: 'English' },
     { code: 'ru', label: 'Русский' },
-    { code: 'he', label: 'עברית' }
-  ];
+    { code: 'he', label: 'עברית' },
+    { code: 'ukr', label: 'Українська'},
+    { code: 'cz', label: 'Čeština'},
+  ]; 
 
   constructor(
     public dialogRef: MatDialogRef<SettingsDialogComponent>,
