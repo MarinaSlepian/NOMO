@@ -1,10 +1,19 @@
 {
+  "SETTINGSDLOG": {
+    "CANCEL": "Отменить",
+    "SAVE": "Согласен",
+    "LANG": "Язык",
+    "SHOWSUBTEXT": "Показать названия кнопок",
+    "ENABLEAUDIO": "Озвучить названия кнопок"
+  },
+  
   "APP_NAMES": {
     "WHAT_WRONG": "Что не так?",
     "GOOD_BAD": "Хорошо и Плохо",
     "ACTIONS": "Живые действия",
     "EMOTIONS": "Живые Эмоции"
   },
+
 "subtext": {
   "LAUGH": "СМЕЯТЬСЯ",
   "CRY": "ПЛАКАТЬ",

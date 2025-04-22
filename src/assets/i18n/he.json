@@ -1,11 +1,21 @@
 {
-    "APP_NAMES": {
+  "SETTINGSDLOG": {
+    "CANCEL": "בטל",
+    "SAVE": "שמור",
+    "LANG": "שפה",
+    "SHOWSUBTEXT": "להראות שמות הכפתורים",
+    "ENABLEAUDIO": "להשמיע שמות הכפתורים"
+  },
+  
+  "APP_NAMES": {
       "WHAT_WRONG": "מה לא בסדר",
       "GOOD_BAD": "טוב ורע",
       "ACTIONS": "פעלים חיים",
       "EMOTIONS": "רגשות חיות"
     },
-    "subtext": {
+
+    
+  "subtext": {
   "LAUGH": "לצחוק",
   "CRY": "לבכות",
   "DRINK": "לשתות",

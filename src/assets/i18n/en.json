@@ -1,4 +1,12 @@
 {
+  "SETTINGSDLOG": {
+    "CANCEL": "Cancel",
+    "SAVE": "Save",
+    "LANG": "Language",
+    "SHOWSUBTEXT": "Show subtext",
+    "ENABLEAUDIO": "Enable audio"
+  },
+  
   "APP_NAMES": {
     "WHAT_WRONG": "What's wrong?",
     "GOOD_BAD": "Good and Bad",
