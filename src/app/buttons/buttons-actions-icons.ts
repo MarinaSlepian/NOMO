@@ -294,4 +294,12 @@ export const BUTTONS_ACTIONS_ICONS = [
       numVideos: '7',
       subtextKey:"subtext.CLOSE"
     },
+    {
+      id: '43',//RANDOM
+      name: '0',
+      avatar: 'user-43.png',
+      numVideos: '10',
+      subtextKey:"subtext.RANDOM"
+    },
+
   ];
