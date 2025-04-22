@@ -52,7 +52,7 @@ export class HeaderComponent implements OnInit
     }
     this.translate.setDefaultLang(this.currentConfig.selectedLang); 
     this.translate.use(this.currentConfig.selectedLang); // sets the active language
-    this.selectedSplash = this.selectedApp+this.currentConfig.selectedLang;  
+    this.updateSplashForLanguage();
   }
 
   selectApp(id: string)
@@ -89,7 +89,10 @@ export class HeaderComponent implements OnInit
  
   updateSplashForLanguage()
   {
-    this.selectedSplash = this.selectedApp + this.currentConfig.selectedLang;  
+    if(this.currentConfig.selectedLang != 'he' && this.currentConfig.selectedLang != 'ru' )
+     this.selectedSplash = this.selectedApp + 'en';  
+    else
+     this.selectedSplash = this.selectedApp + this.currentConfig.selectedLang;  
   }
   
   
