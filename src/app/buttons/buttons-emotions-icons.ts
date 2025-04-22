@@ -55,7 +55,7 @@ export const BUTTONS_EMOTIONS_ICONS = [
       numVideos: '5',
       subtextKey:"subtext.JOYFYL"
     },
-    {
+    { 
       id: '9',//DIAPPOINTED
       name: '0',
       avatar: 'user-9.png',

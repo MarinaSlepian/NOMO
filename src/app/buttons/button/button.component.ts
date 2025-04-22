@@ -59,6 +59,9 @@ export class ButtonComponent {
     let numClicks = Number(this.user.name);
     numClicks++;
     this.user.name = numClicks.toString();
+    if(this.user.subtextKey.includes('RANDOM'))
+      return this.onRandomButton();
+
     this.buildVideoPath();
     if (this.isAudioNeeded) {
       await this.playLocalizedAudio(this.user.subtextKey); // 👈 wait for audio
@@ -66,6 +69,17 @@ export class ButtonComponent {
     this.isShowVideo = true;
 
   }
+
+  onRandomButton()
+  {
+    //relevant ovly for actions function, assumes that maximal number of actions = 42
+    const randomIdNum = Math.floor(Math.random() * 42) + 1;
+    const randomIdStr = String(randomIdNum);
+    this.fullVideoPath = this.videoPath + randomIdStr + 'A.mp4';
+    this.isShowVideo = true;
+
+  }
+
   onCancelVideo()
   {
     this.isShowVideo = false; 
