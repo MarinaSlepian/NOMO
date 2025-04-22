@@ -1,5 +1,13 @@
 {
-    "APP_NAMES": {
+  "SETTINGSDLOG": {
+    "CANCEL": "Скасувати",
+    "SAVE": "Рятувати",
+    "LANG": "Мова",
+    "SHOWSUBTEXT": "Показати підтекст",
+    "ENABLEAUDIO": "Увімкнути звук"
+  },
+  
+  "APP_NAMES": {
       "WHAT_WRONG": "Що не так?",
       "GOOD_BAD": "Добре-Погано",
       "ACTIONS": "Живі дії",

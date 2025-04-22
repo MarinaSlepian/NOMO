@@ -9,7 +9,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatOptionModule } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-
+import { TranslateModule } from '@ngx-translate/core';
 
 
 
@@ -24,12 +24,19 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
     MatSelectModule,
     MatOptionModule,
     MatButtonModule,
-    MatCheckboxModule
+    MatCheckboxModule,
+    TranslateModule
   ]
 })
 
 
 export class SettingsDialogComponent implements OnInit{
+  cancelLabel = 'Cancel';
+  saveLabel = 'Save';
+  langLabel = 'Language';
+  audioLabel = 'Enable audio';
+  subtextLabel = "Show subtext";
+
   selectedLang = 'en';
   needSubtext = true;
   needAudio = false;
@@ -69,6 +76,8 @@ export class SettingsDialogComponent implements OnInit{
   this.selectedLang = this.currentConfig.selectedLang;
   this.needSubtext = this.currentConfig.needSubtext;
   this.needAudio = this.currentConfig.needAudio;
+
+  this.onLanguageChange(this.currentConfig.selectedLang);
   } 
     
   
@@ -88,4 +97,25 @@ export class SettingsDialogComponent implements OnInit{
   close(): void {
     this.dialogRef.close();
   }
+
+  onLanguageChange(lang: string) {
+    const currentLang = this.translate.currentLang;
+  
+    this.translate.use(lang).subscribe(() => {
+      this.translate.get(['SETTINGSDLOG.CANCEL', 'SETTINGSDLOG.SAVE', 
+                          'SETTINGSDLOG.LANG','SETTINGSDLOG.SHOWSUBTEXT',
+                          'SETTINGSDLOG.ENABLEAUDIO']).subscribe(translations => {
+        this.cancelLabel = translations['SETTINGSDLOG.CANCEL'];
+        this.saveLabel = translations['SETTINGSDLOG.SAVE'];
+        this.langLabel = translations['SETTINGSDLOG.LANG'];
+        this.audioLabel = translations['SETTINGSDLOG.ENABLEAUDIO'];
+        this.subtextLabel = translations['SETTINGSDLOG.SHOWSUBTEXT'];
+      
+  
+        // Reset to previous language
+        this.translate.use(currentLang);
+      });
+    });
+  }
+  
 }

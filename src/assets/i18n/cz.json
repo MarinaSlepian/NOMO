@@ -1,5 +1,13 @@
 {
-    "APP_NAMES": {
+  "SETTINGSDLOG": {
+    "CANCEL": "Zrušit",
+    "SAVE": "Souhlasím",
+    "LANG": "Jazyk",
+    "SHOWSUBTEXT": "Zobrazit podtext",
+    "ENABLEAUDIO": "Zapnout hlas"
+  },
+  
+  "APP_NAMES": {
       "WHAT_WRONG": "Co je špatn?",
       "GOOD_BAD": "Správné nebo špatné",
       "ACTIONS": "Živá akce",
