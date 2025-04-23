@@ -33,9 +33,11 @@ jobs:
       - name: 📄 Copy index.html to 404.html
         run: cp dist/essentials/browser/index.html dist/essentials/browser/404.html
 
+      - run: echo "Before deploy"
       - name: 🚀 Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages
           folder: dist/essentials/browser
           clean: true
+      - run: echo "After deploy"
