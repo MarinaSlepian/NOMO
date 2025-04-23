@@ -1,4 +1,4 @@
-import { Component, EventEmitter } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { HeaderComponent } from "./header/header.component";
 import { ButtonComponent } from "./buttons/button/button.component";
 import { BUTTONS_GOOD_BAD_ICONS } from './buttons/buttons-good-bad-icons';
@@ -29,6 +29,8 @@ export class AppComponent {
     needSubtext: true,
     needAudio: false
   };
+//for mobile device
+  isPortraitOnMobile = false;
 
   constructor(){
    this.onSelectAppButton('1');
@@ -37,6 +39,10 @@ export class AppComponent {
      this.currentConfig = JSON.parse(saved);
      this.onUpdateNewConfig(this.currentConfig);
    }
+  }
+
+  ngOnInit(): void {
+    this.checkOrientation();
   }
 
   onUpdateNewConfig(newAppConfig: AppConfig)
@@ -90,4 +96,17 @@ export class AppComponent {
      this.isAudioNeeded = false;
     }
   }
+
+  @HostListener('window:resize')
+  @HostListener('window:orientationchange')
+  onResizeOrOrientationChange() {
+    this.checkOrientation();
+  }
+
+  checkOrientation() {
+    const isMobile = window.innerWidth <= 768;
+    const isPortrait = window.innerHeight > window.innerWidth;
+    this.isPortraitOnMobile = isMobile && isPortrait;
+  }
 }
+

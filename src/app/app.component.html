@@ -1,4 +1,8 @@
-
+@if (isPortraitOnMobile) {
+    <div class="orientation-overlay">
+      Please rotate your device to landscape mode.
+    </div>
+  }
 <app-header (selectNewApp)="onSelectAppButton($event)"
             (newConfig) = "onUpdateNewConfig($event)"></app-header>
 <main>
