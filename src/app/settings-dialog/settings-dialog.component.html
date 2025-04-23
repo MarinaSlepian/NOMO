@@ -1,7 +1,7 @@
-<h4 mat-dialog-title>Application Settings</h4>
+<h4 mat-dialog-title>{{ titleLabel }}</h4>
 
 <div mat-dialog-content style class="language-options">
-  <mat-form-field appearance="fill">
+  <mat-form-field appearance="outline">
     <mat-label>{{langLabel}}</mat-label>
     <mat-select [(value)]="selectedLang" (selectionChange)="onLanguageChange($event.value)">
       @for (lang of languages; track lang.code) {
@@ -16,5 +16,5 @@
 
 <div mat-dialog-actions align="center">
   <button mat-button (click)="close()">{{ cancelLabel }}</button>
-  <button mat-flat-button color="primary" (click)="save()">{{ saveLabel }}</button>
+  <button mat-flat-button (click)="save()">{{ saveLabel }}</button>
 </div>
