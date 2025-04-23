@@ -4,7 +4,8 @@
     "SAVE": "Save",
     "LANG": "Language",
     "SHOWSUBTEXT": "Show subtext",
-    "ENABLEAUDIO": "Enable audio"
+    "ENABLEAUDIO": "Enable audio",
+    "TITLE":"Application Settings"
   },
   
   "APP_NAMES": {

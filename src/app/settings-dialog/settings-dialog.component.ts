@@ -1,4 +1,4 @@
-import { Component, OnInit,Inject } from '@angular/core';
+import { Component, OnInit,ViewEncapsulation } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { TranslateService } from '@ngx-translate/core';
 import { AppConfig } from '../app-config.model';
@@ -18,6 +18,7 @@ import { TranslateModule } from '@ngx-translate/core';
   standalone: true,
   templateUrl: './settings-dialog.component.html',
   styleUrls: ['./settings-dialog.component.css'],
+  encapsulation: ViewEncapsulation.None,
   imports: [
     FormsModule,
     MatFormFieldModule,
@@ -36,6 +37,7 @@ export class SettingsDialogComponent implements OnInit{
   langLabel = 'Language';
   audioLabel = 'Enable audio';
   subtextLabel = "Show subtext";
+  titleLabel = "Application settings";
 
   selectedLang = 'en';
   needSubtext = true;
@@ -104,12 +106,13 @@ export class SettingsDialogComponent implements OnInit{
     this.translate.use(lang).subscribe(() => {
       this.translate.get(['SETTINGSDLOG.CANCEL', 'SETTINGSDLOG.SAVE', 
                           'SETTINGSDLOG.LANG','SETTINGSDLOG.SHOWSUBTEXT',
-                          'SETTINGSDLOG.ENABLEAUDIO']).subscribe(translations => {
+                          'SETTINGSDLOG.ENABLEAUDIO','SETTINGSDLOG.TITLE']).subscribe(translations => {
         this.cancelLabel = translations['SETTINGSDLOG.CANCEL'];
         this.saveLabel = translations['SETTINGSDLOG.SAVE'];
         this.langLabel = translations['SETTINGSDLOG.LANG'];
         this.audioLabel = translations['SETTINGSDLOG.ENABLEAUDIO'];
         this.subtextLabel = translations['SETTINGSDLOG.SHOWSUBTEXT'];
+        this.titleLabel = translations['SETTINGSDLOG.TITLE'];
       
   
         // Reset to previous language
