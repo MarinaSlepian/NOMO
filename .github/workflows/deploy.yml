@@ -3,7 +3,12 @@ name: Deploy Angular App to GitHub Pages
 on:
   push:
     branches:
-      - main
+      - main  # Trigger deploy on push to 'main'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
   build-and-deploy:
@@ -19,17 +24,17 @@ jobs:
           node-version: 18
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build Angular app
         run: npm run build -- --configuration production --base-href /NOMO/
 
-      - name: Copy index.html to 404.html
+      - name: Copy index.html to 404.html for Angular routing support
         run: cp dist/essentials/browser/index.html dist/essentials/browser/404.html
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages 🚀
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages
-          folder: dist/essentials/browser/
+          folder: dist/essentials/browser
           token: ${{ secrets.GITHUB_TOKEN }}
