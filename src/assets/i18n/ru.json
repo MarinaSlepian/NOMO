@@ -1,4 +1,8 @@
 {
+  "ROTATE_DEVICE":{
+    "INSTRUCTION" : "Поверните устройство в горизонтальный режим."
+  },
+
   "SETTINGSDLOG": {
     "CANCEL": "Отменить",
     "SAVE": "Согласен",

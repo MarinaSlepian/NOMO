@@ -1,4 +1,8 @@
 {
+  "ROTATE_DEVICE" :{
+    "INSTRUCTION" : "Please rotate your device to landscape mode."
+  },
+
   "SETTINGSDLOG": {
     "CANCEL": "Cancel",
     "SAVE": "Save",

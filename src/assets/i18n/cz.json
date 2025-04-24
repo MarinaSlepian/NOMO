@@ -1,4 +1,8 @@
 {
+  "ROTATE_DEVICE": {
+    "INSTRUCTION" : "Otočte prosím zařízení do vodorovného režimu."
+  },
+
   "SETTINGSDLOG": {
     "CANCEL": "Zrušit",
     "SAVE": "Souhlasím",

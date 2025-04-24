@@ -1,4 +1,8 @@
 {
+  "ROTATE_DEVICE": {
+    "INSTRUCTION" : "אנא סובב את המכשיר למצב אופקי."
+  },
+
   "SETTINGSDLOG": {
     "CANCEL": "בטל",
     "SAVE": "שמור",
