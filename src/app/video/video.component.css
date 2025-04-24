@@ -27,7 +27,7 @@
 .switch-button img {
   width: 40px;
   height: 40px;
-  filter: drop-shadow(0 0 4px rgb(153, 58, 177));
+  filter: drop-shadow(0 0 4px rgb(27, 4, 91));
 }
 
 dialog {
