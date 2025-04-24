@@ -21,8 +21,8 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 html, body {
   margin: 0;
   padding: 0;
-  height: 100dvh; /* use 100vh as fallback if needed */
   height: 100vh;
-  overflow: hidden;
+  overflow-y: auto; /* ✅ Allows vertical scrolling */
+  -webkit-overflow-scrolling: touch; /* ✅ Smooth scroll for iOS */
   background: rgb(222, 222, 222);
 }
