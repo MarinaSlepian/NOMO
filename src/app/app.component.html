@@ -1,6 +1,6 @@
 @if (isPortraitOnMobile) {
     <div class="orientation-overlay">
-      Please rotate your device to landscape mode.
+        {{rotateInstruction}}
     </div>
   }
 <app-header (selectNewApp)="onSelectAppButton($event)"

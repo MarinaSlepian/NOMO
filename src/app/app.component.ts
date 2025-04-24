@@ -6,6 +6,7 @@ import { BUTTONS_RIGHT_WRONG_ICONS } from './buttons/buttons-write-wrong-icons';
 import { BUTTONS_ACTIONS_ICONS } from './buttons/buttons-actions-icons';
 import { BUTTONS_EMOTIONS_ICONS } from './buttons/buttons-emotions-icons';
 import { AppConfig } from './app-config.model';
+import { TranslateService } from '@ngx-translate/core';
 
 
 
@@ -18,7 +19,8 @@ import { AppConfig } from './app-config.model';
 })
 
 
-export class AppComponent {
+export class AppComponent implements OnInit{
+  rotateInstruction = "";
   buttons = BUTTONS_RIGHT_WRONG_ICONS;
   currentApp = '1';  
   currentVideosPath = 'aassets/videos/right-wrong/video-';
@@ -32,13 +34,13 @@ export class AppComponent {
 //for mobile device
   isPortraitOnMobile = false;
 
-  constructor(){
+  constructor(private translate: TranslateService){
    this.onSelectAppButton('1');
    const saved = localStorage.getItem('appConfig');
-   if (saved) {
+   if (saved) 
      this.currentConfig = JSON.parse(saved);
-     this.onUpdateNewConfig(this.currentConfig);
-   }
+   this.onUpdateNewConfig(this.currentConfig);
+   
   }
 
   ngOnInit(): void {
@@ -59,6 +61,13 @@ export class AppComponent {
       this.isSubTextNeeded = this.currentConfig.needSubtext;
       this.isAudioNeeded = this.currentConfig.needAudio;
     }
+
+    this.translate.use(newAppConfig.selectedLang).subscribe(() => {
+      this.translate.get(['ROTATE_DEVICE.INSTRUCTION']).subscribe(translations => {
+        this.rotateInstruction = translations['ROTATE_DEVICE.INSTRUCTION'];
+      });
+    });
+
   }
 
   onSelectAppButton(id: string)
