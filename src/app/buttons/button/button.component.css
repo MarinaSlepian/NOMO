@@ -5,21 +5,24 @@
 }
 
 button {
+  position: relative; 
   display: flex;
   align-items: stretch; /* let children fill height */
   justify-content: space-between;
   padding: 0;
-  background-color: #5c3481;
+  background-color:  rgb(219, 219, 221);
   border: none;
   color: #c3b3d1;
   width: 9rem;
   height: 8rem;
   cursor: pointer;
   font: inherit;
+  overflow: hidden;
 }
 
+
 /* Hover effect */
-button:hover,
+button:hover, 
 button:active,
 .active {
   background-color: #9965dd;
@@ -51,7 +54,7 @@ button:active,
 /* subtext below image */
 .subtext {
   font-size: 0.75rem;
-  color: #cfcfcf;
+  color: #333333;
   margin-top: 0.3rem;
   text-align: center;
   max-width: 6rem;
@@ -60,12 +63,28 @@ button:active,
 .name-wrapper {
   display: flex;
   flex: 1;
-  justify-content: center;
-  align-items: center;
+  justify-content: center; /* по горизонтали центрируем */
+  padding-right: 2rem;
+  /*padding-bottom: 0.5rem;  добавим небольшой отступ снизу */
 }
-/* Text beside the image */
-/* name beside image */
+/* Text beside the image */ 
 .name {
-  font-size: 1rem;
+  position: absolute;
+  top: 0.0rem;
+  right: 0.0rem;
+  font-size: 0.9rem;
   text-align: center;
+  background-color: rgb(200,200,200); /* Цвет фона бейджа */
+  color: #333333;
+  padding: 0.3rem 0.3rem, 0.3rem, 03rem;
+  border-radius: 6px; /* Скругление всех углов */ 
+  /*margin-bottom: 0.5rem;*/
+  /*box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);*/
+  overflow: hidden; /* чтобы скругления работали корректно */
+ 
+  min-width: 1.5rem;     /* не даст сжаться слишком сильно */
+  max-width: 1.5rem;       /* можно ограничить, если имя длинное */
+  
+  display: inline-block; /* обеспечит адекватное поведение внутри flex-контейнера */
+
 }
