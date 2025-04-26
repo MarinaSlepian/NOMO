@@ -24,5 +24,5 @@ html, body {
   height: 100vh;
   overflow-y: auto; /* ✅ Allows vertical scrolling */
   -webkit-overflow-scrolling: touch; /* ✅ Smooth scroll for iOS */
-  background: rgb(222, 222, 222);
+  background: rgb(250, 250, 250);
 }
