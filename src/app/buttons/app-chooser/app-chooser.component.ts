@@ -1,4 +1,5 @@
-import { Component,Input ,EventEmitter, Output, OnInit} from '@angular/core';
+import { Component,Input ,EventEmitter, Output, OnInit,signal, inject} from '@angular/core';
+
 
 @Component({
   selector: 'app-app-chooser',
@@ -15,8 +16,9 @@ export class AppChooserComponent implements OnInit {
     isDisabled = true;
   
     ngOnInit() {
-      this.isDisabled = true;//!(this.id === '1' || this.id === '2' || this.id === '3' || this.id === '4');
+      this.isDisabled = !(this.id === '1' || this.id === '2' || this.id === '3' || this.id === '4');
     }
+
     onSelectApp()//buttonClick
     { 
       this.select.emit(this.id); 
