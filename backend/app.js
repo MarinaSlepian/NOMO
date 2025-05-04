@@ -1,54 +1,70 @@
 import fs from "node:fs/promises";
-
-import bodyParser from "body-parser";
 import express from "express";
 
 const app = express();
-app.use(bodyParser.json());
+app.use(express.json());
 
-// CORS
-
+// ✅ CORS setup
 app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*"); // allow all domains
-  res.setHeader("Access-Control-Allow-Methods", "PUT");
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
   next();
 });
- 
 
-app.put("/app-usage", async (req, res) => {
+// ✅ In-memory request queue
+const requestQueue = [];
+let isProcessing = false;
+
+async function processQueue() {
+  if (isProcessing || requestQueue.length === 0) return;
+
+  isProcessing = true;
+  const { appId, res } = requestQueue.shift();
+
   try {
-    const appId = req.body.appId;
-  
-    console.log('Received PUT request:', req.body);
-  
+    console.log("Processing appId:", appId);
+
     const fileContent = await fs.readFile("./data/app-usage.json");
     const appData = JSON.parse(fileContent);
-    const app = appData.find((app) => app.id === appId);
-  
-    if (!app) {
-      return res.status(404).json({ error: 'App ID not found' });
+
+    const appIndex = appData.findIndex((app) => app.id === appId);
+    if (appIndex === -1) {
+      return res.status(404).json({ error: "App ID not found" });
     }
-  
-    console.log('app.id: ' + app.id);
-    app.usages++;
-    let updatedAppData = appData.filter(a => a.id !== app.id);
-    updatedAppData = [...updatedAppData, app];
 
+    appData[appIndex].usages++;
 
-    await fs.writeFile(
-      "./data/app-usage.json",
-      JSON.stringify(updatedAppData)
-    );
+    await fs.writeFile("./data/app-usage.json", JSON.stringify(appData, null, 2));
 
-    res.status(200).json({ message: 'Received PUT successfully' });
-} catch (err) {
+    res.status(200).json({
+      message: "Received PUT successfully",
+      updatedUsages: appData[appIndex].usages,
+    });
+  } catch (err) {
     console.error("Error in /app-usage:", err);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: "Internal server error" });
+  } finally {
+    isProcessing = false;
+    processQueue(); // Continue to next in line
+  }
 }
-  
+
+// ✅ PUT endpoint
+app.put("/app-usage", (req, res) => {
+  const appId = req.body.appId;
+
+  if (!appId) {
+    return res.status(400).json({ error: "Missing appId in request body" });
+  }
+
+  console.log("Received PUT request:", req.body);
+
+  requestQueue.push({ appId, res });
+  processQueue();
 });
 
-
-app.listen(3000);
+// ✅ Start server
+app.listen(3000, () => {
+  console.log("Server listening on port 3000");
+});
