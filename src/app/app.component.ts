@@ -108,7 +108,8 @@ export class AppComponent implements OnInit{
      this.isAudioNeeded = false;
     }
       //send usage info to server
-    this.httpClient.put('http://localhost:3000/app-usage',{
+    //this.httpClient.put('http://localhost:3000/app-usage',{
+    this.httpClient.put('https://nomo-backend.onrender.com/app-usage',{
     appId: this.currentApp
     } ).subscribe({
     next: (resData) => console.log (resData),
