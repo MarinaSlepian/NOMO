@@ -49,6 +49,9 @@ async function processQueue() {
     processQueue(); // Continue to next in line
   }
 }
+app.get('/', (req, res) => {
+  res.send('Server is running');
+});
 
 // ✅ PUT endpoint
 app.put("/app-usage", (req, res) => {
