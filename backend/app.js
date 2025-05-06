@@ -49,6 +49,7 @@ async function processQueue() {
     processQueue(); // Continue to next in line
   }
 }
+
 app.get('/', (req, res) => {
   res.send('Server is running');
 });
@@ -68,6 +69,7 @@ app.put("/app-usage", (req, res) => {
 });
 
 // ✅ Start server
-app.listen(3000, () => {
+//app.listen(3000, () => {
+app.listen(3000, '0.0.0.0', () => {
   console.log("Server listening on port 3000");
 });
