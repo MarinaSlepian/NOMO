@@ -123,10 +123,25 @@ export class AppComponent implements OnInit{
     this.checkOrientation();
   }
 
-  checkOrientation() {
-    const isMobile = window.innerWidth <= 768;
-    const isPortrait = window.innerHeight > window.innerWidth;
-    this.isPortraitOnMobile = isMobile && isPortrait;
+//  checkOrientation() {
+//    const isMobile = window.innerWidth <= 768;
+//    const isPortrait = window.innerHeight > window.innerWidth;
+//    this.isPortraitOnMobile = isMobile && isPortrait;
+//  }
+
+checkOrientation() {
+  const isMobile = window.innerWidth <= 768;
+  let isPortrait = false;
+
+  // Use screen.orientation API if available (more reliable in standalone)
+  if (screen.orientation && screen.orientation.type) {
+    isPortrait = screen.orientation.type.startsWith('portrait');
+  } else {
+    // Fallback logic
+    isPortrait = window.innerHeight > window.innerWidth;
   }
+
+  this.isPortraitOnMobile = isMobile && isPortrait;
+}
 }
 
