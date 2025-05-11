@@ -8,12 +8,13 @@ import { BUTTONS_EMOTIONS_ICONS } from './buttons/buttons-emotions-icons';
 import { AppConfig } from './app-config.model';
 import { TranslateService } from '@ngx-translate/core';
 import { HttpClient } from '@angular/common/http';
+import { NgIf } from '@angular/common';
 
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [HeaderComponent, ButtonComponent],
+  imports: [HeaderComponent, ButtonComponent, NgIf],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
@@ -48,6 +49,7 @@ export class AppComponent implements OnInit{
 
   ngOnInit(): void {
     window.addEventListener('beforeinstallprompt', (e: Event) => {
+      console.log('beforeinstallprompt fired'); 
       e.preventDefault();
       this.deferredPrompt = e;
       this.showInstallButton = true; // Now you can show a button in the template
@@ -56,6 +58,7 @@ export class AppComponent implements OnInit{
   }
 
   installApp() {
+    console.log('Install clicked');
     if (this.deferredPrompt) {
       this.deferredPrompt.prompt();
       this.deferredPrompt.userChoice.then((choiceResult: any) => {
