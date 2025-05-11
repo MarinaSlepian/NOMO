@@ -1,7 +1,9 @@
 @if (showInstallButton) {
-    <button (click)="installApp()">
-      📲 Install NOMO
-    </button>
+    <div class="install-banner">
+        <button class="install-button" (click)="installApp()">
+          📲 Install NOMO
+        </button>
+      </div>
   }
 @if (isPortraitOnMobile) {
     <div class="orientation-overlay">
