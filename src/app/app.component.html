@@ -1,15 +1,6 @@
-<ng-template angular>
-    @if (showInstallButton) {
-    <div class="install-banner">
-        <button class="install-button" (click)="installApp()">
-          📲 Install NOMO
-        </button>
-      </div>
-    }
-    @else {
-        <p style="color: red; text-align: center;">Install prompt is not available</p>
-      }   
-</ng-template>
+<div *ngIf="showInstallButton" class="install-banner">
+  <button class="install-button" (click)="installApp()">📲 Install NOMO</button>
+</div>
 @if (isPortraitOnMobile) {
     <div class="orientation-overlay">
         {{rotateInstruction}}
