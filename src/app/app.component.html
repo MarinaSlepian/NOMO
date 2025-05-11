@@ -1,3 +1,8 @@
+@if (showInstallButton) {
+    <button (click)="installApp()">
+      📲 Install NOMO
+    </button>
+  }
 @if (isPortraitOnMobile) {
     <div class="orientation-overlay">
         {{rotateInstruction}}

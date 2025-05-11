@@ -20,6 +20,8 @@ import { HttpClient } from '@angular/common/http';
 
 
 export class AppComponent implements OnInit{
+  deferredPrompt: any;
+  showInstallButton = false;
   private httpClient = inject(HttpClient);
   rotateInstruction = "";
   buttons = BUTTONS_RIGHT_WRONG_ICONS;
@@ -45,7 +47,27 @@ export class AppComponent implements OnInit{
   }
 
   ngOnInit(): void {
+    window.addEventListener('beforeinstallprompt', (e: Event) => {
+      e.preventDefault();
+      this.deferredPrompt = e;
+      this.showInstallButton = true; // Now you can show a button in the template
+    });
     this.checkOrientation();
+  }
+
+  installApp() {
+    if (this.deferredPrompt) {
+      this.deferredPrompt.prompt();
+      this.deferredPrompt.userChoice.then((choiceResult: any) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('User accepted the install prompt');
+        } else {
+          console.log('User dismissed the install prompt');
+        }
+        this.deferredPrompt = null;
+        this.showInstallButton = false;
+      });
+    }
   }
 
   onUpdateNewConfig(newAppConfig: AppConfig)
