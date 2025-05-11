@@ -1,10 +1,12 @@
-@if (showInstallButton) {
+<ng-template angular>
+    @if (showInstallButton) {
     <div class="install-banner">
         <button class="install-button" (click)="installApp()">
           📲 Install NOMO
         </button>
       </div>
   }
+</ng-template>
 @if (isPortraitOnMobile) {
     <div class="orientation-overlay">
         {{rotateInstruction}}
