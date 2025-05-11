@@ -70,7 +70,7 @@ export class HeaderComponent implements OnInit
        width: '300px',
        height: '350px',          // 🔹 fixed height
        minHeight: '200px',       // 🔹 optional: prevent shrinking
-       maxHeight: '90vh',        // 🔹 optional: prevent overflow 
+       maxHeight: '90vh',        // 🔹 optional: prevent overflow !!
        panelClass: 'settings-dialog-purple',
       });
   
