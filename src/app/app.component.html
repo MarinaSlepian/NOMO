@@ -7,7 +7,10 @@
     </div>
   }
 <app-header (selectNewApp)="onSelectAppButton($event)"
-            (newConfig) = "onUpdateNewConfig($event)"></app-header>
+            (newConfig) = "onUpdateNewConfig($event)">
+</app-header>
+
+<div class="wrapper">
 <main>
     <ul id="users">
         @for (b of buttons; track b.id) {
@@ -21,4 +24,7 @@
                 />
         }
     </ul>  
-</main>    
+</main>  
+</div>  
+<app-dashboard class="dashboard-top-right"
+               (selectNewApp)="onSelectAppButton($event)"></app-dashboard>

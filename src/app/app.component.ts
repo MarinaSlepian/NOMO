@@ -9,12 +9,13 @@ import { AppConfig } from './app-config.model';
 import { TranslateService } from '@ngx-translate/core';
 import { HttpClient } from '@angular/common/http';
 import { NgIf } from '@angular/common';
+import { DashboardComponent } from './dashboard/dashboard.component';
 
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [HeaderComponent, ButtonComponent, NgIf],
+  imports: [HeaderComponent, ButtonComponent, NgIf, DashboardComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
@@ -97,6 +98,8 @@ export class AppComponent implements OnInit{
 
     
   }
+
+  
 
   onSelectAppButton(id: string)
   { 
