@@ -1,7 +1,8 @@
 .button-container {
-  border-radius: 6px;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
   overflow: hidden;
+  display: flex;         /* or display: grid; */
+  flex-wrap: wrap;       /* allows wrapping to new lines */
 }
 
 button {
@@ -10,7 +11,7 @@ button {
   align-items: stretch; /* let children fill height */
   justify-content: space-between;
   padding: 0;
-  background-color:  rgb(219, 219, 221);
+  background-color:  rgb(229, 229, 229);
   border: none;
   color: #c3b3d1;
   width: 9rem;
@@ -25,7 +26,7 @@ button {
 button:hover, 
 button:active,
 .active {
-  background-color: #9965dd;
+  background-color: rgb(211,211, 211);
   color: #150722;
 }
 
@@ -70,21 +71,18 @@ button:active,
 /* Text beside the image */ 
 .name {
   position: absolute;
-  top: 0.0rem;
-  right: 0.0rem;
+  bottom: 0.2rem;
+  right: 0.2rem;
+  width: 2.0rem;
+  height: 2.0rem;
   font-size: 0.9rem;
   text-align: center;
-  background-color: rgb(200,200,200); /* Цвет фона бейджа */
+  background-color: white;
   color: #333333;
-  padding: 0.3rem 0.3rem, 0.3rem, 03rem;
-  border-radius: 6px; /* Скругление всех углов */ 
-  /*margin-bottom: 0.5rem;*/
-  /*box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);*/
-  overflow: hidden; /* чтобы скругления работали корректно */
- 
-  min-width: 1.5rem;     /* не даст сжаться слишком сильно */
-  max-width: 1.5rem;       /* можно ограничить, если имя длинное */
-  
-  display: inline-block; /* обеспечит адекватное поведение внутри flex-контейнера */
-
+  padding: 0;
+  border-radius: 50%; /* Makes it a circle */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }

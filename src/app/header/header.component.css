@@ -19,15 +19,9 @@ header {
   flex-wrap: wrap;          /* ⬅️ полезно на маленьких экранах */
 }
 
-.buttons-column {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  align-items: center;      /* ⬅️ выравнивает кнопки по центру */
-}
 
 img {
-  max-width: 35%;
+  max-width: 25%;/* ⬅️ ограничивает ширину изображения до 25% от родителя */
   height: auto;
 }
 

@@ -13,7 +13,7 @@ import { AppConfig } from '../app-config.model';
     standalone: true,
     templateUrl: './header.component.html',
     styleUrls: ['./header.component.css'],
-    imports: [AppChooserComponent, TranslateModule, MatDialogModule ]
+    imports: [AppChooserComponent, TranslateModule, MatDialogModule]
   })
 
 
@@ -63,7 +63,7 @@ export class HeaderComponent implements OnInit
     
     this.selectNewApp.emit(id); 
   }
-
+// Settings button click handler
   onSettingsButton(): void 
   {
     const dialogRef = this.dialog.open(SettingsDialogComponent, {

@@ -1,0 +1,32 @@
+.dashboard-panel {
+  height: 700px;
+  width: 180px;
+  background-color: rgb(229, 229, 229);
+  color: yellowgreen;
+  display: flex;
+  flex-direction: column;      /* Stack children vertically */
+  align-items: center;         /* Center horizontally */
+  justify-content: flex-start; /* Align to top vertically */
+  border-radius: 0 2rem 2rem 0;
+}
+
+.wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+main {
+  flex: 1;
+}
+
+app-dashboard {
+  margin-left: 2rem;
+}
+
+.dashboard-image {
+  width: 80%;      /* or any size you prefer */
+  height: auto;     /* maintain aspect ratio */
+  margin-top: 2rem;     /* Move image down */
+  margin-bottom: 3rem; /* optional: space below the image */
+}
