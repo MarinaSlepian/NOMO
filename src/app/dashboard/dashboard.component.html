@@ -1,16 +1,34 @@
 <div class="dashboard-panel">
   <img src = "assets/logoNOMO.png" alt="NOMO" class="dashboard-image">
         <div class="buttons-column">
-        <app-app-chooser [appName]="'APP_NAMES.WHAT_WRONG' | translate" [id]="'1'" (select)="selectApp($event)">
+        <app-app-chooser [appName]="'APP_NAMES.WHAT_WRONG' | translate" 
+        [id]="'1'" 
+        [active]="selectedApp === '1'"
+        (select)="selectApp($event)">
         </app-app-chooser>
         
-        <app-app-chooser [appName]="'APP_NAMES.GOOD_BAD' | translate" [id]="'2'" (select)="selectApp($event)">
+        <app-app-chooser [appName]="'APP_NAMES.GOOD_BAD' | translate" 
+        [id]="'2'" 
+        [active]="selectedApp === '2'"
+        (select)="selectApp($event)">
         </app-app-chooser>
         
-        <app-app-chooser [appName]="'APP_NAMES.ACTIONS' | translate" [id]="'3'" (select)="selectApp($event)">
+        <app-app-chooser [appName]="'APP_NAMES.ACTIONS' | translate" 
+        [id]="'3'" 
+        [active]="selectedApp === '3'"
+        (select)="selectApp($event)">
         </app-app-chooser>
         
-        <app-app-chooser [appName]="'APP_NAMES.EMOTIONS' | translate" [id]="'4'" (select)="selectApp($event)">
+        <app-app-chooser [appName]="'APP_NAMES.EMOTIONS' | translate" 
+        [id]="'4'" 
+        [active]="selectedApp === '4'"
+        (select)="selectApp($event)">
         </app-app-chooser>
       </div>
-</div>
+      <div>
+        <button class="icon-button" (click)="onSettingsButton()">
+          <img src="assets/settings.png" alt="Settings" />
+        </button>
+      </div>
+
+</div> 

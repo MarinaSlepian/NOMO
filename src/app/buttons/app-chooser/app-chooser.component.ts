@@ -11,6 +11,7 @@ import { Component,Input ,EventEmitter, Output, OnInit,signal, inject} from '@an
 export class AppChooserComponent implements OnInit {
     @Input({required:true}) appName!: string;
     @Input({required:true}) id!: string;
+    @Input() active: boolean = false;
     @Output() select = new EventEmitter<string>();
 
     isDisabled = true;
@@ -22,5 +23,6 @@ export class AppChooserComponent implements OnInit {
     onSelectApp()//buttonClick
     { 
       this.select.emit(this.id); 
+      this.active = true;
     }
 }
