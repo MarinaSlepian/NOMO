@@ -71,7 +71,7 @@ button:active,
 /* Text beside the image */ 
 .name {
   position: absolute;
-  bottom: 0.2rem;
+  top: 0.2rem;
   right: 0.2rem;
   width: 2.0rem;
   height: 2.0rem;

@@ -14,31 +14,18 @@ header {
 .header-content {
   display: flex;
   align-items: center;
-  justify-content: center; /* ⬅️ центрирует контент по горизонтали */
-  gap: 2rem;                /* расстояние между кнопками и изображением */
+  justify-content: left; /* ⬅️ центрирует контент по горизонтали */
+  gap: 20rem;                /* расстояние между кнопками и изображением */
   flex-wrap: wrap;          /* ⬅️ полезно на маленьких экранах */
 }
 
 
 img {
-  max-width: 25%;/* ⬅️ ограничивает ширину изображения до 25% от родителя */
-  height: auto;
+
+  height: 10rem;
 }
 
-.icon-button {
-  background: none;
-  border: none;
-  padding: 0;
-  margin: 0;
-  cursor: pointer;
-  display: inline-block;
-}
 
-.icon-button img {
-  display: block; /* remove inline spacing */
-  width: 140px; /* optional size control */
-  height: 50px;
-}
 
 
 @media (max-width: 600px) {

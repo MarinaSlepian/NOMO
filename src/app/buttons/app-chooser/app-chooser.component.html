@@ -1,5 +1,5 @@
 <div>
-    <button [disabled]="isDisabled" (click)="onSelectApp()">
+    <button [class.active]="active" [disabled]="isDisabled" (click)="onSelectApp()">
         <span>{{appName}}</span>
     </button>
 </div>

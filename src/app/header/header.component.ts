@@ -1,9 +1,6 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { AppChooserComponent } from "../buttons/app-chooser/app-chooser.component";
 import { TranslateService,TranslateModule } from '@ngx-translate/core';
-import { SettingsDialogComponent } from '../settings-dialog/settings-dialog.component';
-import { MatDialog } from '@angular/material/dialog';
-import { MatDialogModule } from '@angular/material/dialog';
 import { AppConfig } from '../app-config.model';
 
 
@@ -13,7 +10,7 @@ import { AppConfig } from '../app-config.model';
     standalone: true,
     templateUrl: './header.component.html',
     styleUrls: ['./header.component.css'],
-    imports: [AppChooserComponent, TranslateModule, MatDialogModule]
+    imports: [TranslateModule]
   })
 
 
@@ -21,7 +18,7 @@ import { AppConfig } from '../app-config.model';
 export class HeaderComponent implements OnInit
 {
   @Output() selectNewApp = new EventEmitter<string>();
-  @Output() newConfig = new EventEmitter<AppConfig>();
+ 
 
   currentConfig: AppConfig = {
     selectedLang: 'en',
@@ -33,7 +30,7 @@ export class HeaderComponent implements OnInit
   selectedSplash = "1en";
   
 
-  constructor(private translate: TranslateService, private dialog: MatDialog) 
+  constructor(private translate: TranslateService) 
   {
  
   }
@@ -63,36 +60,16 @@ export class HeaderComponent implements OnInit
     
     this.selectNewApp.emit(id); 
   }
-// Settings button click handler
-  onSettingsButton(): void 
-  {
-    const dialogRef = this.dialog.open(SettingsDialogComponent, {
-       width: '300px',
-       height: '350px',          // 🔹 fixed height
-       minHeight: '200px',       // 🔹 optional: prevent shrinking
-       maxHeight: '90vh',        // 🔹 optional: prevent overflow !!
-       panelClass: 'settings-dialog-purple',
-      });
-  
-    dialogRef.afterClosed().subscribe((result: AppConfig | undefined) => {
-      if (result) {
-        // ✅ Add logic to update image or do anything else here
-        this.currentConfig.selectedLang = result.selectedLang;
-        this.updateSplashForLanguage();
-        this.currentConfig = result;
-        this.newConfig.emit(this.currentConfig);
-      }
-    });
 
-  }
+  
 
  
   updateSplashForLanguage()
   {
-    if(this.currentConfig.selectedLang != 'he' && this.currentConfig.selectedLang != 'ru' )
+   /* if(this.currentConfig.selectedLang != 'he' && this.currentConfig.selectedLang != 'ru' )
      this.selectedSplash = this.selectedApp + 'en';  
     else
-     this.selectedSplash = this.selectedApp + this.currentConfig.selectedLang;  
+     this.selectedSplash = this.selectedApp + this.currentConfig.selectedLang;  */
   }
   
   

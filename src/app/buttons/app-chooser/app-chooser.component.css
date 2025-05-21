@@ -3,7 +3,7 @@ button {
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    padding: 0.35rem 0.5rem;
+    padding: 0.7rem 0.5rem;
     
     background-color:  rgb(229, 229, 229);
     color: #333333;
@@ -13,15 +13,20 @@ button {
     width: 100%;
     min-width: 10rem;
     text-align: center;
-    border-radius: 20px;
+    border-radius: 0px 20px 20px 0px;
 
   }
   
-  button:hover,
+  button:hover {
+  font-weight: bold;
+ }
+
+
   button:active,
   .active {
     background-color: white;
     color: #150722;
+    font-weight: bold;
   }
   
   button:disabled {

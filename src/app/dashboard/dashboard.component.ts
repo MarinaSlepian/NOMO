@@ -2,16 +2,22 @@ import { Component, OnInit,Output,EventEmitter } from '@angular/core';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AppChooserComponent } from "../buttons/app-chooser/app-chooser.component";
 import { AppConfig } from '../app-config.model';
+import { MatDialogModule } from '@angular/material/dialog';
+import { SettingsDialogComponent } from '../settings-dialog/settings-dialog.component';
+import { MatDialog } from '@angular/material/dialog';
+
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [TranslateModule, AppChooserComponent],
+  imports: [TranslateModule, AppChooserComponent, MatDialogModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
-export class DashboardComponent implements OnInit{
+export class DashboardComponent implements OnInit
+{
     @Output() selectNewApp = new EventEmitter<string>();
+    @Output() newConfig = new EventEmitter<AppConfig>();
 
     currentConfig: AppConfig = {
       selectedLang: 'en',
@@ -20,7 +26,7 @@ export class DashboardComponent implements OnInit{
     };
     selectedApp = "1";
 
-    constructor(private translate: TranslateService) 
+    constructor(private translate: TranslateService, private dialog: MatDialog) 
     {
    
     }
@@ -52,5 +58,26 @@ export class DashboardComponent implements OnInit{
     this.selectNewApp.emit(id); 
   }
 
- 
+ // Settings button click handler
+  onSettingsButton(): void 
+  {
+    const dialogRef = this.dialog.open(SettingsDialogComponent, {
+       width: '300px',
+       height: '350px',          // 🔹 fixed height
+       minHeight: '200px',       // 🔹 optional: prevent shrinking
+       maxHeight: '90vh',        // 🔹 optional: prevent overflow !!
+       panelClass: 'settings-dialog-purple',
+      });
+  
+    dialogRef.afterClosed().subscribe((result: AppConfig | undefined) => {
+      if (result) {
+        // ✅ Add logic to update image or do anything else here
+        this.currentConfig.selectedLang = result.selectedLang;
+        //this.updateSplashForLanguage();
+        this.currentConfig = result;
+        this.newConfig.emit(this.currentConfig);
+      }
+    });
+  }
+
 }
