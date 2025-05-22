@@ -25,5 +25,8 @@
     </ul>  
 </main>  
 </div>  
-<app-dashboard class="dashboard-top-right"
-               (selectNewApp)="onSelectAppButton($event)"></app-dashboard>
+<app-dashboard
+  class="dashboard-top-right"
+  (selectNewApp)="onSelectAppButton($event)"
+  (newConfig)="onUpdateNewConfig($event)">
+</app-dashboard>
