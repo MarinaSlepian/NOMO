@@ -1,8 +1,7 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
-import { AppChooserComponent } from "../buttons/app-chooser/app-chooser.component";
+import { Component, EventEmitter, OnInit, Input, OnChanges } from '@angular/core';
 import { TranslateService,TranslateModule } from '@ngx-translate/core';
 import { AppConfig } from '../app-config.model';
-
+import { Subscription } from 'rxjs'; 
 
 
 @Component({
@@ -10,15 +9,15 @@ import { AppConfig } from '../app-config.model';
     standalone: true,
     templateUrl: './header.component.html',
     styleUrls: ['./header.component.css'],
-    imports: [TranslateModule]
+    imports: [TranslateModule],
   })
 
 
 
-export class HeaderComponent implements OnInit
+export class HeaderComponent implements OnInit, OnChanges
 {
-  @Output() selectNewApp = new EventEmitter<string>();
  
+  @Input({required:true}) appName!: string;
 
   currentConfig: AppConfig = {
     selectedLang: 'en',
@@ -26,8 +25,12 @@ export class HeaderComponent implements OnInit
     needAudio: false
   };
 
-  selectedApp = "1";
   selectedSplash = "1en";
+  translatedAppName = '';
+  appNameBannerColor = 'rgb(229,16,22)';
+  private langChangeSub?: Subscription;
+
+
   
 
   constructor(private translate: TranslateService) 
@@ -48,24 +51,50 @@ export class HeaderComponent implements OnInit
       };
     }
     this.translate.setDefaultLang(this.currentConfig.selectedLang); 
+    this.langChangeSub = this.translate.onLangChange.subscribe(() => {
+    this.updateSplashForLanguage();
+    });
+
     this.translate.use(this.currentConfig.selectedLang); // sets the active language
-    this.updateSplashForLanguage();
+    // Subscribe to language change
+
   }
 
-  selectApp(id: string)
+    ngOnDestroy(): void {
+    this.langChangeSub?.unsubscribe();
+  }
+
+  ngOnChanges(): void 
   {
-    this.selectedApp = id;
-    
     this.updateSplashForLanguage();
-    
-    this.selectNewApp.emit(id); 
+    if(this.appName == '1')
+      this.appNameBannerColor = 'rgb(229,16,22)'; // red
+    else if(this.appName == '2')
+      this.appNameBannerColor = 'rgb(252,180,62)'; // blue 
+    else if(this.appName == '3')
+      this.appNameBannerColor = 'rgb(161,198,30)'; // green    
+    else if(this.appName == '4')
+      this.appNameBannerColor = 'rgb(6,133,248)'; // orange
   }
 
-  
-
- 
   updateSplashForLanguage()
   {
+
+    this.selectedSplash = this.appName + 'en'; 
+    const keyMap: Record<string, string> = {
+      '1': 'APP_NAMES.WHAT_WRONG',
+      '2': 'APP_NAMES.GOOD_BAD',
+      '3': 'APP_NAMES.ACTIONS',
+      '4': 'APP_NAMES.EMOTIONS'
+    };
+
+    const translationKey = keyMap[this.appName];
+
+    this.translate.get(translationKey).subscribe((translated: string) => {
+      this.translatedAppName = translated;
+    });
+    
+
    /* if(this.currentConfig.selectedLang != 'he' && this.currentConfig.selectedLang != 'ru' )
      this.selectedSplash = this.selectedApp + 'en';  
     else

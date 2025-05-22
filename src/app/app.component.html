@@ -6,9 +6,8 @@
         {{rotateInstruction}}
     </div>
   }
-<app-header (selectNewApp)="onSelectAppButton($event)"
-            (newConfig) = "onUpdateNewConfig($event)">
-</app-header>
+<app-header [appName]="currentApp"></app-header>
+
 
 <div class="wrapper">
 <main>

@@ -25,6 +25,7 @@ export class DashboardComponent implements OnInit
       needAudio: false
     };
     selectedApp = "1";
+   
 
     constructor(private translate: TranslateService, private dialog: MatDialog) 
     {
