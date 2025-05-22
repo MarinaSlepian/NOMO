@@ -1,31 +1,43 @@
 header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2rem;
-  width: 100%;
-  margin-bottom: 2rem;
-  text-align: center;
-  background-color: white;
-  padding: 1rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  z-index: 2000;
+  background: white;
 }
 
 
 .header-content {
   display: flex;
   align-items: center;
-  justify-content: left; /* ⬅️ центрирует контент по горизонтали */
-  gap: 20rem;                /* расстояние между кнопками и изображением */
+  justify-content: flex-end; /* ⬅️ центрирует контент по горизонтали */
+  gap: 1.5rem;                /* расстояние между кнопками и изображением */
   flex-wrap: wrap;          /* ⬅️ полезно на маленьких экранах */
+  padding-right: 275px;
 }
 
 
 img {
+  justify-content: flex-start;
+  height: 9.5rem;
+  max-width: 80%;
 
-  height: 10rem;
 }
 
-
+.app-name-banner {
+  background-color:rgb(229,16,22);
+  color: #fff;
+  padding: 0 1.5rem;
+  height: 7rem;
+  display: flex;
+  align-items: center;
+  font-size: 1.2rem;
+  justify-content: center; /* ✅ Centers text horizontally */
+  min-width: 44rem;   /* Add this line for greater width */
+  margin-top: 1.5rem;
+  border-radius: 20px;
+}
 
 
 @media (max-width: 600px) {
@@ -34,7 +46,5 @@ img {
     align-items: center;
   }
 
-  img {
-    max-width: 80%;
-  }
+
 }

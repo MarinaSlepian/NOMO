@@ -1,25 +1,23 @@
 
 main {
   width: 90%;
-  max-width: 768px;/*was 50rem*/
+  max-width: clamp(768px, 90vw, 1000px);
   margin: 2rem auto;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-auto-rows: auto;
+  margin-top: 12rem;
   gap: 2rem;
 }
-  
+
 
 #users {
   display: grid;
-  grid-template-columns: repeat(6, auto); /* ✅ don't stretch */
+  grid-template-columns: repeat(auto-fit, minmax(120px, auto));
   grid-auto-rows: auto;
-  gap: 1.5rem;
+  gap: 1rem;
   margin: 0 auto;                         /* ✅ center on X-axis */
   padding: 0;
   list-style: none;
-  width: max-content;                     /* ✅ shrink to fit */
-
+  width: 100%;
+  max-width: clamp(768px, 90vw, 1000px);
 }
 
 
@@ -96,7 +94,7 @@ main {
   position: fixed;
   top: 1.5rem;
   right: 2rem;
-  z-index: 1000; /* Make sure it stays on top */
+  z-index: 3000; /* Higher than header */
 }
 
 

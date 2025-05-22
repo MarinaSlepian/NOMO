@@ -9,7 +9,11 @@
   align-items: center;         /* Center horizontally */
   justify-content: flex-start; /* Align to top vertically */
   border-radius: 0 2rem 2rem 0;
+  position: fixed;
+  top: 1.5rem;
+  right: 2rem;
 }
+
 
 .wrapper {
   display: flex;

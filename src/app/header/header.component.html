@@ -28,6 +28,9 @@
 
   <header>
     <div class="header-content">
-       <img [src]="'assets/splashes/Splash' + selectedSplash + '.jpg'" alt="Splash" />
+      <img [src]="'assets/splashes/Splash' + selectedSplash + '.jpg'" alt="Splash" />
+            <div class="app-name-banner" [style.backgroundColor]="appNameBannerColor">
+          {{ translatedAppName }}
+      </div>
     </div>
   </header>
