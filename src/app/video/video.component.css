@@ -42,7 +42,7 @@ dialog {
   border: none; 
   margin: 0;
   background-color: transparent;
-  z-index: 20;
+  z-index: 4000; /* Higher than header */
   display: flex;
   justify-content: center;
   align-items: center; /* вместо flex-start flex-start - Align top */

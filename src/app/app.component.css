@@ -18,6 +18,7 @@ main {
   list-style: none;
   width: 100%;
   max-width: clamp(768px, 90vw, 1000px);
+
 }
 
 
