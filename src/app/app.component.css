@@ -36,20 +36,13 @@ main {
     width: 100%;
   }
 }
-@media (max-width: 768px) {
-  #users {
-    grid-template-columns: repeat(2, 1fr); /* or even 1fr for one-per-row */
-    width: 100%;
-    justify-content: center;
-  }
-
 @media (max-width: 900px) {
   #users {
     margin-left: 0rem; 
   }
-}
+
   main {
-    width: 100%;
+    width: 90%;
     padding: 1rem;
   }
 
