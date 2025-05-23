@@ -39,6 +39,8 @@ main {
 @media (max-width: 900px) {
   #users {
     margin-left: 0rem; 
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+
   }
 
   main {
