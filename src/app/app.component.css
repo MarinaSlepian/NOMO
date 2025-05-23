@@ -18,8 +18,8 @@ main {
   padding: 0;
   list-style: none;
   width: 100%;
-  margin-left: 140px;
-  margin-right: 260px;
+  margin-left: 11rem; 
+  margin-right: 16rem; 
 }
 
 
@@ -43,6 +43,11 @@ main {
     justify-content: center;
   }
 
+@media (max-width: 900px) {
+  #users {
+    margin-left: 0rem; 
+  }
+}
   main {
     width: 100%;
     padding: 1rem;
