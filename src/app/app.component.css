@@ -1,10 +1,11 @@
 
 main {
   width: 90%;
-  max-width: clamp(768px, 90vw, 1000px);
-  margin: 2rem auto;
+  max-width: none;
+  margin: 2rem 0 0 0; /* Remove auto-centering */
   margin-top: 12rem;
   gap: 2rem;
+  margin-right: 240px;
 }
 
 
@@ -13,12 +14,13 @@ main {
   grid-template-columns: repeat(auto-fit, minmax(120px, auto));
   grid-auto-rows: auto;
   gap: 1rem;
-  margin: 0 auto;                         /* ✅ center on X-axis */
+  margin: 0;                         
   padding: 0;
   list-style: none;
   width: 100%;
-  max-width: clamp(768px, 90vw, 1000px);
-
+  max-width: 1000px;
+  margin-left: auto;
+  margin-right: 240px;
 }
 
 
@@ -32,7 +34,6 @@ main {
 @media (min-width: 768px) {
   main {
     display: flex;
-    justify-content: center;
     width: 100%;
   }
 }
