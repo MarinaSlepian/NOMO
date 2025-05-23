@@ -1,9 +1,10 @@
 .fullscreen-video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  width: 100vw;
+  height: 100vh;
+  object-fit: contain; /* Show the whole video, keep aspect ratio */
+  background: black;   /* Optional: black bars where video doesn't cover */
   border-radius: 0;
-}
+} 
 
 .close-button,
 .switch-button {
@@ -50,16 +51,6 @@ dialog {
 
 dialog {
   height: 100dvh;
-}
-.fullscreen-video {
-  height: 100dvh;
-}
-
-.fullscreen-video {
-  width: 100%;
-  height: 100dvh;
-  object-fit: cover; /* was contain */
-  border-radius: 0;
 }
 
 .video-container {
