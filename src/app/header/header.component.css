@@ -17,7 +17,11 @@ header {
   flex-wrap: nowrap;          /* ⬅️ полезно на маленьких экранах */
   padding-right: 275px;
 }
-
+@media (max-width: 900px) {
+  .header-content {
+    margin-left: 0rem; 
+  }
+}
 
 img {
   justify-content: flex-start;
