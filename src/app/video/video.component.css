@@ -18,21 +18,24 @@
 
 .close-button {
   top: 1rem;
-  right: 1rem;
+  left: 1rem;
 }
 .switch-button {
   right: 4.5rem; /* to the left of close button */
-  top: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
 }
+
 .close-button img,
 .switch-button img {
   width: 40px;
   height: 40px;
-  filter: drop-shadow(0 0 2px rgb(100, 100, 100));
+  filter: invert(10); /* Make image brighter */ 
+  border-radius: 50 pix; /* Optional: round the image */
 }
 
 dialog {
-  position: fixed;
+  position: fixed; 
   top: 0;
   left: 0;
   width: 100vw;
@@ -43,7 +46,7 @@ dialog {
   border: none; 
   margin: 0;
   background-color: transparent;
-  z-index: 4000; /* Higher than header */
+  z-index: 4000; /* Higher than header */ 
   display: flex;
   justify-content: center;
   align-items: center; /* вместо flex-start flex-start - Align top */
