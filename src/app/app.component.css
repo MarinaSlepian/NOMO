@@ -40,7 +40,7 @@ main {
   #users {
     margin-left: 0rem; 
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-
+    margin-right: 16rem;
   }
 
   main {
