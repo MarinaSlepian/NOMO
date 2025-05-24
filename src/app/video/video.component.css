@@ -17,11 +17,11 @@
 }
 
 .close-button {
-  top: 1rem;
-  left: 1rem;
+  top: 0rem;
+  left: 0rem;
 }
 .switch-button {
-  right: 4.5rem; /* to the left of close button */
+  right: 1.5rem; 
   top: 50%;
   transform: translateY(-50%);
 }
