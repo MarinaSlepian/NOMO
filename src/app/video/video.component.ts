@@ -1,4 +1,4 @@
-import { Component,EventEmitter,Output, Input, OnInit } from '@angular/core';
+import { Component, EventEmitter, Output, Input, HostListener, ViewChild, ElementRef } from '@angular/core';
 
 @Component({
   selector: 'app-video',
@@ -11,13 +11,29 @@ export class VideoComponent {
   @Input({required:true}) videoPath!: string;
   @Output() cancel = new EventEmitter<void>();
   @Input({required:true}) numOfVideos!: string;
+
+  @HostListener('document:keydown.escape', ['$event'])
+  handleEscape(event: KeyboardEvent) {
+    this.onCancel();
+  }
   
+  @ViewChild('videoPlayer') videoPlayer!: ElementRef<HTMLVideoElement>;
+
+  @HostListener('document:keydown.enter', ['$event'])
+  handleEnter(event: KeyboardEvent) {
+    if (this.videoPlayer) {
+      this.onSwitchVideo(this.videoPlayer.nativeElement);
+    }
+  }
 
 
   onCancel()
   {
     this.cancel.emit();
-  
+    // Remove focus from the currently focused element
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+  }
   }
 
   upadteVideoPath()
