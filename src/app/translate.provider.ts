@@ -17,7 +17,7 @@ export const provideTranslate = () => [
   TranslateStore,
   {
     provide: TranslateLoader,
-    useFactory: httpTranslateLoaderFactory,
+    useFactory: httpTranslateLoaderFactory, 
     deps: [HttpClient]
   },
   importProvidersFrom(
@@ -26,8 +26,9 @@ export const provideTranslate = () => [
       loader: {
         provide: TranslateLoader,
         useFactory: httpTranslateLoaderFactory,
-        deps: [HttpClient]
+        deps: [HttpClient] 
       }
-    })
+    }) 
   )
 ];
+ 
