@@ -3,7 +3,7 @@ main {
   width: 90%;
   max-width: none;
   margin: 2rem 0 0 0; /* Remove auto-centering */
-  margin-top: 7.5rem;
+  padding-top: 4rem;
   gap: 2rem;
   margin-right: 240px;
 }
