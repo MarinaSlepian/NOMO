@@ -5,6 +5,7 @@ header {
   width: 100vw;
   z-index: 2000;
   background: white;
+  padding-right: 16rem;
 }
 
 
@@ -12,16 +13,12 @@ header {
   display: flex;
   align-items: center;
   justify-content: flex-start; /* ⬅️ центрирует контент по горизонтали */
-  margin-left: 8rem; /* отступ слева */
+  margin-left: 2rem; /* отступ слева */
   gap: 1.5rem;                /* расстояние между кнопками и изображением */
   flex-wrap: nowrap;          /* ⬅️ полезно на маленьких экранах */
-  padding-right: 275px;
 }
-@media (max-width: 900px) {
-  .header-content {
-    margin-left: 0rem; 
-  }
-}
+
+
 
 img {
   justify-content: flex-start;
@@ -49,7 +46,8 @@ img {
 }
 
 
-@media (max-width: 600px) {
+
+@media (max-height: 480px) {
   .header-content {
     flex-direction: column;
     align-items: center;
@@ -57,6 +55,23 @@ img {
     padding-right: 0;
     margin-left: 0;
   }
-
-
 }
+
+@media (max-height: 480px) {
+  .splash-image {
+    display: none;
+  }
+}
+
+@media (max-height: 480px) {
+  .app-name-banner {
+    border-radius: 10px;
+    margin-left: 2rem; /* Уменьшаем отступ слева */
+    margin-right: 0; 
+    width: calc(100% - 18); /* Уменьшаем ширину баннера */
+    font-size: 1rem; /* Уменьшаем размер шрифта */
+    padding: 0.5rem 1rem; /* Уменьшаем отступы */
+    height: auto; /* Позволяем высоте адаптироваться */
+  }
+}
+

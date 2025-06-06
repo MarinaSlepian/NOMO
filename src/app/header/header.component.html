@@ -1,35 +1,8 @@
-<!--<header>
-    <img src="assets/Splash.jpg" alt="A todo list"/>
-    <div>
-        <h1> {{selectedUser.name}}</h1>
-        <p>Enterprise-level task management without friction</p>
-    </div>
-</header>!-->
-
-<!--<header>
-    <div class="header-content">
-      <div class="buttons-column">
-        <button>
-          <span>Что не так?</span>
-        </button>
-        <button>
-          <span>Хорошо и Плохо</span>
-        </button>
-        <button>
-            <span>Глаголы</span>
-          </button>
-          <button>
-            <span>Эмоции</span>
-          </button>
-      </div>
-      <img src="assets/splashes/Splash1.jpg" alt="A todo list" />
-    </div>
-  </header>!-->
 
   <header>
     <div class="header-content">
-      <img [src]="'assets/splashes/Splash' + selectedSplash + '.jpg'" alt="Splash" />
-            <div class="app-name-banner" [style.backgroundColor]="appNameBannerColor">
+      <img  class="splash-image"   [src]="'assets/splashes/Splash' + selectedSplash + '.jpg'" alt="Splash" />
+      <div class="app-name-banner" [style.backgroundColor]="appNameBannerColor">
           {{ translatedAppName }}
       </div>
     </div>
