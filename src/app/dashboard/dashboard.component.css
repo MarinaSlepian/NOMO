@@ -1,6 +1,6 @@
 .dashboard-panel {
   height: 90vh;
-  min-height: 500px;
+  min-height: 400px;
   width: 12rem;
   background-color: rgb(229, 229, 229);
   color: yellowgreen;
@@ -55,3 +55,13 @@ app-dashboard {
   margin-top: 4rem;
 }
 
+@media (max-height: 480px) {
+  .dashboard-image {
+    width: 60%;      /* or any size you prefer */
+    margin-top: 0.5rem;     /* Move image down */
+    margin-bottom: 1rem; /* optional: space below the image */
+  }
+  .icon-button {
+  margin-top: 2rem;
+  }
+}

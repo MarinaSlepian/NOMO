@@ -6,27 +6,34 @@
         {{rotateInstruction}}
     </div>
   }
-<app-header [appName]="currentApp"></app-header>
 
 
-<div class="wrapper">
-<main>
+<div class="app-layout">
+
+  <div class="top-bar">
+    <app-header [appName]="currentApp"></app-header>
+
+    <app-dashboard
+      class="dashboard-top-right"
+      (selectNewApp)="onSelectAppButton($event)"
+      (newConfig)="onUpdateNewConfig($event)">
+    </app-dashboard>
+  </div>
+
+  <main class="main-content">
     <ul id="users">
-        @for (b of buttons; track b.id) {
-            <li>
-                <app-button 
-                    [user]="b"
-                    [videoPath]="currentVideosPath"
-                    [currentApp]="currentApp"
-                    [isSubtextNeeded]="isSubTextNeeded"
-                    [isAudioNeeded]="isAudioNeeded"  
-                />
-        }
+      @for (b of buttons; track b.id) {
+        <li>
+          <app-button 
+            [user]="b"
+            [videoPath]="currentVideosPath"
+            [currentApp]="currentApp"
+            [isSubtextNeeded]="isSubTextNeeded"
+            [isAudioNeeded]="isAudioNeeded"  
+          />
+        </li>
+      }
     </ul>  
-</main>  
-</div>  
-<app-dashboard
-  class="dashboard-top-right"
-  (selectNewApp)="onSelectAppButton($event)"
-  (newConfig)="onUpdateNewConfig($event)">
-</app-dashboard>
+  </main>
+
+</div>

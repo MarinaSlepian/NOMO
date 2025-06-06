@@ -1,28 +1,26 @@
-
+/* Layout for main scrollable area */
 main {
-  width: 90%;
-  max-width: none;
-  margin: 2rem 0 0 0; /* Remove auto-centering */
-  margin-top: 9.5rem; /* 👈 מפנה מקום להדר הקבוע */
-  gap: 2rem;
-  margin-right: 240px;
+  margin-top: 9.5rem;      /* space for fixed header/dashboard */
+  padding-top: 2rem; 
+  margin-left: 2rem;
+  margin-right: 16rem;     /* space for floating dashboard */
+  padding-bottom: 2rem;
+  width: auto;
+  box-sizing: border-box;
 }
 
-
+/* Button grid */
 #users {
+  
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, auto));
-  grid-auto-rows: auto;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 1rem;
-  margin: 0;                         
+  margin: 0;
   padding: 0;
   list-style: none;
-  width: 100%;
-  margin-left: 11rem; 
-  margin-right: 16rem; 
 }
 
-
+/* Fallback text styling */
 #fallback {
   font-weight: bold;
   font-size: 1.15rem;
@@ -30,31 +28,15 @@ main {
   text-align: center;
 }
 
-@media (min-width: 768px) {
-  main {
-    display: flex;
-    width: 100%;
-  }
-}
-@media (max-width: 900px) {
-  #users {
-    margin-left: 0rem; 
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    margin-right: 16rem;
-  }
-
-  main {
-    width: 90%;
-    padding: 1rem;
-  }
-
-  li {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-  }
+@media (max-height: 480px) {
+    main {
+    margin-top: 3rem;
+    }
 }
 
+
+
+/* Orientation blocker overlay */
 .orientation-overlay {
   position: fixed;
   top: 0;
@@ -70,35 +52,23 @@ main {
   text-align: center;
   padding: 2rem;
   font-size: 1.5rem;
-
-  /* Fade-in effect */
   animation: fadeIn 0.5s ease-in;
   opacity: 0.8;
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
+/* Install banner */
 .install-banner {
   display: flex;
   justify-content: center;
   padding: 1rem;
 }
 
-.dashboard-top-right {
-  position: fixed;
-  top: 1.5rem;
-  right: 2rem;
-  z-index: 3000; /* Higher than header */
-}
-
-
+/* Install button style */
 .install-button {
   background-color: #1976d2;
   color: white;
@@ -108,4 +78,13 @@ main {
   border-radius: 6px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   cursor: pointer;
-}  
+}
+
+/* Fixed dashboard in top-right corner */
+.dashboard-top-right {
+  position: fixed;
+  top: 1.5rem;
+  right: 2rem;
+  z-index: 3000;
+
+}

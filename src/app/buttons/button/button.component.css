@@ -3,23 +3,24 @@
   overflow: hidden;
   display: flex;         /* or display: grid; */
   flex-wrap: wrap;       /* allows wrapping to new lines */
+  box-sizing: border-box;
 }
 
 button {
-  position: relative; 
-  display: flex;
-  align-items: stretch; /* let children fill height */
-  justify-content: space-between;
-  padding: 0;
-  background-color:  rgb(229, 229, 229);
-  border: none;
-  color: #c3b3d1;
-  width: 9rem;
+  flex: 1 1 9rem;  /* 👈 allows shrinking and growing from base size */
+  max-width: 10rem;
+  min-width: 7rem;
   height: 7rem;
-  cursor: pointer;
-  font: inherit;
+  padding: 0;
+  border: none;
+  background-color: rgb(229, 229, 229);
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
   overflow: hidden;
+  box-sizing: border-box;
 }
+
 
 
 /* Hover effect */
