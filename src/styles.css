@@ -56,4 +56,9 @@ html, body {
   line-height: 1.5 !important;
 }
 
+/* Directly target the label after the switch for mat-mdc-slide-toggle spacing */
+.mdc-form-field > .mdc-switch + .mdc-label {
+  margin-left: 0.5rem !important;
+}
+
 
