@@ -67,8 +67,8 @@ export class DashboardComponent implements OnInit
     this.isSettingsOpen = true; // 🔹 Set the flag to true when dialog opens
     const dialogRef = this.dialog.open(SettingsDialogComponent, {
        width: '780px',
-       height: '150px',          // 🔹 fixed height
-       minHeight: '150px',       // 🔹 optional: prevent shrinking
+       height: '130px',          // 🔹 fixed height
+       minHeight: '130px',       // 🔹 optional: prevent shrinking
        maxHeight: '90vh',        // 🔹 optional: prevent overflow !!
        maxWidth: '90vw',        // 🔹 optional: prevent overflow !!
        panelClass: 'settings-strip-dialog',
