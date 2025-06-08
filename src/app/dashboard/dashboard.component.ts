@@ -25,7 +25,7 @@ export class DashboardComponent implements OnInit
       needAudio: false
     };
     selectedApp = "1";
-   
+    isSettingsOpen = false;
 
     constructor(private translate: TranslateService, private dialog: MatDialog) 
     {
@@ -62,15 +62,22 @@ export class DashboardComponent implements OnInit
  // Settings button click handler
   onSettingsButton(): void 
   {
+    if( this.isSettingsOpen) 
+      return;
+    this.isSettingsOpen = true; // 🔹 Set the flag to true when dialog opens
     const dialogRef = this.dialog.open(SettingsDialogComponent, {
-       width: '300px',
-       height: '350px',          // 🔹 fixed height
-       minHeight: '200px',       // 🔹 optional: prevent shrinking
+       width: '780px',
+       height: '150px',          // 🔹 fixed height
+       minHeight: '150px',       // 🔹 optional: prevent shrinking
        maxHeight: '90vh',        // 🔹 optional: prevent overflow !!
-       panelClass: 'settings-dialog-purple',
+       maxWidth: '90vw',        // 🔹 optional: prevent overflow !!
+       panelClass: 'settings-strip-dialog',
+       backdropClass: 'custom-backdrop'
       });
   
+   
     dialogRef.afterClosed().subscribe((result: AppConfig | undefined) => {
+      this.isSettingsOpen = false; // 🔹 Reset the flag when dialog closes
       if (result) {
         // ✅ Add logic to update image or do anything else here
         this.currentConfig.selectedLang = result.selectedLang;

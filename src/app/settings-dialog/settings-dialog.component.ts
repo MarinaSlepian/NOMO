@@ -10,6 +10,7 @@ import { MatOptionModule } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { TranslateModule } from '@ngx-translate/core';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
 
 
@@ -26,7 +27,8 @@ import { TranslateModule } from '@ngx-translate/core';
     MatOptionModule,
     MatButtonModule,
     MatCheckboxModule,
-    TranslateModule
+    TranslateModule,
+    MatSlideToggleModule
   ]
 })
 
@@ -121,4 +123,4 @@ export class SettingsDialogComponent implements OnInit{
     });
   }
   
-}
+}  
