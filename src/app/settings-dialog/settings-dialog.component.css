@@ -92,6 +92,7 @@
   color: black !important;
 }
 
+
 /* ========== Checkbox & Option Labels ========== */
 .mdc-dialog__surface mat-label,
 .mdc-dialog__surface label,
@@ -149,4 +150,17 @@
 /* ========== Overlay Layer ========== */
 ::ng-deep .cdk-overlay-pane {
   z-index: 1000 !important;
+}
+
+.controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* or 'space-between' or 'flex-start' */
+  gap: 1.5rem;
+  flex-wrap: wrap; /* allows wrapping on small screens */
+  padding: 1rem 0;
+}
+.controls-row mat-form-field {
+  min-width: 4rem;
+  margin: 0;
 }

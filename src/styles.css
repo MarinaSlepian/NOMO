@@ -26,3 +26,32 @@ html, body {
   -webkit-overflow-scrolling: touch; /* ✅ Smooth scroll for iOS */
   background: white
 }
+
+.custom-backdrop {
+  background-color: rgba(0, 0, 0, 0.75) !important;
+}
+.settings-strip-dialog {
+  border-radius: 20px !important;
+  overflow: hidden; /* ensures child content respects the radius */
+  font: 12px/1.5 "Poppins", sans-serif !important;
+
+}
+/* Global override for all Angular Material dialogs */
+.mat-mdc-dialog-container,
+.mat-mdc-dialog-title,
+.mat-mdc-dialog-content,
+.mat-mdc-dialog-actions,
+.mat-mdc-button,
+.mat-mdc-slide-toggle,
+.mat-mdc-slide-toggle label,
+.mat-mdc-slide-toggle label .mdc-label,
+.mat-mdc-slide-toggle .mdc-label,
+.mat-mdc-select,
+.mat-mdc-select-value,
+.mat-mdc-option,
+.mat-mdc-checkbox,
+.mat-mdc-checkbox-label {
+  font-family: "Poppins", sans-serif !important;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+}

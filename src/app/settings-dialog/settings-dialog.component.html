@@ -1,20 +1,26 @@
-<h4 mat-dialog-title>{{ titleLabel }}</h4>
 
-<div mat-dialog-content style class="language-options">
+<div class="controls-row">
   <mat-form-field appearance="outline">
-    <mat-label>{{langLabel}}</mat-label>
     <mat-select [(value)]="selectedLang" (selectionChange)="onLanguageChange($event.value)">
       @for (lang of languages; track lang.code) {
         <mat-option [value]="lang.code">{{ lang.label }}</mat-option>
       }
     </mat-select>
   </mat-form-field>
-  <mat-checkbox [(ngModel)]="needSubtext">{{subtextLabel}}</mat-checkbox>
-  <mat-checkbox [(ngModel)]="needAudio">{{audioLabel}}</mat-checkbox>
 
-</div>
+  <mat-slide-toggle [(ngModel)]="needSubtext" color="accent">
+    {{ subtextLabel }}
+  </mat-slide-toggle>
 
-<div mat-dialog-actions align="center">
-  <button mat-button (click)="close()">{{ cancelLabel }}</button>
-  <button mat-flat-button (click)="save()">{{ saveLabel }}</button>
+  <mat-slide-toggle [(ngModel)]="needAudio" color="warn">
+    {{ audioLabel }}
+  </mat-slide-toggle>
+
+  <button mat-icon-button (click)="close()" class="icon-button">
+    <img src="assets/icons/cancel-circle-button.png" alt="Cancel" width="40" height="40" />
+  </button>
+
+  <button mat-icon-button (click)="save()" class="icon-button">
+    <img src="assets/icons/ok-circle-button.png" alt="Save" width="40" height="40" />
+  </button>
 </div>
