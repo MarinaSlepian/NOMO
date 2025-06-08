@@ -56,49 +56,4 @@ html, body {
   line-height: 1.5 !important;
 }
 
-/* GLOBAL OVERRIDE: Place in styles.css for maximum effect */
-::ng-deep .green-toggle .mdc-switch__track,
-::ng-deep mat-slide-toggle.green-toggle .mdc-switch__track {
-  background-color: #4caf50 !important;
-}
-::ng-deep .green-toggle .mdc-switch__thumb,
-::ng-deep mat-slide-toggle.green-toggle .mdc-switch__thumb {
-  background-color: #388e3c !important;
-}
-::ng-deep .green-toggle .mdc-switch--checked .mdc-switch__track,
-::ng-deep mat-slide-toggle.green-toggle .mdc-switch--checked .mdc-switch__track {
-  background-color: #4caf50 !important;
-}
-::ng-deep .green-toggle .mdc-switch--checked .mdc-switch__thumb,
-::ng-deep mat-slide-toggle.green-toggle .mdc-switch--checked .mdc-switch__thumb {
-  background-color: #388e3c !important;
-}
-::ng-deep .green-toggle .mdc-switch__track--checked,
-::ng-deep mat-slide-toggle.green-toggle .mdc-switch__track--checked {
-  background-color: #4caf50 !important;
-}
-::ng-deep .green-toggle .mdc-switch__thumb--checked,
-::ng-deep mat-slide-toggle.green-toggle .mdc-switch__thumb--checked {
-  background-color: #388e3c !important;
-}
 
-/* Force Angular Material accent color to green for mat-slide-toggle */
-:root {
-  --mdc-theme-secondary: #4caf50;
-  --mdc-switch-selected-track-color: #4caf50;
-  --mdc-switch-selected-thumb-color: #388e3c;
-  --mdc-switch-unselected-thumb-color: #a5d6a7;
-}
-.mat-mdc-slide-toggle.mat-accent .mdc-switch__track {
-  background-color: #4caf50 !important;
-}
-.mat-mdc-slide-toggle.mat-accent .mdc-switch__thumb {
-  background-color: #388e3c !important;
-}
-.mat-mdc-slide-toggle.mat-accent .mdc-switch--selected .mdc-switch__track {
-  background-color: #4caf50 !important;
-}
-.mat-mdc-slide-toggle.mat-accent .mdc-switch--selected .mdc-switch__thumb {
-  background-color: #388e3c !important;
-}
- 

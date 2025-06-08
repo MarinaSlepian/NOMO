@@ -165,45 +165,4 @@
   margin: 0;
 }
 
-/* Toggle Styles */
-/* Remove duplicate selectors and use the correct deep selector for Angular Material v15+ */
-::ng-deep .green-toggle .mdc-switch__track {
-  background-color: #4caf50 !important;
-}
-::ng-deep .green-toggle .mdc-switch--selected .mdc-switch__thumb {
-  background-color: #388e3c !important;
-}
-::ng-deep .green-toggle .mdc-switch--selected .mdc-switch__track {
-  background-color: #4caf50 !important;
-}
-::ng-deep .green-toggle .mdc-switch__thumb {
-  background-color: #a5d6a7 !important;
-}
-
-/* Strongest possible selector for Angular Material MDC slide toggle */
-::ng-deep .green-toggle .mdc-switch__track,
-::ng-deep .green-toggle .mdc-switch__track--checked {
-  background-color: #4caf50 !important;
-}
-::ng-deep .green-toggle .mdc-switch__thumb,
-::ng-deep .green-toggle .mdc-switch__thumb--checked {
-  background-color: #388e3c !important;
-}
-::ng-deep .green-toggle .mdc-switch--checked .mdc-switch__track {
-  background-color: #4caf50 !important;
-}
-::ng-deep .green-toggle .mdc-switch--checked .mdc-switch__thumb {
-  background-color: #388e3c !important;
-}
-::ng-deep mat-slide-toggle.green-toggle .mdc-switch__track {
-  background-color: #4caf50 !important;
-}
-::ng-deep mat-slide-toggle.green-toggle .mdc-switch__thumb {
-  background-color: #388e3c !important;
-}
-::ng-deep mat-slide-toggle.green-toggle .mdc-switch--checked .mdc-switch__track {
-  background-color: #4caf50 !important;
-}
-::ng-deep mat-slide-toggle.green-toggle .mdc-switch--checked .mdc-switch__thumb {
-  background-color: #388e3c !important;
-}
+ 
