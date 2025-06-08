@@ -3,7 +3,7 @@
   background-color: white !important;
   color: black !important;
   border: none !important;
-  border-radius: 0 !important;
+  border-radius: 20rem !important;
   box-shadow: none !important;
   padding: 1rem !important;
   line-height: 1.2 !important;
@@ -159,12 +159,14 @@
 
 .controls-row {
   display: flex;
-  align-items: center; /* Center items vertically */
+  align-items: center;
   justify-content: center;
   gap: 1.5rem;
   flex-wrap: wrap;
-  padding: 1.5rem 0; /* Add more vertical padding for centering */
-  height: 100%;
+  padding: 0.25rem 0 !important;
+  margin: 0 !important;
+  min-height: unset !important;
+  height: auto !important;
 }
 
 /* Remove extra margin from mat-form-field and its children */
