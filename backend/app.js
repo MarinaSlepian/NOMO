@@ -74,7 +74,6 @@ async function processQueue() {
 app.get("/", (req, res) => {
   res.send("Server is running");
   console.log("✅ debug-log route hit");
-  res.send("Debug OK");
 
 });
 
