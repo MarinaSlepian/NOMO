@@ -1,5 +1,5 @@
-import fs from "node:fs/promises";
 import express from "express";
+import { pool } from "./db.js";
 
 const app = express();
 app.use(express.json());
@@ -25,21 +25,28 @@ async function processQueue() {
   try {
     console.log("Processing appId:", appId);
 
-    const fileContent = await fs.readFile("./data/app-usage.json");
-    const appData = JSON.parse(fileContent);
-
-    const appIndex = appData.findIndex((app) => app.id === appId);
-    if (appIndex === -1) {
-      return res.status(404).json({ error: "App ID not found" });
+    const validIds = [1, 2, 3, 4, 5];
+    if (!validIds.includes(appId)) {
+      return res.status(400).json({ error: "Invalid appId" });
     }
 
-    appData[appIndex].usages++;
+    const result = await pool.query(
+      `UPDATE usage_counters
+       SET count = count + 1
+       WHERE option_id = $1
+       RETURNING count`,
+      [appId]
+    );
 
-    await fs.writeFile("./data/app-usage.json", JSON.stringify(appData, null, 2));
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "App ID not found in DB" });
+    }
+
+    const updatedCount = result.rows[0].count;
 
     res.status(200).json({
-      message: "Received PUT successfully",
-      updatedUsages: appData[appIndex].usages,
+      message: "PUT processed successfully",
+      updatedUsages: updatedCount,
     });
   } catch (err) {
     console.error("Error in /app-usage:", err);
@@ -50,8 +57,8 @@ async function processQueue() {
   }
 }
 
-app.get('/', (req, res) => {
-  res.send('Server is running');
+app.get("/", (req, res) => {
+  res.send("Server is running");
 });
 
 // ✅ PUT endpoint
@@ -69,7 +76,6 @@ app.put("/app-usage", (req, res) => {
 });
 
 // ✅ Start server
-//app.listen(3000, () => {
-app.listen(3000, '0.0.0.0', () => {
+app.listen(3000, "0.0.0.0", () => {
   console.log("Server listening on port 3000");
 });
