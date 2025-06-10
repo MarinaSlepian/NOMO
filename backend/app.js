@@ -24,7 +24,7 @@ async function processQueue() {
 
   try {
     console.log("Processing appId:", appId);
-
+    const id = Number(appId);
     const validIds = [1, 2, 3, 4, 5];
     if (!validIds.includes(appId)) {
       return res.status(400).json({ error: "Invalid appId" });
