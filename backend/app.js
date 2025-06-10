@@ -3,7 +3,7 @@ import { pool } from "./db.js";
 
 const app = express();
 app.use(express.json());
-console.log('🧠 Middleware active');
+console.log('🧠 🧠 Middleware active');
 
 
 app.all("/route-check", (req, res) => {
@@ -72,9 +72,8 @@ async function processQueue() {
 }
 
 app.get("/", (req, res) => {
-  res.send("Server is running");
   console.log("✅ debug-log route hit");
-
+  res.send("Server is running");
 });
 
 // ✅ PUT endpoint
