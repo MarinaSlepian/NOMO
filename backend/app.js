@@ -3,6 +3,7 @@ import { pool } from "./db.js";
 
 const app = express();
 app.use(express.json());
+console.log('🧠 Middleware active');
 
 // ✅ CORS setup
 app.use((req, res, next) => {
@@ -26,9 +27,10 @@ async function processQueue() {
     console.log("Processing appId:", appId);
     const id = Number(appId);
     const validIds = [1, 2, 3, 4, 5];
-    if (!validIds.includes(appId)) {
+    if (!validIds.includes(id)) {
       return res.status(400).json({ error: "Invalid appId" });
     }
+    
 
     if (!Number.isInteger(id) || id < 1 || id > 5) {
       return res.status(400).json({ error: 'Invalid appId' });
