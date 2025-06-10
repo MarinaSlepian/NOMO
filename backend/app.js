@@ -23,6 +23,7 @@ async function processQueue() {
   isProcessing = true;
   const { appId, res } = requestQueue.shift();
 
+   console.log("🚀 Processing appId:", appId); 
   try {
     console.log("Processing appId:", appId);
     const id = Number(appId);
@@ -69,6 +70,7 @@ app.get("/", (req, res) => {
 
 // ✅ PUT endpoint
 app.put("/app-usage", (req, res) => {
+  console.log("🟡 PUT /app-usage endpoint reached");
   const appId = req.body.appId;
 
   if (!appId) {
