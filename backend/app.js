@@ -3,10 +3,11 @@ import { pool } from "./db.js";
 
 const app = express();
 app.use(express.json());
-console.log('🧠 Middleware active');
+console.log('🧠🧠 Middleware active');
 
 // ✅ CORS setup
 app.use((req, res, next) => {
+  console.log(`➡️ Request received: ${req.method} ${req.url}`);
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
