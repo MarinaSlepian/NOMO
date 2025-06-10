@@ -30,6 +30,10 @@ async function processQueue() {
       return res.status(400).json({ error: "Invalid appId" });
     }
 
+    if (!Number.isInteger(id) || id < 1 || id > 5) {
+      return res.status(400).json({ error: 'Invalid appId' });
+    }
+
     const result = await pool.query(
       `UPDATE usage_counters
        SET count = count + 1
