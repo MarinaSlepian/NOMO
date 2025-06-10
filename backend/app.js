@@ -30,7 +30,7 @@ async function processQueue() {
   isProcessing = true;
   const { appId, res } = requestQueue.shift();
 
-   console.log("🚀 Processing appId:", appId); 
+  console.log("🚀 Processing appId:", appId); 
   try {
     console.log("Processing appId:", appId);
     const id = Number(appId);
@@ -59,7 +59,7 @@ async function processQueue() {
     const updatedCount = result.rows[0].count;
 
     res.status(200).json({
-      message: "PUT processed successfully",
+      message: "PUT processed very successfully",
       updatedUsages: updatedCount,
     });
   } catch (err) {
