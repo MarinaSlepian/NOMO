@@ -88,3 +88,9 @@ main {
   z-index: 3000;
 
 }
+
+.main-content {
+  margin-bottom: 0 !important;   
+  margin-top: 11rem !important;   
+  padding-top: 0 !important;  
+}
