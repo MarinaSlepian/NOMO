@@ -3,7 +3,13 @@ import { pool } from "./db.js";
 
 const app = express();
 app.use(express.json());
-console.log('🧠🧠 Middleware active');
+console.log('🧠 Middleware active');
+
+
+app.all("/route-check", (req, res) => {
+  console.log("✅ /route-check handler reached!");
+  res.send("Route check OK");
+});
 
 // ✅ CORS setup
 app.use((req, res, next) => {
@@ -67,6 +73,9 @@ async function processQueue() {
 
 app.get("/", (req, res) => {
   res.send("Server is running");
+  console.log("✅ debug-log route hit");
+  res.send("Debug OK");
+
 });
 
 // ✅ PUT endpoint
