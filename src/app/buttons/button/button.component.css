@@ -19,8 +19,7 @@ button {
   align-items: stretch;
   overflow: hidden;
   box-sizing: border-box;
-  position: relative; 
-  
+  position: relative; /* Ensure .name is positioned relative to button */
 }
 
 
