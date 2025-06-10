@@ -51,7 +51,8 @@ async function processQueue() {
        RETURNING count`,
       [appId]
     );
-
+    
+    console.log("✅ Successfully updated DB for appId:", appId);
     if (result.rowCount === 0) {
       return res.status(404).json({ error: "App ID not found in DB" });
     }
