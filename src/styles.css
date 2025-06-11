@@ -61,4 +61,8 @@ html, body {
   margin-left: 0.5rem !important;
 }
 
-
+/* styles.css or angular.json global style */
+.cdk-overlay-container {
+  position: fixed !important;
+  z-index: 25000 !important;
+}
