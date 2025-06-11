@@ -4,7 +4,6 @@ header {
   left: 0;
   width: 100vw;
   height: 9.5rem; /* Fix the height explicitly to match the image */
-
   z-index: 2000;
   background: white;
   padding-right: 16rem;
@@ -76,7 +75,7 @@ img {
     border-radius: 10px;
     margin-left: 2rem; /* Уменьшаем отступ слева */
     margin-right: 0; 
-    width: calc(100% - 18); /* Уменьшаем ширину баннера */
+    width: calc(100% - 18px); /* Уменьшаем ширину баннера */
     font-size: 1rem; /* Уменьшаем размер шрифта */
     padding: 0.5rem 1rem; /* Уменьшаем отступы */
     height: auto; /* Позволяем высоте адаптироваться */
