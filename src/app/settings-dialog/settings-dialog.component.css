@@ -12,6 +12,7 @@
   height: auto !important;
   box-sizing: border-box;
   overflow: visible !important;
+  z-index: 10000 !important;
 }
 
 /* ========== Dialog Title ========== */
@@ -207,6 +208,5 @@
   display: flex;
   align-items: center;
 }
-
 
 
