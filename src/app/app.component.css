@@ -29,7 +29,10 @@ main {
 
 @media (max-height: 480px) {
     main {
-    margin-top: 2.5vh;
+     margin-top: 2.5vh;
+    }
+    #users {
+     margin-top: 2rem;
     }
 }
 
