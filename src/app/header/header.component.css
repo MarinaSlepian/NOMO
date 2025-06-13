@@ -59,7 +59,8 @@ img {
     flex-direction: column;
     align-items: center;
     gap: 0.5rem;
-    padding-right: 0;
+    padding-right: 1rem; 
+    padding-left: 1rem; 
     margin-left: 0;
   }
 }
@@ -75,7 +76,6 @@ img {
     border-radius: 10px;
     margin-left: 2rem; /* Уменьшаем отступ слева */
     margin-right: 0; 
-    width: calc(100% - 18px); /* Уменьшаем ширину баннера */
     font-size: 1rem; /* Уменьшаем размер шрифта */
     padding: 0.5rem 1rem; /* Уменьшаем отступы */
     height: auto; /* Позволяем высоте адаптироваться */
