@@ -1,6 +1,6 @@
 /* Layout for main scrollable area */
 main {
-  margin-top: calc(9vh + 0.5rem);      /* space for fixed header/dashboard */
+  margin-top: calc(9.5rem + 0.5rem);      /* space for fixed header/dashboard */
   padding-top: 2rem; 
   margin-left: 2rem;
   margin-right: 16rem;     /* space for floating dashboard */
