@@ -61,3 +61,47 @@ dialog {
   height: 100dvh;
   position: relative; /* so that absolutely positioned buttons align correctly */
 }
+
+/* Controls positioned over video */
+.custom-controls {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  gap: 1rem;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 0.75rem 1.5rem;
+  border-radius: 1rem;
+  align-items: center;
+}
+
+/* Optional button styles */
+.custom-controls button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: white;
+  font-size: 1.2rem;
+}
+
+.custom-controls button:hover {
+  filter: brightness(1.5);
+}
+/* ✅ Top-right close button */
+.close-control {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 1001;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.close-control img {
+  width: 30px;
+  height: 30px;
+  filter: invert(1) brightness(1.2) contrast(1.1); /* Make it white if icon is black */
+}

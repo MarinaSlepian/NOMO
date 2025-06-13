@@ -11,6 +11,8 @@ export class VideoComponent {
   @Input({required:true}) videoPath!: string;
   @Output() cancel = new EventEmitter<void>();
   @Input({required:true}) numOfVideos!: string;
+  isPlaying = true;
+
 
   @HostListener('document:keydown.escape', ['$event'])
   handleEscape(event: KeyboardEvent) {
@@ -22,11 +24,20 @@ export class VideoComponent {
   @HostListener('document:keydown.enter', ['$event'])
   handleEnter(event: KeyboardEvent) {
     if (this.videoPlayer) {
-      this.onSwitchVideo(this.videoPlayer.nativeElement);
+      this.onSwitchVideo();
     }
   }
 
-
+  togglePlay() {
+    const video = this.videoPlayer.nativeElement;
+    if (video.paused) {
+      video.play();
+      this.isPlaying = true;
+    } else {
+      video.pause();
+      this.isPlaying = false;
+    }
+  }
   onCancel()
   {
     this.cancel.emit();
@@ -59,10 +70,11 @@ export class VideoComponent {
     
   }
 
-  onSwitchVideo(videoElement: HTMLVideoElement)
+  onSwitchVideo()
   {
 
     this.upadteVideoPath();
+    const videoElement = this.videoPlayer.nativeElement;
 
    // Trick: reload the <video> element manually
    setTimeout(() => {
