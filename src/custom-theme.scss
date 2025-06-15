@@ -1,7 +1,8 @@
 @use '@angular/material' as mat;
 @include mat.core();
 
-$green-accent: mat.m2-define-palette(mat.$m2-green-palette, 500, 300, 700);
+$green-accent: mat.m2-define-palette(mat.$m2-light-green-palette, 600, 300, 800);
+
 
 $custom-theme: mat.m2-define-light-theme((
   color: (
