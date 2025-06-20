@@ -72,7 +72,7 @@ dialog {
   display: flex;
   gap: 1rem;
   background: rgba(0, 0, 0, 0.5);
-  padding: 0.75rem 1.5rem;
+  padding: 0.25rem 0.5rem;
   border-radius: 1rem;
   align-items: center;
 }
@@ -83,7 +83,7 @@ dialog {
   border: none;
   cursor: pointer;
   color: white;
-  font-size: 1.2rem;
+  font-size: 2.6rem;
 }
 
 .custom-controls button:hover {
@@ -101,7 +101,7 @@ dialog {
 }
 
 .close-control img {
-  width: 30px;
-  height: 30px;
+  width: 50px;
+  height: 50px;
   filter: invert(1) brightness(1.2) contrast(1.1); /* Make it white if icon is black */
 }
