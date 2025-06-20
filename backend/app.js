@@ -32,35 +32,28 @@ async function processQueue() {
 
   console.log("🚀 Processing appId:", appId); 
   try {
-    console.log("Processing appId:", appId);
     const id = Number(appId);
     const validIds = [1, 2, 3, 4, 5];
     if (!validIds.includes(id)) {
       return res.status(400).json({ error: "Invalid appId" });
     }
-    
-
-    if (!Number.isInteger(id) || id < 1 || id > 5) {
-      return res.status(400).json({ error: 'Invalid appId' });
-    }
 
     const result = await pool.query(
-      `UPDATE usage_counters
-       SET count = count + 1
-       WHERE option_id = $1
-       RETURNING count`,
-      [appId]
+      `
+      INSERT INTO usage_counters (option_id, usage_date, count)
+      VALUES ($1, CURRENT_DATE, 1)
+      ON CONFLICT (option_id, usage_date)
+      DO UPDATE SET count = usage_counters.count + 1
+      RETURNING count
+      `,
+      [id]
     );
-    
-    console.log("✅ Successfully updated DB for appId:", appId);
-    if (result.rowCount === 0) {
-      return res.status(404).json({ error: "App ID not found in DB" });
-    }
 
     const updatedCount = result.rows[0].count;
+    console.log("✅ DB updated for appId:", id, "on date:", new Date().toISOString().split('T')[0]);
 
     res.status(200).json({
-      message: "PUT processed very successfully",
+      message: "PUT processed with daily tracking",
       updatedUsages: updatedCount,
     });
   } catch (err) {
@@ -68,7 +61,7 @@ async function processQueue() {
     res.status(500).json({ error: "Internal server error" });
   } finally {
     isProcessing = false;
-    processQueue(); // Continue to next in line
+    processQueue(); // continue to next
   }
 }
 
