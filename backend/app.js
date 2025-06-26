@@ -1,6 +1,9 @@
 import express from "express";
 import { pool } from "./db.js";
+import UAParser from 'ua-parser-js';
+import fetch from 'node-fetch';
 
+const parser = new UAParser();
 const app = express();
 app.use(express.json());
 console.log('🧠 🧠 Middleware active');
@@ -42,19 +45,38 @@ async function processQueue() {
     const ipAddress = res.req.headers["x-forwarded-for"] || res.req.socket.remoteAddress;
     const userAgent = res.req.headers["user-agent"];
 
-       // ✅ 1. Обновляем информацию об устройстве
+    // 🔍 1. Разбираем user-agent
+    const ua = parser.setUA(userAgent).getResult();
+    const os_platform = ua.os.name + " " + ua.os.version;
+    const device_type = ua.device.type || "desktop"; // default if missing
+
+    // 🌍 2. Получаем страну по IP через ip-api.com
+    let country = "unknown";
+    try {
+      const response = await fetch(`http://ip-api.com/json/${ipAddress}`);
+      const geo = await response.json();
+      if (geo.status === "success") {
+        country = geo.country;
+      }
+    } catch (e) {
+      console.warn("🌐 GeoIP lookup failed:", e.message);
+    }
+
+
+    // 💾 3. Обновляем device_info
     await pool.query(
       `
-      INSERT INTO device_info (device_id, ip_address, user_agent, last_seen)
-      VALUES ($1, $2, $3, CURRENT_DATE)
+      INSERT INTO device_info (device_id, country, os_platform, device_type, last_seen)
+      VALUES ($1, $2, $3, $4, CURRENT_DATE)
       ON CONFLICT (device_id) DO UPDATE
-      SET ip_address = EXCLUDED.ip_address,
-          user_agent = EXCLUDED.user_agent,
+      SET country = EXCLUDED.country,
+          os_platform = EXCLUDED.os_platform,
+          device_type = EXCLUDED.device_type,
           last_seen = CURRENT_DATE
       `,
-      [deviceId, ipAddress, userAgent]
+      [deviceId, country, os_platform, device_type]
     );
-
+    
     // ✅ 2. Обновляем счётчик использования
     const result = await pool.query(
       `
