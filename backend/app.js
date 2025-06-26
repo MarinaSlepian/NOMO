@@ -43,7 +43,8 @@ async function processQueue() {
     }
 
         // ✅ Добавляем: сбор данных устройства
-    const ipAddress = res.req.headers["x-forwarded-for"] || res.req.socket.remoteAddress;
+    const rawIp = res.req.headers["x-forwarded-for"] || res.req.socket.remoteAddress;
+    const ipAddress = rawIp?.split(',')[0].trim();
     const userAgent = res.req.headers["user-agent"];
 
     // 🔍 1. Разбираем user-agent
