@@ -52,16 +52,18 @@ async function processQueue() {
     const os_platform = ua.os.name + " " + ua.os.version;
     const device_type = ua.device.type || "desktop"; // default if missing
 
-    // 🌍 2. Получаем страну по IP через ip-api.com
+    // 🌍 2. Получаем страну по IP через ipwho.is
     let country = "unknown";
     try {
-      const response = await fetch(`http://ip-api.com/json/${ipAddress}`);
+      const response = await fetch(`https://ipwho.is/${ipAddress}`);
       const geo = await response.json();
-      if (geo.status === "success") {
+      console.log("📦 ipwho.is result:", geo);
+
+      if (geo.success) {
         country = geo.country;
       }
     } catch (e) {
-      console.warn("🌐 GeoIP lookup failed:", e.message);
+      console.warn("🌐 ipwho.is lookup failed:", e.message);
     }
 
 
