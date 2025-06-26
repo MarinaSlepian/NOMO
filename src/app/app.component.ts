@@ -10,6 +10,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { HttpClient } from '@angular/common/http';
 import { NgIf } from '@angular/common';
 import { DashboardComponent } from './dashboard/dashboard.component';
+import { v4 as uuidv4 } from 'uuid';
 
 
 @Component({
@@ -22,6 +23,7 @@ import { DashboardComponent } from './dashboard/dashboard.component';
 
 
 export class AppComponent implements OnInit{
+  deviceId: string | null = null
   deferredPrompt: any;
   showInstallButton = false;
   private httpClient = inject(HttpClient);
@@ -49,6 +51,13 @@ export class AppComponent implements OnInit{
   }
 
   ngOnInit(): void {
+    this.deviceId = localStorage.getItem('deviceId');
+    if (!this.deviceId) {
+      this.deviceId = uuidv4();
+      localStorage.setItem('deviceId', this.deviceId);
+    }
+    console.log('Device ID:', this.deviceId);
+
     window.addEventListener('beforeinstallprompt', (e: Event) => {
       console.log('beforeinstallprompt fired'); 
       e.preventDefault();
@@ -137,6 +146,7 @@ export class AppComponent implements OnInit{
     }
       //send usage info to server
     //this.httpClient.put('http://localhost:3000/app-usage',{
+
     this.httpClient.put('https://nomo-backend.onrender.com/app-usage',{
     appId: this.currentApp
     } ).subscribe({
