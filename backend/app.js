@@ -1,9 +1,9 @@
 import express from "express";
 import { pool } from "./db.js";
-import pkg from 'ua-parser-js';
 import fetch from 'node-fetch';
+import { UAParser } from 'ua-parser-js';
   
-const parser = pkg.UAParser;
+const parser = new UAParser();
 
 const app = express();
 app.use(express.json());
