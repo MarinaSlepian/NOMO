@@ -22,7 +22,8 @@ export class HeaderComponent implements OnInit, OnChanges
   currentConfig: AppConfig = {
     selectedLang: 'en',
     needSubtext: true,
-    needAudio: false
+    needAudio: false,
+    selectedApp: '1' // Default selected app
   };
 
   selectedSplash = "1en";
@@ -47,7 +48,8 @@ export class HeaderComponent implements OnInit, OnChanges
       this.currentConfig = {
         selectedLang: 'en',
         needSubtext: true,
-        needAudio: false
+        needAudio: false,
+        selectedApp: '1' // Default selected app
       };
     }
     this.translate.setDefaultLang(this.currentConfig.selectedLang); 

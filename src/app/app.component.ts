@@ -29,14 +29,14 @@ export class AppComponent implements OnInit{
   private httpClient = inject(HttpClient);
   rotateInstruction = "";
   buttons = BUTTONS_RIGHT_WRONG_ICONS;
-  currentApp = '1';  
   currentVideosPath = 'aassets/videos/right-wrong/video-';
   isSubTextNeeded = false;
   isAudioNeeded = false;
   currentConfig: AppConfig = {
     selectedLang: 'en',
     needSubtext: true,
-    needAudio: false
+    needAudio: false,
+    selectedApp: '1' // Default selected app
   };
 //for mobile device
   isPortraitOnMobile = false;
@@ -44,8 +44,12 @@ export class AppComponent implements OnInit{
   constructor(private translate: TranslateService){
    this.onSelectAppButton('1');
    const saved = localStorage.getItem('appConfig');
-   if (saved) 
+   if (saved) {
      this.currentConfig = JSON.parse(saved);
+     this.onSelectAppButton(this.currentConfig.selectedApp);
+    }
+   else
+    this.onSelectAppButton('1');
    this.onUpdateNewConfig(this.currentConfig);
    
   }
@@ -85,12 +89,12 @@ export class AppComponent implements OnInit{
 
   onUpdateNewConfig(newAppConfig: AppConfig)
   {
-    console.log('onUpdateNewConfig .currentApp '+ this.currentApp);
+    console.log('onUpdateNewConfig .currentApp '+ this.currentConfig.selectedApp);
     this.isSubTextNeeded = newAppConfig.needSubtext;
 
     this.currentConfig = newAppConfig;
     //subtext and audio only relevant for emotions and actions
-    if(this.currentApp === '1' || this.currentApp === '2'){
+    if(this.currentConfig.selectedApp === '1' || this.currentConfig.selectedApp === '2'){
       this.isSubTextNeeded = false;
       this.isAudioNeeded = false; 
     }
@@ -112,7 +116,7 @@ export class AppComponent implements OnInit{
 
   onSelectAppButton(id: string)
   { 
-    this.currentApp = id;
+    this.currentConfig.selectedApp = id;
     console.log('Selected button id app component '+id);
     if(id === '1'){
       this.buttons = BUTTONS_RIGHT_WRONG_ICONS;
@@ -150,7 +154,7 @@ export class AppComponent implements OnInit{
     //this.httpClient.put('http://localhost:3000/app-usage',{
 
     this.httpClient.put('https://nomo-backend.onrender.com/app-usage',{
-    appId: this.currentApp,
+    appId: this.currentConfig.selectedApp,
     deviceId: this.deviceId
     } ).subscribe({
     next: (resData) => console.log (resData),

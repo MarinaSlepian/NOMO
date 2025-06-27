@@ -22,9 +22,9 @@ export class DashboardComponent implements OnInit
     currentConfig: AppConfig = {
       selectedLang: 'en',
       needSubtext: true,
-      needAudio: false
+      needAudio: false,
+      selectedApp: '1' // Default selected app
     };
-    selectedApp = "1";
     isSettingsOpen = false;
 
     constructor(private translate: TranslateService, private dialog: MatDialog) 
@@ -42,7 +42,8 @@ export class DashboardComponent implements OnInit
         this.currentConfig = {
         selectedLang: 'en',
         needSubtext: true,
-        needAudio: false
+        needAudio: false,
+        selectedApp: '1' // Default selected app
       };
     }
     
@@ -51,11 +52,11 @@ export class DashboardComponent implements OnInit
     }
 
   selectApp(id: string)
-  {
-    this.selectedApp = id;
-    
-   // this.updateSplashForLanguage();
-    
+  { 
+    if(this.currentConfig.selectedApp === id) // Prevents unnecessary updates
+      return;
+    this.currentConfig.selectedApp = id; // Update the selected app in the config
+    localStorage.setItem('appConfig', JSON.stringify(this.currentConfig)); // Save the updated confi
     this.selectNewApp.emit(id); 
   }
 

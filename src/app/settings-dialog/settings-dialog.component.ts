@@ -47,7 +47,8 @@ export class SettingsDialogComponent implements OnInit{
   currentConfig: AppConfig = {
                 selectedLang: this.selectedLang,
                 needSubtext: this.needSubtext,
-                needAudio: this.needAudio
+                needAudio: this.needAudio,
+                selectedApp: '1' 
                };
 
   languages = [
@@ -74,7 +75,8 @@ export class SettingsDialogComponent implements OnInit{
     this.currentConfig = {
       selectedLang: 'en',
       needSubtext: true,
-      needAudio: false
+      needAudio: false,
+      selectedApp: '1'
     };
   }
   this.selectedLang = this.currentConfig.selectedLang;
