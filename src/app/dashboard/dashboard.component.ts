@@ -53,8 +53,8 @@ export class DashboardComponent implements OnInit
 
   selectApp(id: string)
   { 
-    if(this.currentConfig.selectedApp === id) // Prevents unnecessary updates
-      return;
+    //if(this.currentConfig.selectedApp === id) // Prevents unnecessary updates
+    //  return;
     this.currentConfig.selectedApp = id; // Update the selected app in the config
     localStorage.setItem('appConfig', JSON.stringify(this.currentConfig)); // Save the updated confi
     this.selectNewApp.emit(id); 
