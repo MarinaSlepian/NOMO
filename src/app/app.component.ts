@@ -41,15 +41,14 @@ export class AppComponent implements OnInit{
 //for mobile device
   isPortraitOnMobile = false;
 
-  constructor(private translate: TranslateService){
-   this.onSelectAppButton('1');
+  constructor(private translate: TranslateService)
+  {
    const saved = localStorage.getItem('appConfig');
    if (saved) {
-     this.currentConfig = JSON.parse(saved);
-     this.onSelectAppButton(this.currentConfig.selectedApp);
-    }
-   else
-    this.onSelectAppButton('1');
+     //this.currentConfig = JSON.parse(saved);
+     this.currentConfig = { ...this.currentConfig, ...JSON.parse(saved) };
+   }
+   this.onSelectAppButton(this.currentConfig.selectedApp);
    this.onUpdateNewConfig(this.currentConfig);
    
   }
