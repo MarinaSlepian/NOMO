@@ -9,23 +9,22 @@
       Your browser does not support the video tag.
     </video>
 
-    <!-- ✅ Bottom custom controls -->
-    <div class="custom-controls">
-      <button (click)="togglePlay()">
-        {{ isPlaying ? '⏸️ ' : '▶️ ' }}
-      </button>
-      <button (click)="onSwitchVideo()">
-        🔄 
-      </button>
-    </div>
 
     <!-- ✅ Top-right Close button -->
     <!--<button class="close-control" (click)="onCancel()">
       <img src="assets/icons/close.png" alt="Close Video" width="24" height="24" />
     </button>-->
-    <button class="close-control" (click)="onCancel()">
-      ❎
-    </button>
-
+    <div class="custom-buttons">
+      <button class="close-button" (click)="onCancel()">
+        ❎ 
+      </button>
+      <button class="switch-button" (click)="onSwitchVideo()">
+        🔄 
+      </button>
+      <button class="toggle-button" (click)="togglePlay()">
+          {{ isPlaying ? '⏸️ ' : '▶️ ' }}
+      </button>
+    </div>
+   
   </div>
 </dialog>
