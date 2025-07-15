@@ -120,34 +120,35 @@ export class AppComponent implements OnInit{
     if(id === '1'){
       this.buttons = BUTTONS_RIGHT_WRONG_ICONS;
       //this.currentVideosPath = 'assets/videos/right-wrong/video-';
-      this.currentVideosPath = 'https://pub-cd55d14ab122470ead2da86ec8b3e38e.r2.dev/right-wrong/video-';
+      this.currentVideosPath = 'https://r2-video-proxy.slepianmarina.workers.dev/right-wrong/video-';
       this.isSubTextNeeded = false;
       this.isAudioNeeded = false;
     }
     else if(id === '2'){
       this.buttons = BUTTONS_GOOD_BAD_ICONS;
       //this.currentVideosPath = 'assets/videos/good-bad/video-';
-      this.currentVideosPath = 'https://pub-cd55d14ab122470ead2da86ec8b3e38e.r2.dev/good-bad/video-';
+      this.currentVideosPath = 'https://r2-video-proxy.slepianmarina.workers.dev/good-bad/video-';
       this.isSubTextNeeded = false;
       this.isAudioNeeded = false;
     } else if(id === '3')
     {
       this.buttons = BUTTONS_ACTIONS_ICONS;
       //this.currentVideosPath = 'assets/videos/actions/video-';
-      this.currentVideosPath = 'https://pub-cd55d14ab122470ead2da86ec8b3e38e.r2.dev/actions/video-';
+      this.currentVideosPath = 'https://r2-video-proxy.slepianmarina.workers.dev/actions/video-';
       this.isSubTextNeeded = this.currentConfig.needSubtext;
       this.isAudioNeeded = this.currentConfig.needAudio;
     } else if(id==='4')
     {
       this.buttons = BUTTONS_EMOTIONS_ICONS;
       //this.currentVideosPath = 'assets/videos/emotions/video-';
-      this.currentVideosPath = 'https://pub-cd55d14ab122470ead2da86ec8b3e38e.r2.dev/emotions/video-';
+      this.currentVideosPath = 'https://r2-video-proxy.slepianmarina.workers.dev/emotions/video-';
       this.isSubTextNeeded = this.currentConfig.needSubtext;
       this.isAudioNeeded = this.currentConfig.needAudio;
     }
     else {//temporary
      this.buttons = BUTTONS_RIGHT_WRONG_ICONS;
-     this.currentVideosPath = 'https://pub-cd55d14ab122470ead2da86ec8b3e38e.r2.dev/right-wrong/video-';
+     //this.currentVideosPath = 'https://pub-cd55d14ab122470ead2da86ec8b3e38e.r2.dev/right-wrong/video-';
+     this.currentVideosPath = 'https://r2-video-proxy.slepianmarina.workers.dev/right-wrong/video-';
      this.isSubTextNeeded = false;
      this.isAudioNeeded = false;
     }

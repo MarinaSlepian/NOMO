@@ -44,7 +44,7 @@ dialog {
   z-index: 1001;
   display: flex;
   flex-direction: column;   /* 👈 Makes the buttons stack vertically */
-  gap: 0.5rem;                /* 👈 Space between buttons */
+  gap: 1rem;                /* 👈 Space between buttons */
   background: none;         /* or rgba(...) if you want a panel look */
 }
 

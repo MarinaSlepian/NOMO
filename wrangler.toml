@@ -1,7 +1,12 @@
-name = "nomo-r2-uploader"
+name = "r2-video-proxy"
+main = "cloudflare-worker/index.js"
 compatibility_date = "2025-07-14"
 
+account_id = "b0efdb8091a2955b3f3982fdfcc507f3"
+
+workers_dev = true
+
 [[r2_buckets]]
-binding = "NOMO_BUCKET"
+binding = "VIDEO_BUCKET"
 bucket_name = "nomo-videos"
 preview_bucket_name = "nomo-videos"
