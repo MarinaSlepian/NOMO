@@ -1,0 +1,7 @@
+name = "nomo-r2-uploader"
+compatibility_date = "2025-07-14"
+
+[[r2_buckets]]
+binding = "NOMO_BUCKET"
+bucket_name = "nomo-videos"
+preview_bucket_name = "nomo-videos"
