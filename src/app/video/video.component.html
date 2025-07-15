@@ -18,11 +18,13 @@
       <button class="close-button" (click)="onCancel()">
         ❎ 
       </button>
-      <button class="switch-button" (click)="onSwitchVideo()">
-        🔄 
-      </button>
+
       <button class="toggle-button" (click)="togglePlay()">
           {{ isPlaying ? '⏸️ ' : '▶️ ' }}
+      </button>
+
+      <button class="switch-button" (click)="onSwitchVideo()">
+        🔄 
       </button>
     </div>
    
