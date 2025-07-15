@@ -120,9 +120,7 @@ export class AppComponent implements OnInit{
     if(id === '1'){
       this.buttons = BUTTONS_RIGHT_WRONG_ICONS;
       //this.currentVideosPath = 'assets/videos/right-wrong/video-';
-
       this.currentVideosPath = 'https://pub-cd55d14ab122470ead2da86ec8b3e38e.r2.dev/right-wrong/video-';
-      
       this.isSubTextNeeded = false;
       this.isAudioNeeded = false;
     }
@@ -135,7 +133,8 @@ export class AppComponent implements OnInit{
     } else if(id === '3')
     {
       this.buttons = BUTTONS_ACTIONS_ICONS;
-      this.currentVideosPath = 'assets/videos/actions/video-';
+      //this.currentVideosPath = 'assets/videos/actions/video-';
+      this.currentVideosPath = 'https://pub-cd55d14ab122470ead2da86ec8b3e38e.r2.dev/actions/video-';
       this.isSubTextNeeded = this.currentConfig.needSubtext;
       this.isAudioNeeded = this.currentConfig.needAudio;
     } else if(id==='4')
@@ -148,7 +147,7 @@ export class AppComponent implements OnInit{
     }
     else {//temporary
      this.buttons = BUTTONS_RIGHT_WRONG_ICONS;
-     this.currentVideosPath = 'assets/videos/right-wrong/video-';
+     this.currentVideosPath = 'https://pub-cd55d14ab122470ead2da86ec8b3e38e.r2.dev/right-wrong/video-';
      this.isSubTextNeeded = false;
      this.isAudioNeeded = false;
     }
