@@ -119,15 +119,15 @@ export class AppComponent implements OnInit{
     console.log('Selected button id app component '+id);
     if(id === '1'){
       this.buttons = BUTTONS_RIGHT_WRONG_ICONS;
-      //this.currentVideosPath = 'assets/videos/right-wrong/video-';
-      this.currentVideosPath = 'https://r2-video-proxy.slepianmarina.workers.dev/right-wrong/video-';
+      this.currentVideosPath = 'assets/videos/right-wrong/video-';
+      //this.currentVideosPath = 'https://r2-video-proxy.slepianmarina.workers.dev/right-wrong/video-';
       this.isSubTextNeeded = false;
       this.isAudioNeeded = false;
     }
     else if(id === '2'){
       this.buttons = BUTTONS_GOOD_BAD_ICONS;
-      //this.currentVideosPath = 'assets/videos/good-bad/video-';
-      this.currentVideosPath = 'https://r2-video-proxy.slepianmarina.workers.dev/good-bad/video-';
+      this.currentVideosPath = 'assets/videos/good-bad/video-';
+      //this.currentVideosPath = 'https://r2-video-proxy.slepianmarina.workers.dev/good-bad/video-';
       this.isSubTextNeeded = false;
       this.isAudioNeeded = false;
     } else if(id === '3')
