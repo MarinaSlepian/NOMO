@@ -87,7 +87,8 @@ export class HeaderComponent implements OnInit, OnChanges
       '1': 'APP_NAMES.WHAT_WRONG',
       '2': 'APP_NAMES.GOOD_BAD',
       '3': 'APP_NAMES.ACTIONS',
-      '4': 'APP_NAMES.EMOTIONS'
+      '4': 'APP_NAMES.EMOTIONS',
+      '5': 'APP_NAMES.SEQUENCES'
     };
 
     const translationKey = keyMap[this.appName];

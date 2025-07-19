@@ -20,20 +20,31 @@
     </app-dashboard>
   </div>
 
-  <main class="main-content">
-    <ul id="users">
-      @for (b of buttons; track b.id) {
-        <li>
-          <app-button 
-            [user]="b"
-            [videoPath]="currentVideosPath"
-            [currentApp]="currentConfig.selectedApp"
-            [isSubtextNeeded]="isSubTextNeeded"
-            [isAudioNeeded]="isAudioNeeded"  
-          />
-        </li>
-      }
-    </ul>  
-  </main>
 
+
+    <main class="main-content">
+      @if (currentConfig.selectedApp == '5') 
+      {
+
+        <app-sequence-chooser></app-sequence-chooser>
+        
+      }
+      @else
+      {
+        <ul id="users">
+          @for (b of buttons; track b.id) {
+            <li>
+              <app-button 
+                [user]="b"
+                [videoPath]="currentVideosPath"
+                [currentApp]="currentConfig.selectedApp"
+                [isSubtextNeeded]="isSubTextNeeded"
+                [isAudioNeeded]="isAudioNeeded"  
+              />
+            </li>
+          }
+        </ul>  
+      }
+    </main>
+  
 </div>

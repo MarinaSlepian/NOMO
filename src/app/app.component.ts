@@ -11,12 +11,13 @@ import { HttpClient } from '@angular/common/http';
 import { NgIf } from '@angular/common';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { v4 as uuidv4 } from 'uuid';
+import { SequenceChooserComponent } from './sequence-chooser/sequence-chooser.component';
 
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [HeaderComponent, ButtonComponent, NgIf, DashboardComponent],
+  imports: [HeaderComponent, ButtonComponent, NgIf, DashboardComponent,SequenceChooserComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
