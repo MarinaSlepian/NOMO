@@ -25,10 +25,14 @@
         (select)="selectApp($event)">
         </app-app-chooser>
 
+        <app-app-chooser [appName]="'APP_NAMES.SEQUENCES' | translate" 
+        [id]="'5'" 
+        [active]="currentConfig.selectedApp === '5'"
+        (select)="selectApp($event)">
+        </app-app-chooser>
 
 
-
-      </div>
+      </div>  
       <div>
         <button class="icon-button" (click)="onSettingsButton()">
           <img src="assets/settings.png" alt="Settings" />

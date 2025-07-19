@@ -7,6 +7,8 @@ import { Component } from '@angular/core';
   templateUrl: './sequence.component.html',
   styleUrl: './sequence.component.css'
 })
+
+
 export class SequenceComponent {
 
 }

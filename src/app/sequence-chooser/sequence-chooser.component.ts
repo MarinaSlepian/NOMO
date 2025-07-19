@@ -5,6 +5,7 @@ const STATES = {
   CHOOSER: 'chooser',
   THUMBNAILS: 'thumbnails',
   SEQUENCE: 'sequence',
+  VIDEO: 'video',
 } as const;
 
 type State = typeof STATES[keyof typeof STATES];
