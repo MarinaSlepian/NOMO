@@ -14,6 +14,8 @@ export class SequenceComponent implements OnInit {
   @Input({required:true}) thumbPath!: string;
 
   pathsArray: string[] = [];
+  indexesArray: number[] = [];//for usage in html loop
+
 
   checkImageExists(path: string): Promise<boolean> {
     return new Promise((resolve) => {
@@ -49,6 +51,7 @@ export class SequenceComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.BuildThumbPathsArray();    
+    this.BuildThumbPathsArray();  
+    this.indexesArray = Array.from({ length: this.numSegments }, (_, i) => i);  
   }
 }

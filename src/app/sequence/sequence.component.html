@@ -1,69 +1,75 @@
 @if (numSegments === 2) {
-  <div class="color-grid-container2">
-    <div class="color-grid">
+  <div class="sequence-grid2">
+    <div class="sequence-column">
       <div class="color-cell color-green">1</div>
-      <div class="color-cell color-red">2</div>
+      <img class="pict" [src]="pathsArray[0]" alt="Thumbnail" />
     </div>
-    <ul id="pict-list">
-      @for (path of pathsArray; track path) {
-        <li>
-          <img class="pict" [src]="path" alt="Thumbnail" />
-        </li>
-      }
-    </ul>
+    <div class="sequence-column">
+      <div class="color-cell color-red">2</div>
+      <img class="pict" [src]="pathsArray[1]" alt="Thumbnail" />
+    </div>
   </div>
 }
 
 @else if (numSegments === 3) {
-  <div class="color-grid-container3">
-    <div class="color-grid">
+  <div class="sequence-grid3">
+    <div class="sequence-column">
       <div class="color-cell color-green">1</div>
-      <div class="color-cell color-red">2</div>
-      <div class="color-cell color-blue">3</div>
+      <img class="pict" [src]="pathsArray[0]" alt="Thumbnail" />
     </div>
-    <ul id="pict-list">
-      @for (path of pathsArray; track path) {
-        <li>
-          <img class="pict" [src]="path" alt="Thumbnail" />
-        </li>
-      }
-    </ul>
+    <div class="sequence-column">
+      <div class="color-cell color-red">2</div>
+      <img class="pict" [src]="pathsArray[1]" alt="Thumbnail" />
+    </div>
+    <div class="sequence-column">
+      <div class="color-cell color-blue">3</div>
+      <img class="pict" [src]="pathsArray[2]" alt="Thumbnail" />
+    </div>
   </div>
 }
 
 @else if (numSegments === 4) {
-  <div class="color-grid-container4">
-    <div class="color-grid">
+  <div class="sequence-grid4">
+    <div class="sequence-column">
       <div class="color-cell color-green">1</div>
-      <div class="color-cell color-red">2</div>
-      <div class="color-cell color-blue">3</div>
-      <div class="color-cell color-yellow">4</div>
+      <img class="pict" [src]="pathsArray[0]" alt="Thumbnail" />
     </div>
-    <ul id="pict-list">
-      @for (path of pathsArray; track path) {
-        <li>
-          <img class="pict" [src]="path" alt="Thumbnail" />
-        </li>
-      }
-    </ul>
+    <div class="sequence-column">
+      <div class="color-cell color-red">2</div>
+      <img class="pict" [src]="pathsArray[1]" alt="Thumbnail" />
+    </div>
+    <div class="sequence-column">
+      <div class="color-cell color-blue">3</div>
+      <img class="pict" [src]="pathsArray[2]" alt="Thumbnail" />
+    </div>
+    <div class="sequence-column">
+      <div class="color-cell color-yellow">4</div>
+      <img class="pict" [src]="pathsArray[3]" alt="Thumbnail" />
+    </div>
   </div>
 }
 
 @else if (numSegments === 5) {
-  <div class="color-grid-container5">
-    <div class="color-grid">
+  <div class="sequence-grid5">
+    <div class="sequence-column">
       <div class="color-cell color-green">1</div>
-      <div class="color-cell color-red">2</div>
-      <div class="color-cell color-blue">3</div>
-      <div class="color-cell color-yellow">4</div>
-      <div class="color-cell color-green">5</div>
+      <img class="pict" [src]="pathsArray[0]" alt="Thumbnail" />
     </div>
-    <ul id="pict-list">
-      @for (path of pathsArray; track path) {
-        <li>
-          <img class="pict" [src]="path" alt="Thumbnail" />
-        </li>
-      }
-    </ul>
+    <div class="sequence-column">
+      <div class="color-cell color-red">2</div>
+      <img class="pict" [src]="pathsArray[1]" alt="Thumbnail" />
+    </div>
+    <div class="sequence-column">
+      <div class="color-cell color-blue">3</div>
+      <img class="pict" [src]="pathsArray[2]" alt="Thumbnail" />
+    </div>
+    <div class="sequence-column">
+      <div class="color-cell color-yellow">4</div>
+      <img class="pict" [src]="pathsArray[3]" alt="Thumbnail" />
+    </div>
+    <div class="sequence-column">
+      <div class="color-cell color-green">5</div>
+      <img class="pict" [src]="pathsArray[4]" alt="Thumbnail" />
+    </div>
   </div>
 }
