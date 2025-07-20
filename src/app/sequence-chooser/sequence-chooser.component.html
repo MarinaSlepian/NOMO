@@ -1,20 +1,33 @@
 
 @if(currentSeqState === STATES.CHOOSER ){
-<div class="color-grid-container">
-  <div class="color-grid">
-    <div class="color-cell color-green" (click)="onCellClick(2)">2</div>
-    <div class="color-cell color-red" (click)="onCellClick(3)">3</div>
-    <div class="color-cell color-blue" (click)="onCellClick(4)">4</div>
-    <div class="color-cell color-yellow" (click)="onCellClick(5)">5</div>
+  <div class="color-grid-container">
+    <div class="color-grid">
+      <div class="color-cell color-green" (click)="onCellClick(2)">2</div>
+      <div class="color-cell color-red" (click)="onCellClick(3)">3</div>
+      <div class="color-cell color-blue" (click)="onCellClick(4)">4</div>
+      <div class="color-cell color-yellow" (click)="onCellClick(5)">5</div>
+    </div>
+    <img class="character-illustration" src="assets/sequence-stuff/girl.png" alt="Character" />
   </div>
-  <img class="character-illustration" src="assets/sequence-stuff/girl.png" alt="Character" />
-</div>
 }
 @else if(currentSeqState === STATES.THUMBNAILS ){
-    <app-sequence-thumbnails [numSegments]="numSegments"></app-sequence-thumbnails>
-    
+  <div class="sequence-container">
+    <ul id = "thumb-list">
+      @for (path of pathsArray; track path) {
+        <li>
+          <app-sequence-thumb
+            [thumbPath]="path"
+            (thumbClicked)="onThumbSelected($event)" />
+        </li>
+      }
+    </ul>
+  </div>
 }
 @else if(currentSeqState === STATES.SEQUENCE ){
-    <div class="app-sequence">
-    </div>
+  <app-sequence [numSegments]="numSegments"
+                [thumbPath]="chosenThumbPath"></app-sequence>
+}
+
+@else if(currentSeqState === STATES.VIDEO ){
+
 }
