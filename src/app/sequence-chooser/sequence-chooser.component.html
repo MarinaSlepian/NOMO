@@ -25,9 +25,14 @@
 }
 @else if(currentSeqState === STATES.SEQUENCE ){
   <app-sequence [numSegments]="numSegments"
-                [thumbPath]="chosenThumbPath"></app-sequence>
+                [thumbPath]="chosenThumbPath"
+                (goBackClicked) = "onGoBackClicked()"
+                (showVideoClicked) = "onShowVideoClicked($event)"></app-sequence>
 }
 
 @else if(currentSeqState === STATES.VIDEO ){
-
+  <div class="video-container">
+    <button class="close-button" (click)="onGoBackClicked()">✖</button>
+    <video [src]="videoPath" controls controlsList="nodownload" autoplay></video>
+  </div>
 }

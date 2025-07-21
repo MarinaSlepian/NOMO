@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, Output, OnInit, EventEmitter } from '@angular/core';
 import {CdkDragDrop, CdkDrag, CdkDropList, moveItemInArray} from '@angular/cdk/drag-drop';
 
 @Component({
@@ -13,6 +13,9 @@ import {CdkDragDrop, CdkDrag, CdkDropList, moveItemInArray} from '@angular/cdk/d
 export class SequenceComponent implements OnInit {
   @Input({required:true}) numSegments: number = 2; 
   @Input({required:true}) thumbPath!: string;
+  @Output() showVideoClicked = new EventEmitter<string>();
+  @Output() goBackClicked = new EventEmitter();
+  
 
   pathsArray: string[] = [];
   indexesArray: number[] = [];//for usage in html loop
@@ -60,5 +63,23 @@ export class SequenceComponent implements OnInit {
 
   drop(event: CdkDragDrop<string[]>) {
     moveItemInArray(this.pathsArray, event.previousIndex, event.currentIndex);
+  }
+
+  back(): void {
+    this.goBackClicked.emit();
+    console.log('Back button clicked, emitting:', this.thumbPath);
+  }
+
+  show(): void {
+    //check if the pictures are sorted correctly
+    const isSorted = this.pathsArray.every((val, i, array) => i === 0 || array[i - 1] <= val);
+    if(isSorted) {
+      let videoPath = this.pathsArray[0].replace('_1.png', '.mp4');
+      this.showVideoClicked.emit(videoPath);
+    }
+  }
+
+  reset(): void {
+    this.shuffleArray(this.pathsArray);
   }
 }

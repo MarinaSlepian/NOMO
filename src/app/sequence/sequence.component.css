@@ -88,3 +88,19 @@
 .pictures-list.cdk-drop-list-dragging .example-picture:not(.cdk-drag-placeholder) {
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
+
+.actions-row {
+  display: flex;
+  justify-content: center; /* ⬅️ горизонтальное выравнивание по центру */
+  align-items: center;     /* ⬅️ вертикальное выравнивание (если нужно) */
+  gap: 10vw;                /* ⬅️ расстояние между кнопками */
+  margin-top: 6vw;         /* ⬅️ отступ сверху */
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+}

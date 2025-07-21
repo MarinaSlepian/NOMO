@@ -25,6 +25,7 @@ export class SequenceChooserComponent  {
   numSegments: number = 2; // Default value, can be changed as needed
   pathsArray: string[] = [];
   chosenThumbPath: string = '';
+  videoPath: string = '';
 
 
   checkImageExists(path: string): Promise<boolean> {
@@ -62,5 +63,15 @@ export class SequenceChooserComponent  {
     this.BuildThumbPathsArray();
     this.currentSeqState = this.STATES.THUMBNAILS;
 
+  }
+  onShowVideoClicked(videoPath: string) {
+    console.log('onShowVideoClicked video path', videoPath);
+    this.videoPath = videoPath;
+    this.currentSeqState = this.STATES.VIDEO;
+  }
+
+  onGoBackClicked(){
+    console.log('Go back clicked, returning to chooser state');
+    this.currentSeqState = this.STATES.THUMBNAILS;
   }
 }
