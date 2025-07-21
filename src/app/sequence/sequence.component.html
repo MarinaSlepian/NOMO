@@ -1,75 +1,16 @@
-@if (numSegments === 2) {
-  <div class="sequence-grid2">
-    <div class="sequence-column">
-      <div class="color-cell color-green">1</div>
-      <img class="pict" [src]="pathsArray[0]" alt="Thumbnail" />
-    </div>
-    <div class="sequence-column">
-      <div class="color-cell color-red">2</div>
-      <img class="pict" [src]="pathsArray[1]" alt="Thumbnail" />
-    </div>
-  </div>
-}
 
-@else if (numSegments === 3) {
-  <div class="sequence-grid3">
-    <div class="sequence-column">
-      <div class="color-cell color-green">1</div>
-      <img class="pict" [src]="pathsArray[0]" alt="Thumbnail" />
+<div class="rectangle-row">
+  @for (i of indexesArray; track i) {
+    <div class="color-cell" [style.background]="colors[i]">
+      {{ i + 1 }}
     </div>
-    <div class="sequence-column">
-      <div class="color-cell color-red">2</div>
-      <img class="pict" [src]="pathsArray[1]" alt="Thumbnail" />
-    </div>
-    <div class="sequence-column">
-      <div class="color-cell color-blue">3</div>
-      <img class="pict" [src]="pathsArray[2]" alt="Thumbnail" />
-    </div>
-  </div>
-}
+  }
+</div>
 
-@else if (numSegments === 4) {
-  <div class="sequence-grid4">
-    <div class="sequence-column">
-      <div class="color-cell color-green">1</div>
-      <img class="pict" [src]="pathsArray[0]" alt="Thumbnail" />
+<div cdkDropList cdkDropListOrientation="horizontal" class="pictures-list" (cdkDropListDropped)="drop($event)">
+  @for (path of pathsArray; track path) {
+    <div class="picture-box" cdkDrag>
+      <img [src]="path" alt="Image" style="max-width: 100%; max-height: 100%;">
     </div>
-    <div class="sequence-column">
-      <div class="color-cell color-red">2</div>
-      <img class="pict" [src]="pathsArray[1]" alt="Thumbnail" />
-    </div>
-    <div class="sequence-column">
-      <div class="color-cell color-blue">3</div>
-      <img class="pict" [src]="pathsArray[2]" alt="Thumbnail" />
-    </div>
-    <div class="sequence-column">
-      <div class="color-cell color-yellow">4</div>
-      <img class="pict" [src]="pathsArray[3]" alt="Thumbnail" />
-    </div>
-  </div>
-}
-
-@else if (numSegments === 5) {
-  <div class="sequence-grid5">
-    <div class="sequence-column">
-      <div class="color-cell color-green">1</div>
-      <img class="pict" [src]="pathsArray[0]" alt="Thumbnail" />
-    </div>
-    <div class="sequence-column">
-      <div class="color-cell color-red">2</div>
-      <img class="pict" [src]="pathsArray[1]" alt="Thumbnail" />
-    </div>
-    <div class="sequence-column">
-      <div class="color-cell color-blue">3</div>
-      <img class="pict" [src]="pathsArray[2]" alt="Thumbnail" />
-    </div>
-    <div class="sequence-column">
-      <div class="color-cell color-yellow">4</div>
-      <img class="pict" [src]="pathsArray[3]" alt="Thumbnail" />
-    </div>
-    <div class="sequence-column">
-      <div class="color-cell color-green">5</div>
-      <img class="pict" [src]="pathsArray[4]" alt="Thumbnail" />
-    </div>
-  </div>
-}
+  }
+</div>

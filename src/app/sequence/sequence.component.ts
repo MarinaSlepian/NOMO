@@ -1,9 +1,10 @@
 import { Component, Input, OnInit } from '@angular/core';
+import {CdkDragDrop, CdkDrag, CdkDropList, moveItemInArray} from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'app-sequence',
   standalone: true,
-  imports: [],
+  imports: [CdkDropList, CdkDrag],
   templateUrl: './sequence.component.html',
   styleUrl: './sequence.component.css'
 })
@@ -15,6 +16,8 @@ export class SequenceComponent implements OnInit {
 
   pathsArray: string[] = [];
   indexesArray: number[] = [];//for usage in html loop
+  colors = ['rgb(161, 198, 30)', 'rgb(229, 16, 22)', 'rgb(6, 133, 248)', 
+            'rgb(255, 235, 0)', 'rgb(161, 198, 30)'];
 
 
   checkImageExists(path: string): Promise<boolean> {
@@ -53,5 +56,9 @@ export class SequenceComponent implements OnInit {
   ngOnInit(): void {
     this.BuildThumbPathsArray();  
     this.indexesArray = Array.from({ length: this.numSegments }, (_, i) => i);  
+  }
+
+  drop(event: CdkDragDrop<string[]>) {
+    moveItemInArray(this.pathsArray, event.previousIndex, event.currentIndex);
   }
 }
