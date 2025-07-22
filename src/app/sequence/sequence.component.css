@@ -63,7 +63,7 @@
 .picture-box img {
   width: 100%;
   height: 100%;
-  object-fit: contain; /* или "cover" — зависит от твоих целей */
+  object-fit: cover; /* или "cover" — зависит от твоих целей */
 }
 .cdk-drag-preview {
   box-sizing: border-box;
@@ -94,7 +94,7 @@
   justify-content: center; /* ⬅️ горизонтальное выравнивание по центру */
   align-items: center;     /* ⬅️ вертикальное выравнивание (если нужно) */
   gap: 10vw;                /* ⬅️ расстояние между кнопками */
-  margin-top: 6vw;         /* ⬅️ отступ сверху */
+  margin-top: 2vw;         /* ⬅️ отступ сверху */
 }
 
 .icon-button {

@@ -71,12 +71,20 @@ export class SequenceComponent implements OnInit {
   }
 
   show(): void {
+    let videoPath: string = '';
     //check if the pictures are sorted correctly
     const isSorted = this.pathsArray.every((val, i, array) => i === 0 || array[i - 1] <= val);
+    
     if(isSorted) {
-      let videoPath = this.pathsArray[0].replace('_1.png', '.mp4');
-      this.showVideoClicked.emit(videoPath);
+      videoPath = this.pathsArray[0].replace('_1.png', '.mp4');
     }
+    else{
+      const randomInd = Math.floor(Math.random() * 5) + 1;
+      videoPath = "assets/sequence-stuff/videos/failure" + randomInd + ".mp4";
+      console.log('Failure video path', videoPath);
+    }
+      
+    this.showVideoClicked.emit(videoPath);
   }
 
   reset(): void {
