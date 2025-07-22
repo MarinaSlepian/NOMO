@@ -32,8 +32,8 @@
 .color-yellow { background-color: rgb(255, 235, 0); }
 
 .character-illustration {
-  max-height: 50vh;
-  width: auto;
+  max-width: 20vw;
+  height: auto;
 }
 
 #thumb-list {
