@@ -16,7 +16,6 @@ export class SequenceComponent implements OnInit {
   @Output() showVideoClicked = new EventEmitter<string>();
   @Output() goBackClicked = new EventEmitter();
   
-
   pathsArray: string[] = [];
   indexesArray: number[] = [];//for usage in html loop
   colors = ['rgb(161, 198, 30)', 'rgb(229, 16, 22)', 'rgb(6, 133, 248)', 
@@ -67,23 +66,31 @@ export class SequenceComponent implements OnInit {
 
   back(): void {
     this.goBackClicked.emit();
-    console.log('Back button clicked, emitting:', this.thumbPath);
+    console.log('Back button clicked, emitting:', this.thumbPath); 
   }
 
   show(): void {
     let videoPath: string = '';
+
     //check if the pictures are sorted correctly
     const isSorted = this.pathsArray.every((val, i, array) => i === 0 || array[i - 1] <= val);
     
     if(isSorted) {
-      videoPath = this.pathsArray[0].replace('_1.png', '.mp4');
+      //videoPath = this.pathsArray[0].replace('_1.png', '.mp4');
+      //extract the number from the first png path
+      const resultStr = this.pathsArray[0].replace("_1.png", "");//remove the _1.png part
+      const match = resultStr.match(/_(\d+)$/);
+      if (match) {
+        const id = parseInt(match[1], 10);
+        videoPath = 'https://r2-video-proxy.slepianmarina.workers.dev/sequences/seq' + this.numSegments + '_'+id+'.mp4';
+      }
     }
     else{
       const randomInd = Math.floor(Math.random() * 5) + 1;
-      videoPath = "assets/sequence-stuff/videos/failure" + randomInd + ".mp4";
-      console.log('Failure video path', videoPath);
+      //videoPath = "assets/sequence-stuff/videos/failure" + randomInd + ".mp4";
+      videoPath = 'https://r2-video-proxy.slepianmarina.workers.dev/sequences/failure' + randomInd + '.mp4';
     }
-      
+    console.log('Sequence video path', videoPath);
     this.showVideoClicked.emit(videoPath);
   }
 
