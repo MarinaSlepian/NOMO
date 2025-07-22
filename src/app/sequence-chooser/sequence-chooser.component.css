@@ -12,7 +12,7 @@
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr 1fr;
   width: 30vw;
-  height: 30vw;
+  height: 50vh;
   gap: 8px; /* 👈 add gap here for spacing */
 }
 
@@ -32,7 +32,7 @@
 .color-yellow { background-color: rgb(255, 235, 0); }
 
 .character-illustration {
-  max-height: 30vw;
+  max-height: 50vh;
   width: auto;
 }
 
