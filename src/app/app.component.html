@@ -13,11 +13,13 @@
   <div class="top-bar">
     <app-header [appName]="currentConfig.selectedApp"></app-header>
 
-    <app-dashboard
-      class="dashboard-top-right"
-      (selectNewApp)="onSelectAppButton($event)"
-      (newConfig)="onUpdateNewConfig($event)">
-    </app-dashboard>
+    @if(isShowDashboard){
+      <app-dashboard
+        class="dashboard-top-right"
+        (selectNewApp)="onSelectAppButton($event)"
+        (newConfig)="onUpdateNewConfig($event)">
+      </app-dashboard>
+    }
   </div>
 
 
@@ -26,7 +28,7 @@
       @if (currentConfig.selectedApp == '5') 
       {
 
-        <app-sequence-chooser></app-sequence-chooser>
+        <app-sequence-chooser (isShowDashboard)="hideShowDashboard($event)"></app-sequence-chooser>
         
       }
       @else

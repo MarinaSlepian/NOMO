@@ -41,6 +41,7 @@ export class AppComponent implements OnInit{
   };
 //for mobile device
   isPortraitOnMobile = false;
+  isShowDashboard = true;
 
   constructor(private translate: TranslateService)
   {
@@ -112,7 +113,10 @@ export class AppComponent implements OnInit{
     
   }
 
-  
+  hideShowDashboard(isShow: boolean) {
+    this.isShowDashboard = isShow;
+    console.log('isShowDashboard', this.isShowDashboard);
+  }
 
   onSelectAppButton(id: string)
   { 

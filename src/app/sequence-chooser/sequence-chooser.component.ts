@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Output, EventEmitter } from '@angular/core';
 import { SequenceThumbComponent} from '../sequence-thumb/sequence-thumb.component';
 import { SequenceComponent } from '../sequence/sequence.component';
 
@@ -19,6 +19,9 @@ type State = typeof STATES[keyof typeof STATES];
   styleUrls: ['./sequence-chooser.component.css'] // ✅ fixed here
 })
 export class SequenceChooserComponent  {
+  
+  @Output() isShowDashboard = new EventEmitter<boolean>();
+
 
   readonly STATES = STATES;
   currentSeqState: State = this.STATES.CHOOSER;
@@ -26,6 +29,7 @@ export class SequenceChooserComponent  {
   pathsArray: string[] = [];
   chosenThumbPath: string = '';
   videoPath: string = '';
+  
 
 
   checkImageExists(path: string): Promise<boolean> {
@@ -55,6 +59,7 @@ export class SequenceChooserComponent  {
     console.log('Parent received click on:', path);
     this.chosenThumbPath = path;
     this.currentSeqState = this.STATES.SEQUENCE;
+    this.isShowDashboard.emit(false); // Emit false to hide the dashboard
   }
 
   onCellClick(cellNumber: number): void {
@@ -62,16 +67,20 @@ export class SequenceChooserComponent  {
     this.numSegments = cellNumber; // Update numThumbs based on the clicked cell
     this.BuildThumbPathsArray();
     this.currentSeqState = this.STATES.THUMBNAILS;
+    this.isShowDashboard.emit(true); // Emit false to hide the dashboard
 
   }
   onShowVideoClicked(videoPath: string) {
     console.log('onShowVideoClicked video path', videoPath);
     this.videoPath = videoPath;
     this.currentSeqState = this.STATES.VIDEO;
+    this.isShowDashboard.emit(true); // Emit false to hide the dashboard
+
   }
 
   onGoBackClicked(){
     console.log('Go back clicked, returning to chooser state');
     this.currentSeqState = this.STATES.THUMBNAILS;
+    this.isShowDashboard.emit(true); // Emit false to hide the dashboard
   }
 }

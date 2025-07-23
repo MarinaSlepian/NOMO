@@ -1,30 +1,31 @@
+<div class="layout-container">
+  <div class="rectangle-row">
+    @for (i of indexesArray; track i) {
+      <div class="color-cell" [style.background]="colors[i]">
+        {{ i + 1 }}
+      </div>
+    }
+  </div>
 
-<div class="rectangle-row">
-  @for (i of indexesArray; track i) {
-    <div class="color-cell" [style.background]="colors[i]">
-      {{ i + 1 }}
-    </div>
-  }
-</div>
+  <div cdkDropList cdkDropListOrientation="horizontal" class="pictures-list" (cdkDropListDropped)="drop($event)">
+    @for (path of pathsArray; track path) {
+      <div class="picture-box" cdkDrag>
+        <img [src]="path" alt="Image" style="max-width: 100%; max-height: 100%;">
+      </div>
+    }
+  </div>
 
-<div cdkDropList cdkDropListOrientation="horizontal" class="pictures-list" (cdkDropListDropped)="drop($event)">
-  @for (path of pathsArray; track path) {
-    <div class="picture-box" cdkDrag>
-      <img [src]="path" alt="Image" style="max-width: 100%; max-height: 100%;">
-    </div>
-  }
-</div>
+  <div class="actions-row">
+    <button  (click)="back()" class="icon-button">
+      <img src="assets\sequence-stuff\actions-buttons\back_pict.png" alt="back" width="40" height="40" />
+    </button>
 
-<div class="actions-row">
-  <button  (click)="back()" class="icon-button">
-    <img src="assets\sequence-stuff\actions-buttons\back_pict.png" alt="back" width="40" height="40" />
-  </button>
+    <button  (click)="show()" class="icon-button">
+      <img src="assets\sequence-stuff\actions-buttons\show_pict.png" alt="show" width="40" height="40" />
+    </button>
 
-  <button  (click)="show()" class="icon-button">
-    <img src="assets\sequence-stuff\actions-buttons\show_pict.png" alt="show" width="40" height="40" />
-  </button>
-
-    <button  (click)="reset()" class="icon-button">
-    <img src="assets\sequence-stuff\actions-buttons\reset_pict.png" alt="reset" width="40" height="40" />
-  </button>
+      <button  (click)="reset()" class="icon-button">
+      <img src="assets\sequence-stuff\actions-buttons\reset_pict.png" alt="reset" width="40" height="40" />
+    </button>
+  </div>
 </div>
