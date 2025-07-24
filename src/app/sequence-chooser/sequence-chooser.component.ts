@@ -78,9 +78,15 @@ export class SequenceChooserComponent  {
 
   }
 
-  onGoBackClicked(){
-    console.log('Go back clicked, returning to chooser state');
-    this.currentSeqState = this.STATES.THUMBNAILS;
-    this.isShowDashboard.emit(true); // Emit false to hide the dashboard
+  onGoBackClicked()
+  {
+    if(this.videoPath.includes('failure')){
+          this.currentSeqState = this.STATES.SEQUENCE;
+          this.isShowDashboard.emit(false); // Emit false to hide the dashboard
+    }
+    else{
+      this.currentSeqState = this.STATES.THUMBNAILS;
+      this.isShowDashboard.emit(true); // Emit false to hide the dashboard
+    }
   }
 }
