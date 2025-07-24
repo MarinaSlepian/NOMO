@@ -34,9 +34,6 @@
 
 .pictures-list {
   flex: 0 0 auto;
-
-  width: 50vw;
-  max-width: 50vw;
   border: solid 1px #ccc;
   min-height: 60px;
   display: flex;
