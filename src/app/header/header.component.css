@@ -53,15 +53,16 @@ img {
 
 @media (max-height: 480px) {
    header {
-    height: 3rem; /* Fix the height explicitly to match the image */
+    height: 3rem; 
   }
   .header-content {
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.5rem;  
     padding-right: 1rem; 
     padding-left: 1rem; 
     margin-left: 0;
+    height: 6rem; 
   }
 }
 
