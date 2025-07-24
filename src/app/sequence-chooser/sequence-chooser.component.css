@@ -39,7 +39,7 @@
 #thumb-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(19vw, 1fr));
-  gap: 1rem;
+  gap: 1vw;
   margin: 0;
   padding: 0;
   list-style: none;
