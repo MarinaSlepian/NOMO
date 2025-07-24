@@ -83,10 +83,11 @@ export class SequenceChooserComponent  {
     if(this.videoPath.includes('failure')){
           this.currentSeqState = this.STATES.SEQUENCE;
           this.isShowDashboard.emit(false); // Emit false to hide the dashboard
+          this.videoPath = ''; // Reset videoPath
     }
     else{
       this.currentSeqState = this.STATES.THUMBNAILS;
       this.isShowDashboard.emit(true); // Emit false to hide the dashboard
     }
-  }
+  } 
 }
