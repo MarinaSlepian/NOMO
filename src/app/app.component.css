@@ -1,7 +1,7 @@
 /* Layout for main scrollable area */
 main {
   margin-top: calc(9.5rem + 0.5rem);      /* space for fixed header/dashboard */
-  padding-top: 2rem; 
+  padding-top: 0vh; 
   margin-left: 2rem;
   margin-right: 16rem;     /* space for floating dashboard */
   padding-bottom: 2rem;
@@ -29,7 +29,8 @@ main {
 
 @media (max-height: 480px) {
     main {
-     margin-top: 2.5vh;
+     margin-top: 2vh;
+     padding-top: 10vh; 
     }
     #users {
      margin-top: 2rem;

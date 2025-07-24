@@ -77,6 +77,8 @@ export class HeaderComponent implements OnInit, OnChanges
       this.appNameBannerColor = 'rgb(161,198,30)'; // green    
     else if(this.appName == '4')
       this.appNameBannerColor = 'rgb(6,133,248)'; // orange
+    else if(this.appName == '5')
+      this.appNameBannerColor = 'rgb(161,198,30)'; // orange
   }
 
   updateSplashForLanguage()

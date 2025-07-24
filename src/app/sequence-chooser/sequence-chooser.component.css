@@ -38,11 +38,12 @@
 
 #thumb-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(19vw, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(clamp(19vw, 19vw, 40vw), 1fr));
   gap: 1rem;
   margin: 0;
   padding: 0;
   list-style: none;
+  justify-content: center;
 }
 
 .video-container {
@@ -79,4 +80,9 @@ video {
   align-items: center;
   justify-content: center;
   z-index: 10;
+}
+
+.sequence-container {
+
+  margin-top: 10dvh;
 }
