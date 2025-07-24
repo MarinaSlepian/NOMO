@@ -3,6 +3,7 @@
 
 /* Color rectangles only */
 .color-cell {
+  max-width: 30vw; /* or any other width you prefer */
   padding: 10px;
   display: flex;
   align-items: center;
@@ -27,11 +28,15 @@
   overflow: hidden;
   width: 80vw;
   max-width: 100%;
+  justify-content: center;
+
 }
 
 .pictures-list {
-  width: 80vw;
-  max-width: 100%;
+  flex: 0 0 auto;
+
+  width: 50vw;
+  max-width: 50vw;
   border: solid 1px #ccc;
   min-height: 60px;
   display: flex;
@@ -41,6 +46,7 @@
 }
 
 .picture-box {
+  max-width: 30vw; /* or any other width you prefer */
   aspect-ratio: 4 / 3; 
   padding: 1vw; /* вместо 10px */
   border-right: solid 1px #ccc;

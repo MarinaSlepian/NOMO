@@ -66,3 +66,9 @@ html, body {
   position: fixed !important;
   z-index: 25000 !important;
 }
+
+.cdk-drop-list.pictures-list {
+  width: fit-content !important;
+  max-width: none !important;
+  flex: 0 0 auto !important;
+}
