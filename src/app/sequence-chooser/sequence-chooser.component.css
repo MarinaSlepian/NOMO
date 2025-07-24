@@ -38,7 +38,7 @@
 
 #thumb-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(clamp(19vw, 19vw, 40vw), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(19vw, 1fr));
   gap: 1rem;
   margin: 0;
   padding: 0;

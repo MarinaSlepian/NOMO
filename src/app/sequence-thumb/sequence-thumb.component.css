@@ -1,0 +1,7 @@
+.responsive-thumb {
+  min-width: 19vw;
+  height: 20dvh;
+  object-fit: cover; /* optional: ensures images fill the box nicely */
+  cursor: pointer;
+}
+ 
