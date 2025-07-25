@@ -11,7 +11,8 @@
 <div class="app-layout">
 
   <div class="top-bar">
-    <app-header [appName]="currentConfig.selectedApp"></app-header>
+    <app-header [appName]="currentConfig.selectedApp"
+                [isShowDashboard]="isShowDashboard"></app-header>
 
     @if(isShowDashboard){
       <app-dashboard
@@ -20,7 +21,7 @@
         (newConfig)="onUpdateNewConfig($event)">
       </app-dashboard>
     }
-  </div>
+ </div>
 
 
 

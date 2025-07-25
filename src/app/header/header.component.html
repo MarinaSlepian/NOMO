@@ -2,8 +2,15 @@
   <header>
     <div class="header-content">
       <img  class="splash-image"   [src]="'assets/splashes/Splash' + selectedSplash + '.jpg'" alt="Splash" />
-      <div class="app-name-banner" [style.backgroundColor]="appNameBannerColor">
+      @if(isShowDashboard) {
+        <div class="app-name-banner" [style.backgroundColor]="appNameBannerColor">
           {{ translatedAppName }}
-      </div>
+        </div>
+      }
+      @else {
+        <div class="app-name-banner-no-dashboard" [style.backgroundColor]="appNameBannerColor">
+            {{ translatedAppName }}
+        </div>
+      }
     </div>
   </header>

@@ -49,7 +49,21 @@ img {
   flex-shrink: 1;/* width: auto; or remove fixed width if set */
 }
 
-
+.app-name-banner-no-dashboard {
+  background-color:rgb(229,16,22);
+  color: #fff;
+  padding: 0 1.5rem;
+  height: 7.2rem;
+  display: flex;
+  align-items: center;
+  font-size: 1.2rem;
+  justify-content: center; /* ✅ Centers text horizontally */
+  width: 92%;
+  margin-top: 1.5rem;
+  border-radius: 20px;
+  min-width: 0; /* Allow shrinking */
+  flex-shrink: 1;/* width: auto; or remove fixed width if set */
+}
 
 @media (max-height: 480px) {
    header {
@@ -63,6 +77,19 @@ img {
     padding-left: 1rem; 
     margin-left: 0;
     height: 6rem; 
+  }
+  .app-name-banner-no-dashboard {
+    position: absolute;
+    top: 0;
+    left: 2vw;
+    width: 92vw;
+    z-index: -1; /* keep it behind other content */
+    border-radius: 10px;
+    margin-left: 2rem; /* Уменьшаем отступ слева */
+    font-size: 1rem; /* Уменьшаем размер шрифта */
+    padding: 0.5rem 1rem; /* Уменьшаем отступы */
+    height: auto; /* Позволяем высоте адаптироваться */
+
   }
 }
 

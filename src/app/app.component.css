@@ -56,7 +56,7 @@ main {
   padding: 2rem;
   font-size: 1.5rem;
   animation: fadeIn 0.5s ease-in;
-  opacity: 0.8;
+  opacity: 0.9;
 }
 
 @keyframes fadeIn {

@@ -18,6 +18,7 @@ export class HeaderComponent implements OnInit, OnChanges
 {
  
   @Input({required:true}) appName!: string;
+  @Input({required:true}) isShowDashboard: boolean = false;
 
   currentConfig: AppConfig = {
     selectedLang: 'en',
