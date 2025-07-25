@@ -1,6 +1,7 @@
 import { Component, Output, EventEmitter } from '@angular/core';
 import { SequenceThumbComponent} from '../sequence-thumb/sequence-thumb.component';
 import { SequenceComponent } from '../sequence/sequence.component';
+import { VideoComponent } from '../video/video.component';
 
 const STATES = {
   CHOOSER: 'chooser',
@@ -14,7 +15,7 @@ type State = typeof STATES[keyof typeof STATES];
 @Component({
   selector: 'app-sequence-chooser',
   standalone: true,
-  imports: [SequenceThumbComponent, SequenceComponent],
+  imports: [SequenceThumbComponent, SequenceComponent, VideoComponent],
   templateUrl: './sequence-chooser.component.html',
   styleUrls: ['./sequence-chooser.component.css'] // ✅ fixed here
 })

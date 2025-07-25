@@ -31,8 +31,7 @@
 }
 
 @else if(currentSeqState === STATES.VIDEO ){
-  <div class="video-container">
-    <button class="close-button" (click)="onGoBackClicked()">✖</button>
-    <video [src]="videoPath" controls controlsList="nodownload" autoplay></video>
-  </div>
+
+  <app-video [videoPath]="videoPath" (cancel)="onGoBackClicked()" [numOfVideos]="'1'" />
+
 }

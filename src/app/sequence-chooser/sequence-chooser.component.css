@@ -46,42 +46,6 @@
   justify-content: center;
 }
 
-.video-container {
-  position: relative; /* ✅ required to anchor the close button */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  margin-left: auto;
-  margin-right: 0;
-}
-
-video {
-  max-width: 80%;
-  height: auto;
-  border-radius: 12px;
-  margin-left: auto; /* ⬅️ מזיז לימין */
-  margin-right: 0;
-}
-
-.close-button {
-  position: absolute;
-  top: 1vw;
-  right: 1vw;
-  background: rgba(0, 0, 0, 0.6);
-  color: white;
-  border: none;
-  font-size: 2vw;
-  border-radius: 50%;
-  width: 3vw;
-  height: 3vw;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-}
-
 .sequence-container {
 
   margin-top: 10dvh;
