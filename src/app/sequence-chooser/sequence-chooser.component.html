@@ -32,6 +32,8 @@
 
 @else if(currentSeqState === STATES.VIDEO ){
 
-  <app-video [videoPath]="videoPath" (cancel)="onGoBackClicked()" [numOfVideos]="'1'" />
+  <app-video [videoPath]="videoPath" 
+              [isLoopNeeded]="false"
+             (cancel)="onGoBackClicked()" [numOfVideos]="'1'" />
 
 }

@@ -11,6 +11,7 @@ export class VideoComponent {
   @Input({required:true}) videoPath!: string;
   @Output() cancel = new EventEmitter<void>();
   @Input({required:true}) numOfVideos!: string;
+  @Input() isLoopNeeded = true;
   isPlaying = true;
 
 

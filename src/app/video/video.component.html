@@ -4,10 +4,17 @@
 <dialog open>
   <div class="video-container">
 
-    <video #videoPlayer class="fullscreen-video" autoplay loop playsinline preload="auto">
-      <source [src]="videoPath" type="video/mp4" />
-      Your browser does not support the video tag.
-    </video>
+    @if(isLoopNeeded) {    
+      <video #videoPlayer class="fullscreen-video" autoplay loop playsinline preload="auto">
+        <source [src]="videoPath" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+    } @else {
+        <video #videoPlayer class="fullscreen-video" autoplay playsinline preload="auto">
+        <source [src]="videoPath" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+    }
 
 
     <!-- ✅ Top-right Close button -->
