@@ -3,37 +3,47 @@
 
 <dialog open>
   <div class="video-container">
+    
+    @if (isLoading) {
+      <div class="spinner-overlay">
+        <img src="assets/spinner.gif" alt="Loading..." class="gif-spinner" />
+      </div>
+    }
 
-    @if(isLoopNeeded) {    
-      <video #videoPlayer class="fullscreen-video" autoplay loop playsinline preload="auto">
+    @if (isLoopNeeded) {
+      <video
+        #videoPlayer
+        class="fullscreen-video"
+        autoplay
+        loop
+        playsinline
+        preload="auto"
+        (loadeddata)="onVideoLoaded()"
+      >
         <source [src]="videoPath" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
     } @else {
-        <video #videoPlayer class="fullscreen-video" autoplay playsinline preload="auto">
+      <video
+        #videoPlayer
+        class="fullscreen-video"
+        autoplay
+        playsinline
+        preload="auto"
+        (loadeddata)="onVideoLoaded()"
+      >
         <source [src]="videoPath" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
     }
 
-
-    <!-- ✅ Top-right Close button -->
-    <!--<button class="close-control" (click)="onCancel()">
-      <img src="assets/icons/close.png" alt="Close Video" width="24" height="24" />
-    </button>-->
     <div class="custom-buttons">
-      <button class="close-button" (click)="onCancel()">
-        ❎ 
-      </button>
-
+      <button class="close-button" (click)="onCancel()">❎</button>
       <button class="toggle-button" (click)="togglePlay()">
-          {{ isPlaying ? '⏸️ ' : '▶️ ' }}
+        {{ isPlaying ? '⏸️ ' : '▶️ ' }}
       </button>
-
-      <button class="switch-button" (click)="onSwitchVideo()">
-        🔄 
-      </button>
+      <button class="switch-button" (click)="onSwitchVideo()">🔄</button>
     </div>
-   
+    
   </div>
 </dialog>

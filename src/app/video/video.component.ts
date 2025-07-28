@@ -13,7 +13,11 @@ export class VideoComponent {
   @Input({required:true}) numOfVideos!: string;
   @Input() isLoopNeeded = true;
   isPlaying = true;
+  isLoading = true;
 
+  onVideoLoaded() {
+    this.isLoading = false;
+  }
 
   @HostListener('document:keydown.escape', ['$event'])
   handleEscape(event: KeyboardEvent) {

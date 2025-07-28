@@ -89,4 +89,9 @@ export class DashboardComponent implements OnInit
     });
   }
 
+   onLogIn(): void 
+   {
+
+   }
+
 }

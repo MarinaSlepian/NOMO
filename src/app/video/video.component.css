@@ -57,5 +57,23 @@ dialog {
 }
 
 
+.spinner-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6); /* затемнение */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.gif-spinner {
+  width: 200px; /* или подгони под свой GIF */
+  height: 200px;
+  object-fit: contain;
+}
 
 
