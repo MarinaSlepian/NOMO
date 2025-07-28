@@ -65,10 +65,18 @@ main {
 }
 
 /* Install banner */
+
 .install-banner {
+  position: fixed;          /* ← this is the key! */
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3000;            /* above header and main */
   display: flex;
   justify-content: center;
   padding: 1rem;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
 /* Install button style */
