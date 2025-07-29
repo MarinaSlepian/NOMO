@@ -79,7 +79,10 @@ export class VideoComponent {
   {
 
     this.upadteVideoPath();
+    this.isLoading = true; // Set loading state before changing the source
+
     const videoElement = this.videoPlayer.nativeElement;
+
 
    // Trick: reload the <video> element manually
    setTimeout(() => {

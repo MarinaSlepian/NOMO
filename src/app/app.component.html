@@ -1,6 +1,8 @@
-<div *ngIf="showInstallButton" class="install-banner">
+<!--<div *ngIf="showInstallButton" class="install-banner">
   <button class="install-button" (click)="installApp()">📲 Install NOMO</button>
-</div>
+</div>-->
+
+
 @if (isPortraitOnMobile) {
     <div class="orientation-overlay">
         {{rotateInstruction}}
@@ -18,7 +20,8 @@
       <app-dashboard
         class="dashboard-top-right"
         (selectNewApp)="onSelectAppButton($event)"
-        (newConfig)="onUpdateNewConfig($event)">
+        (newConfig)="onUpdateNewConfig($event)"
+        (requestInstallApp)="installApp()">
       </app-dashboard>
     }
  </div>

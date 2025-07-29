@@ -139,3 +139,11 @@ app-dashboard {
   max-height: 400px;
   width: auto;
 }
+
+.install-image-button {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+}

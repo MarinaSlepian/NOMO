@@ -67,26 +67,26 @@ export class AppComponent implements OnInit{
       console.log('beforeinstallprompt fired'); 
       e.preventDefault();
       this.deferredPrompt = e;
-      this.showInstallButton = true; // Now you can show a button in the template
     });
     this.checkOrientation();
   }
 
+  installRequested() {
+    this.showInstallButton = true; // Now you can show a button in the template
+
+  }
   installApp() {
-    console.log('Install clicked');
     if (this.deferredPrompt) {
       this.deferredPrompt.prompt();
       this.deferredPrompt.userChoice.then((choiceResult: any) => {
-        if (choiceResult.outcome === 'accepted') {
-          console.log('User accepted the install prompt');
-        } else {
-          console.log('User dismissed the install prompt');
-        }
+        console.log('Install outcome:', choiceResult.outcome);
         this.deferredPrompt = null;
-        this.showInstallButton = false;
       });
+    } else {
+      console.log('No install prompt available');
     }
   }
+  
 
   onUpdateNewConfig(newAppConfig: AppConfig)
   {

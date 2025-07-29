@@ -18,6 +18,7 @@ export class DashboardComponent implements OnInit
 {
     @Output() selectNewApp = new EventEmitter<string>();
     @Output() newConfig = new EventEmitter<AppConfig>();
+    @Output() requestInstallApp = new EventEmitter();
 
     currentConfig: AppConfig = {
       selectedLang: 'en',
@@ -88,7 +89,10 @@ export class DashboardComponent implements OnInit
       }
     });
   }
-
+  installApp() {
+    console.log('Install img clicked by user');
+    this.requestInstallApp.emit();
+  }
    onLogIn(): void 
    {
 
