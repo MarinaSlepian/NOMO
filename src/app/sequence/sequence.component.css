@@ -110,6 +110,7 @@
   align-items: center;  /* ⬅️ center content horizontally */
   width: 95vw;         /* ⬅️ full screen width */
   box-sizing: border-box;
+  margin-top: 10dvh;
 }
 .rectangle-row,
 .pictures-list,
