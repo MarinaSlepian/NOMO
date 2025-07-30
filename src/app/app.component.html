@@ -9,7 +9,15 @@
     </div>
   }
 
-
+<!--@if (showAuthDialog) {-->
+@if (false) {
+  <div class="overlay">
+    <div class="dialog">
+      <app-auth (close)="onAuthDialogClosed()"></app-auth>
+    </div>
+  </div>
+}
+@else{
 <div class="app-layout">
 
   <div class="top-bar">
@@ -54,3 +62,4 @@
     </main>
   
 </div>
+}

@@ -1,0 +1,61 @@
+.auth-dialog {
+  background-image: url('/assets/authentication.png'); /* ✅ adjust path */
+  background-size: calc(100% - 4rem) calc(100% - 4rem );
+  background-position: center;
+  background-repeat: no-repeat;
+
+  padding: 2rem;
+  width: 50vw;
+  height: 50vh; 
+  max-width: 50vw;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  color: white; /* optional if your image is dark */
+}
+
+.auth-dialog h2 {
+  color: rgb(6, 133, 248);
+  text-align: center;
+  font-size: 1.2rem;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin-top: 6rem;
+}
+
+.auth-dialog form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+}
+
+.auth-dialog input,
+.auth-dialog button {
+  padding: 0.4rem;
+  font-size: 0.75rem;
+  border-radius: 6px;
+  border: none; /* ✅ removes frame */
+  outline: none; /* ✅ removes focus ring (optional — use with caution) */
+
+}
+
+.auth-dialog input {
+  width: 20vw;       /* set desired width */
+  background: rgba(255, 255, 255, 0.9);
+  color: black;
+
+}
+
+.auth-dialog button {
+  width: 8vw;       /* set desired width */
+  background-color: rgb(6, 133, 248);
+  color: white;
+  cursor: pointer;
+}
+
+.button-row {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  justify-content: center;
+}

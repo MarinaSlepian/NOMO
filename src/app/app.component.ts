@@ -8,22 +8,23 @@ import { BUTTONS_EMOTIONS_ICONS } from './buttons/buttons-emotions-icons';
 import { AppConfig } from './app-config.model';
 import { TranslateService } from '@ngx-translate/core';
 import { HttpClient } from '@angular/common/http';
-import { NgIf } from '@angular/common';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { v4 as uuidv4 } from 'uuid';
 import { SequenceChooserComponent } from './sequence-chooser/sequence-chooser.component';
+import { AuthComponent } from './auth/auth.component';
 
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [HeaderComponent, ButtonComponent, NgIf, DashboardComponent,SequenceChooserComponent],
+  imports: [HeaderComponent, ButtonComponent, DashboardComponent,SequenceChooserComponent, AuthComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
 
 
 export class AppComponent implements OnInit{
+  showAuthDialog = false;
   deviceId: string | null = null
   deferredPrompt: any;
   showInstallButton = false;
@@ -56,6 +57,9 @@ export class AppComponent implements OnInit{
   }
 
   ngOnInit(): void {
+    const token = localStorage.getItem('token');
+    this.showAuthDialog = !token; // show dialog only if token is missing
+
     this.deviceId = localStorage.getItem('deviceId');
     if (!this.deviceId) {
       this.deviceId = uuidv4();
@@ -158,6 +162,7 @@ export class AppComponent implements OnInit{
      this.isAudioNeeded = false;
     }
     
+  
     
     //send usage info to server
     //this.httpClient.put('http://localhost:3000/app-usage',{
@@ -170,6 +175,10 @@ export class AppComponent implements OnInit{
     });
 
   } 
+  //authentication dialog
+  onAuthDialogClosed() {
+    this.showAuthDialog = false;
+  }
 
   @HostListener('window:resize')
   @HostListener('window:orientationchange')
@@ -197,5 +206,8 @@ checkOrientation() {
 
   this.isPortraitOnMobile = isMobile && isPortrait;
 }
+
+  
+
 }
 

@@ -1,0 +1,17 @@
+<div class="auth-dialog">
+  <h2>{{ isLoginMode ? 'Login' : 'Sign Up' }}</h2>
+
+<form [formGroup]="authForm" (ngSubmit)="submit()">
+  <input type="email" formControlName="email" placeholder="Email" />
+  <input type="password" formControlName="password" placeholder="Password" />
+
+  <div class="button-row">
+    <button type="submit">{{ isLoginMode ? 'Login' : 'Sign Up' }}</button>
+    <button type="button" (click)="switchMode()">
+      Switch to {{ isLoginMode ? 'Sign Up' : 'Login' }}
+    </button>
+  </div>
+</form>
+
+</div>
+  
