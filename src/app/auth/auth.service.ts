@@ -8,7 +8,7 @@ export class AuthService {
   isLoggedIn$ = new BehaviorSubject<boolean>(false);
 
   // ✅ Your actual Render backend URL
-  private apiUrl = 'https://nomo-api.onrender.com';
+  private apiUrl = 'https://nomo-cj4l.onrender.com';
 
   constructor(private http: HttpClient) {}
 
@@ -23,7 +23,7 @@ export class AuthService {
       tap(res => this.setToken(res.token))
     );
   }
-
+ 
   logout() {
     this.token = null;
     localStorage.removeItem('token');

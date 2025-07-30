@@ -167,7 +167,7 @@ export class AppComponent implements OnInit{
     //send usage info to server
     //this.httpClient.put('http://localhost:3000/app-usage',{
 
-    this.httpClient.put('https://nomo-backend.onrender.com/app-usage',{
+    this.httpClient.put('https://nomo-cj4l.onrender.com/app-usage',{
     appId: this.currentConfig.selectedApp,
     deviceId: this.deviceId
     } ).subscribe({
