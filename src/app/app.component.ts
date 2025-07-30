@@ -46,17 +46,17 @@ export class AppComponent implements OnInit{
 
   constructor(private translate: TranslateService)
   {
-   const saved = localStorage.getItem('appConfig');
-   if (saved) {
-     //this.currentConfig = JSON.parse(saved);
-     this.currentConfig = { ...this.currentConfig, ...JSON.parse(saved) };
-   }
-   this.onSelectAppButton(this.currentConfig.selectedApp);
-   this.onUpdateNewConfig(this.currentConfig);
+
    
   }
 
   ngOnInit(): void {
+   const saved = localStorage.getItem('appConfig');
+   if (saved) {
+     //this.currentConfig = JSON.parse(saved);
+     this.currentConfig = { ...this.currentConfig, ...JSON.parse(saved) };
+   }   
+
     const token = localStorage.getItem('token');
     this.showAuthDialog = !token; // show dialog only if token is missing
 
@@ -66,6 +66,10 @@ export class AppComponent implements OnInit{
       localStorage.setItem('deviceId', this.deviceId);
     }
     console.log('Device ID:', this.deviceId);
+
+    this.onUpdateNewConfig(this.currentConfig);
+    this.onSelectAppButton(this.currentConfig.selectedApp);
+
 
     window.addEventListener('beforeinstallprompt', (e: Event) => {
       console.log('beforeinstallprompt fired'); 
