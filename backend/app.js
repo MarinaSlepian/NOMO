@@ -189,6 +189,7 @@ app.post('/login', async (req, res) => {
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' });
 
     // Optional: update last_login
+    console.log("🕓 Updating last_login for user", user.id);
     await pool.query(`UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1`, [user.id]);
 
     res.json({ token });
