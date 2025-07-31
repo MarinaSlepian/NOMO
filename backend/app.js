@@ -150,14 +150,14 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key'; // use env
 
 // 🔐 SIGNUP route
 app.post('/signup', async (req, res) => {
-  const { email, password } = req.body;
+  const { username, email, password } = req.body;
 
   try {
     const hash = await bcrypt.hash(password, 10);
 
     const result = await pool.query(
       `INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email`,
-      [email, hash]
+      [username,email, hash]
     );
 
     const user = result.rows[0];

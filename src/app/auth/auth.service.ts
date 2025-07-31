@@ -18,12 +18,16 @@ export class AuthService {
     );
   }
 
-  signup(email: string, password: string) {
-    return this.http.post<{ token: string }>(`${this.apiUrl}/signup`, { email, password }).pipe(
+  signup(username: string, email: string, password: string) {
+    return this.http.post<{ token: string }>(`${this.apiUrl}/signup`, {
+      username,
+      email,
+      password
+    }).pipe(
       tap(res => this.setToken(res.token))
     );
   }
- 
+  
   logout() {
     this.token = null;
     localStorage.removeItem('token');

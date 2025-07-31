@@ -33,11 +33,12 @@ export class AuthComponent {
   submit() {
     if (this.authForm.invalid) return;
 
-    const { email, password } = this.authForm.value;
-    console.log(this.isLoginMode ? 'Login' : 'Signup', email, password);
+    const { uname, email, password } = this.authForm.value;
+    console.log(this.isLoginMode ? 'Login' : 'Signup', uname, email, password);
+
     const auth$ = this.isLoginMode
       ? this.authService.login(email, password)
-      : this.authService.signup(email, password);
+      : this.authService.signup(uname, email, password);
 
     auth$.subscribe({
       next: () => {
