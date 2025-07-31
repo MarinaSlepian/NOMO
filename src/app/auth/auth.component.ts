@@ -14,14 +14,18 @@ export class AuthComponent {
   @Output() close = new EventEmitter<void>();
   authForm: FormGroup;
   isLoginMode = true;
+  showPassword = false;
 
   constructor(private fb: FormBuilder,private authService: AuthService) {
     this.authForm = this.fb.group({
+      uname: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      password: ['', Validators.required],
     });
   }
-
+  togglePasswordVisibility() {
+    this.showPassword = !this.showPassword;
+  }
   switchMode() {
     this.isLoginMode = !this.isLoginMode;
   }

@@ -1,17 +1,43 @@
-<div class="auth-dialog">
-  <h2>{{ isLoginMode ? 'Login' : 'Sign Up' }}</h2>
+<div class="auth-container">
+  <div class="form-wrapper">
+    <h2>{{ isLoginMode ? 'Login' : 'Sign Up' }}</h2>
 
-<form [formGroup]="authForm" (ngSubmit)="submit()">
-  <input type="email" formControlName="email" placeholder="Email" />
-  <input type="password" formControlName="password" placeholder="Password" />
+    <form [formGroup]="authForm" (ngSubmit)="submit()">
+      <input type="text" formControlName="uname" placeholder="User name" />
+      <input type="email" formControlName="email" placeholder="Email" />
 
-  <div class="button-row">
-    <button type="submit">{{ isLoginMode ? 'Login' : 'Sign Up' }}</button>
-    <button type="button" (click)="switchMode()">
-      Switch to {{ isLoginMode ? 'Sign Up' : 'Login' }}
-    </button>
+      <!-- Password field with toggle icon -->
+      <div class="password-wrapper">
+        <input
+          [type]="showPassword ? 'text' : 'password'"
+          formControlName="password"
+          placeholder="Password"
+        />
+        <button
+          type="button"
+          class="toggle-password"
+          (click)="togglePasswordVisibility()"
+          aria-label="Toggle password visibility"
+        >
+          @if (showPassword) {
+            <span>🙈</span>
+          } @else {
+            <span>👁️</span>
+          }
+        </button>
+      </div>
+
+
+      <div class="button-row">
+        <button class="form-button" type="submit">{{ isLoginMode ? 'Login' : 'Sign Up' }}</button>
+        <button class="form-button" type="button" (click)="switchMode()">
+          Switch to {{ isLoginMode ? 'Sign Up' : 'Login' }}
+        </button>
+      </div>
+    </form>
   </div>
-</form>
 
+  <div class="image-wrapper">
+    <img src="assets/authentication.png" alt="Auth characters" />
+  </div>
 </div>
-  
