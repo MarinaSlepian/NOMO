@@ -176,7 +176,7 @@ app.post('/signup', async (req, res) => {
 // 🔐 LOGIN route
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
-
+  console.log("🔐 LOGIN route");
   try {
     const result = await pool.query(`SELECT * FROM users WHERE email = $1`, [email]);
     const user = result.rows[0];
