@@ -47,7 +47,9 @@ export class AuthComponent {
       },
       error: err => {
         console.error('❌ Auth error:', err);
-        alert('Authentication failed');
+
+        const msg = err?.error?.error || 'Authentication failed';
+        alert(msg);  // Show the real backend message if available
       }
     });
   }
