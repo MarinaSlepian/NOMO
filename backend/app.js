@@ -60,7 +60,7 @@ async function processQueue() {
     try {
       const response = await fetch(`https://ipwho.is/${ipAddress}`);
       const geo = await response.json();
-      console.log("📦 ipwho.is result:", geo);
+      //console.log("📦 ipwho.is result:", geo);
 
       if (geo.success) {
         country = geo.country;
@@ -150,6 +150,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key'; // use env
 
 // 🔐 SIGNUP route
 app.post('/signup', async (req, res) => {
+  console.log("🔐 SIGNUP route");
   const { username, email, password } = req.body;
 
   try {
@@ -175,8 +176,8 @@ app.post('/signup', async (req, res) => {
 
 // 🔐 LOGIN route
 app.post('/login', async (req, res) => {
-  const { email, password } = req.body;
   console.log("🔐 LOGIN route");
+  const { email, password } = req.body;
   try {
     const result = await pool.query(`SELECT * FROM users WHERE email = $1`, [email]);
     const user = result.rows[0];
