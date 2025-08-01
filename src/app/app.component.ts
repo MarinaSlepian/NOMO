@@ -188,7 +188,8 @@ export class AppComponent implements OnInit{
 
     this.httpClient.put('https://nomo-cj4l.onrender.com/app-usage',{
     appId: this.currentConfig.selectedApp,
-    deviceId: this.deviceId
+    deviceId: this.deviceId,
+    email: this.loggedEmail
     } ).subscribe({
     next: (resData) => console.log (resData),
     });

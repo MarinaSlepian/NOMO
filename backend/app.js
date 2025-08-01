@@ -35,7 +35,7 @@ async function processQueue() {
   if (isProcessing || requestQueue.length === 0) return;
 
   isProcessing = true;
-  const { appId, deviceId, res } = requestQueue.shift();
+  const { appId, deviceId, email, res } = requestQueue.shift();
 
   console.log("🚀 Processing appId - deviceId ", appId,"-",deviceId); 
   try {
@@ -83,23 +83,27 @@ async function processQueue() {
       `,
       [deviceId, country, os_platform, device_type]
     );
-    
+
+
     // ✅ 2. Обновляем счётчик использования
     const result = await pool.query(
       `
-      INSERT INTO usage_counters (device_id, option_id, usage_date, count)
-      VALUES ($1, $2, CURRENT_DATE, 1)
+      INSERT INTO usage_counters (device_id, option_id, usage_date, count, email)
+      VALUES ($1, $2, CURRENT_DATE, 1, $3)
       ON CONFLICT (device_id, option_id, usage_date)
       DO UPDATE SET count = usage_counters.count + 1
       RETURNING count
       `,
-      [deviceId, id]
+      [deviceId, id, email]
     );
 
 
+
     const updatedCount = result.rows[0].count;
+
     console.log("✅ usage_counters updated:", {
       deviceId,
+      email,
       appId: id,
       updatedCount,
       date: new Date().toISOString().split("T")[0],
@@ -123,19 +127,18 @@ app.get("/", (req, res) => {
   res.send("Server is running");
 });
 
-// ✅ PUT endpoint
 app.put("/app-usage", (req, res) => {
   console.log("🟡 PUT /app-usage endpoint reached");
-  const appId = req.body.appId;
-  const deviceId = req.body.deviceId;
+
+  const { appId, deviceId, email } = req.body;
 
   if (!appId || !deviceId) {
-    return res.status(400).json({ error: "Missing appId or deviceID in request body" });
+    return res.status(400).json({ error: "Missing appId or deviceId in request body" });
   }
 
   console.log("Received PUT request:", req.body);
 
-  requestQueue.push({ appId, deviceId,res });
+  requestQueue.push({ appId, deviceId, email, res }); // ✅ include email
   processQueue();
 });
 
