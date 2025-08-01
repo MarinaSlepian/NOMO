@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, tap } from 'rxjs';
+import { BehaviorSubject, map } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -14,7 +14,10 @@ export class AuthService {
 
   login(email: string, password: string) {
     return this.http.post<{ token: string }>(`${this.apiUrl}/login`, { email, password }).pipe(
-      tap(res => this.setToken(res.token))
+      map(res => {
+        this.setToken(res.token);
+        return res; // return the token to the subscriber
+      })
     );
   }
 
@@ -24,7 +27,10 @@ export class AuthService {
       email,
       password
     }).pipe(
-      tap(res => this.setToken(res.token))
+      map(res => {
+        this.setToken(res.token);
+        return res; // return the token or user info to the subscriber
+      })
     );
   }
   

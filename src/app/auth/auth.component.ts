@@ -41,15 +41,17 @@ export class AuthComponent {
       : this.authService.signup(uname, email, password);
 
     auth$.subscribe({
-      next: () => {
+      next: (res) => {
         console.log('✅ Auth successful');
-        this.close.emit(); // close the dialog
+
+        //const decoded = jwtDecode<{ email: string }>(res.token);
+        //console.log('📨 Logged in as:', decoded.email);
+
+        this.close.emit(); // ✅ safe to emit now
       },
       error: err => {
-        console.error('❌ Auth error:', err);
-
         const msg = err?.error?.error || 'Authentication failed';
-        alert(msg);  // Show the real backend message if available
+        alert(msg);
       }
     });
   }
