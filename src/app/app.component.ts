@@ -12,19 +12,27 @@ import { DashboardComponent } from './dashboard/dashboard.component';
 import { v4 as uuidv4 } from 'uuid';
 import { SequenceChooserComponent } from './sequence-chooser/sequence-chooser.component';
 import { AuthComponent } from './auth/auth.component';
+import { jwtDecode } from 'jwt-decode'; 
 
+interface MyTokenPayload {
+  email: string;
+  exp: number;
+}
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [HeaderComponent, ButtonComponent, DashboardComponent,SequenceChooserComponent, AuthComponent],
+  imports: [HeaderComponent, ButtonComponent, DashboardComponent,
+            SequenceChooserComponent, AuthComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
 
 
+
 export class AppComponent implements OnInit{
   showAuthDialog = false;
+  loggedEmail = '';
   deviceId: string | null = null
   deferredPrompt: any;
   showInstallButton = false;
@@ -51,13 +59,15 @@ export class AppComponent implements OnInit{
   }
 
   ngOnInit(): void {
-   const saved = localStorage.getItem('appConfig');
-   if (saved) {
-     //this.currentConfig = JSON.parse(saved);
-     this.currentConfig = { ...this.currentConfig, ...JSON.parse(saved) };
-   }   
 
+    //check authentication
     const token = localStorage.getItem('token');
+    if (token) {
+      const decoded = jwtDecode<MyTokenPayload>(token);
+      console.log('🔍 Decoded token:', decoded);
+      this.loggedEmail = decoded.email;
+      console.log("Logged-in email:", this.loggedEmail);
+    }
     this.showAuthDialog = !token; // show dialog only if token is missing
 
     this.deviceId = localStorage.getItem('deviceId');
@@ -66,16 +76,21 @@ export class AppComponent implements OnInit{
       localStorage.setItem('deviceId', this.deviceId);
     }
     console.log('Device ID:', this.deviceId);
-
+    //check config
+    const saved = localStorage.getItem('appConfig');
+    if (saved) {
+      this.currentConfig = { ...this.currentConfig, ...JSON.parse(saved) };
+    }   
     this.onUpdateNewConfig(this.currentConfig);
     this.onSelectAppButton(this.currentConfig.selectedApp);
 
-
+    //check install prompt
     window.addEventListener('beforeinstallprompt', (e: Event) => {
-      console.log('beforeinstallprompt fired'); 
-      e.preventDefault();
-      this.deferredPrompt = e;
-    });
+        console.log('beforeinstallprompt fired'); 
+        e.preventDefault();
+        this.deferredPrompt = e;
+      });
+    //check orientation
     this.checkOrientation();
   }
 

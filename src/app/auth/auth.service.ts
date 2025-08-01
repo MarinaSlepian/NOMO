@@ -35,11 +35,20 @@ export class AuthService {
   }
 
   autoLogin() {
-    const stored = localStorage.getItem('token');
-    if (stored) {
-      this.token = stored;
+    console.log("autoLogin");
+    const storedToken = localStorage.getItem('token');
+    const storedEmail = localStorage.getItem('email');
+    if (storedToken) {
+      this.token = storedToken;
       this.isLoggedIn$.next(true);
+
+      // Optional: Log or use the email
+      console.log("autoLogged in as:", storedEmail);
     }
+  }
+
+  getEmail(): string | null {
+    return localStorage.getItem('email');
   }
 
   private setToken(token: string) {

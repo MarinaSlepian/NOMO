@@ -25,6 +25,7 @@
     "@ngx-translate/http-loader": "^16.0.1",
     "bcrypt": "^6.0.0",
     "jsonwebtoken": "^9.0.2",
+    "jwt-decode": "^4.0.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "uuid": "^11.1.0",
