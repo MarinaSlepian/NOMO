@@ -32,7 +32,6 @@ interface MyTokenPayload {
 
 export class AppComponent implements OnInit{
   showAuthDialog = false;
-  loggedEmail = '';
   deviceId: string | null = null
   deferredPrompt: any;
   showInstallButton = false;
@@ -62,12 +61,6 @@ export class AppComponent implements OnInit{
 
     //check authentication
     const token = localStorage.getItem('token');
-    if (token) {
-      const decoded = jwtDecode<MyTokenPayload>(token);
-      console.log('🔍 Decoded token:', decoded);
-      this.loggedEmail = decoded.email;
-      console.log("Logged-in email:", this.loggedEmail);
-    }
     this.showAuthDialog = !token; // show dialog only if token is missing
 
     this.deviceId = localStorage.getItem('deviceId');
@@ -93,7 +86,19 @@ export class AppComponent implements OnInit{
     //check orientation
     this.checkOrientation();
   }
-
+  getLoggedInEmail(): string | undefined {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const decoded = jwtDecode<{ email: string }>(token);
+        console.log("Logged-in email:", decoded.email);
+        return decoded.email;
+      } catch (e) {
+        console.warn("❌ Failed to decode token:", e);
+      }
+    }
+    return undefined;
+  }
   installRequested() {
     this.showInstallButton = true; // Now you can show a button in the template
 
@@ -189,7 +194,7 @@ export class AppComponent implements OnInit{
     this.httpClient.put('https://nomo-cj4l.onrender.com/app-usage',{
     appId: this.currentConfig.selectedApp,
     deviceId: this.deviceId,
-    email: this.loggedEmail
+    email: this.getLoggedInEmail()
     } ).subscribe({
     next: (resData) => console.log (resData),
     });
