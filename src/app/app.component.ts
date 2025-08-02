@@ -53,7 +53,7 @@ export class AppComponent implements OnInit{
   isShowDashboard = true;
 
 constructor(private translate: TranslateService, private swUpdate: SwUpdate) {
-  console.log('🚀 NOMO App version 3 running');
+  console.log('🚀 NOMO App version 4 running');
 
   this.swUpdate.versionUpdates.subscribe(event => {
     if (event.type === 'VERSION_READY') {
