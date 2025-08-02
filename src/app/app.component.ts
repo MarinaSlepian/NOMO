@@ -13,6 +13,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { SequenceChooserComponent } from './sequence-chooser/sequence-chooser.component';
 import { AuthComponent } from './auth/auth.component';
 import { jwtDecode } from 'jwt-decode'; 
+import { SwUpdate } from '@angular/service-worker';
 
 interface MyTokenPayload {
   email: string;
@@ -51,10 +52,14 @@ export class AppComponent implements OnInit{
   isPortraitOnMobile = false;
   isShowDashboard = true;
 
-  constructor(private translate: TranslateService)
+  constructor(private translate: TranslateService, private swUpdate: SwUpdate)
   {
 
-   
+    this.swUpdate.versionUpdates.subscribe(event => {
+      if (event.type === 'VERSION_READY') {
+        this.swUpdate.activateUpdate().then(() => document.location.reload());
+      }
+    });
   }
 
   ngOnInit(): void {
