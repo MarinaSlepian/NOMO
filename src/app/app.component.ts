@@ -52,17 +52,22 @@ export class AppComponent implements OnInit{
   isPortraitOnMobile = false;
   isShowDashboard = true;
 
-  constructor(private translate: TranslateService, private swUpdate: SwUpdate)
-  {
-    console.log('🚀 NOMO App version 2 running');
+constructor(private translate: TranslateService, private swUpdate: SwUpdate) {
+  console.log('🚀 NOMO App version 3 running');
 
-    this.swUpdate.versionUpdates.subscribe(event => {
-      if (event.type === 'VERSION_READY') {
-        console.log('🔄 New version found, reloading...');
-        this.swUpdate.activateUpdate().then(() => document.location.reload());
-      }
-    });
-  }
+  this.swUpdate.versionUpdates.subscribe(event => {
+    if (event.type === 'VERSION_READY') {
+      console.log('🔄 New version found, activating and reloading...');
+
+      this.swUpdate.activateUpdate().then(() => {
+        setTimeout(() => {
+          console.log('✅ Reloading after delay');
+          document.location.reload();
+        }, 1000); // wait 1 second
+      });
+    }
+  });
+}
 
   ngOnInit(): void {
 
