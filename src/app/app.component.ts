@@ -54,9 +54,11 @@ export class AppComponent implements OnInit{
 
   constructor(private translate: TranslateService, private swUpdate: SwUpdate)
   {
+    console.log('🚀 NOMO App version 2 running');
 
     this.swUpdate.versionUpdates.subscribe(event => {
       if (event.type === 'VERSION_READY') {
+        console.log('🔄 New version found, reloading...');
         this.swUpdate.activateUpdate().then(() => document.location.reload());
       }
     });
