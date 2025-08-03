@@ -5,12 +5,13 @@
   gap: 0rem;
   width: 90%;
   max-width: 900px;
-  margin: 3rem auto;
+  margin: 0rem auto;
   flex-wrap: wrap; /* Allows wrapping on small screens */
   box-sizing: border-box;
   background-color: rgb(209,211,212);
   border-radius: 20px;
-
+  margin-bottom: 0;
+  padding-bottom: 0rem;
 }
 
 /* LEFT: Form block */
@@ -21,6 +22,9 @@
   flex-direction: column;
   gap: 0.75rem;
   padding-left: 1rem; /* or any value like 20px */
+
+  padding-bottom: 0rem; /* or remove it entirely */
+  margin-bottom: 0rem;  /* ensure no margin is adding extra space */
 }
 
 .form-wrapper h2 {
@@ -28,12 +32,14 @@
   text-align: center;
   font-size: 1.3rem;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  
+  margin-top: -2rem; /* or 0 if you want it flush with the top */
+
 }
 
 /* Form styling */
 form {
   margin-top: -1rem; /* adjust as needed */
+  margin-bottom: 0;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -50,8 +56,10 @@ form input {
   box-sizing: border-box;
 }
 
-form button {
+
+.form-button {
   padding: 0.5rem 1rem;
+  background-color: rgb(6, 133, 248);
   color: white;
   border: none;
   border-radius: 6px;
@@ -63,19 +71,22 @@ form button {
   gap: 1rem;
   justify-content: center;
   flex-wrap: wrap;
+   margin-bottom: 0;
 }
 
 /* RIGHT: Image block */
 .image-wrapper {
   flex: 1 1 300px;
-  max-width: 90%;
+  max-width: 80%;
   text-align: center;  
 }
 
 .image-wrapper img {
+  margin-top: -1rem;
   width: 80%;
   height: auto;
   max-height: 500px;
+  object-fit: contain;
 }
 
 .form-wrapper input,
@@ -131,11 +142,3 @@ input:focus {
   box-shadow: none;
 }
 
-.form-button {
-  padding: 0.5rem 1rem;
-  background-color: rgb(6, 133, 248);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}

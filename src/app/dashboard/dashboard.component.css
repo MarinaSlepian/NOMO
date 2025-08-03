@@ -1,7 +1,7 @@
 .dashboard-panel {
   height: 90vh;
   min-height: 400px;
-  width: 12rem;
+  width: 12vw;
   background-color: rgb(229, 229, 229);
   color: yellowgreen;
   display: flex;
@@ -30,7 +30,7 @@ app-dashboard {
 }
 
 .dashboard-image {
-  width: 90%;      /* or any size you prefer */
+  width: 100%;      /* or any size you prefer */
   height: auto;     /* maintain aspect ratio */
   margin-top: 2rem;     /* Move image down */
   margin-bottom: 3rem; /* optional: space below the image */
@@ -58,7 +58,7 @@ app-dashboard {
 
 @media (max-height: 500px) {
     .dashboard-image {
-    width: 60%;      /* or any size you prefer */
+    width: 90%;      /* or any size you prefer */
     margin-top: 0rem;     /* Move image down */
     margin-bottom: 0rem; /* optional: space below the image */
   }
@@ -72,12 +72,6 @@ app-dashboard {
     gap: 0.5rem;
   }
 
-  .dashboard-image {
-    width: 50%;
-    margin-top: 0.5rem;
-    margin-bottom: 1rem;
-  }
-
   .buttons-column {
     gap: 0rem; /* tighter vertical spacing */
   }
@@ -88,8 +82,9 @@ app-dashboard {
   }
 
   app-app-chooser {
-    transform: scale(0.7); /* optional: shrink the button size */
+    transform: scaleX(0.7);
   }
+  
 }
 
 .color-grid-container {
