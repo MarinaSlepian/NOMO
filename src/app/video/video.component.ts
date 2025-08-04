@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output, Input, HostListener, ViewChild, ElementRef } from '@angular/core';
+import { Component, EventEmitter, Output, Input, HostListener, ViewChild, ElementRef, AfterViewInit  } from '@angular/core';
 
 @Component({
   selector: 'app-video',
@@ -7,7 +7,7 @@ import { Component, EventEmitter, Output, Input, HostListener, ViewChild, Elemen
   templateUrl: './video.component.html',
   styleUrls: ['./video.component.css']
 })
-export class VideoComponent {
+export class VideoComponent implements AfterViewInit {
   @Input({required:true}) videoPath!: string;
   @Output() cancel = new EventEmitter<void>();
   @Input({required:true}) numOfVideos!: string;
@@ -15,9 +15,36 @@ export class VideoComponent {
   isPlaying = true;
   isLoading = true;
 
+  ngAfterViewInit() {
+    // Mark the start of the first video load
+    performance.mark('initial-video-load-start');
+  }
+
   onVideoLoaded() {
     this.isLoading = false;
+
+    //measure loading time
+    const switchMarkExists = performance.getEntriesByName('video-load-start').length > 0;
+    const initialMarkExists = performance.getEntriesByName('initial-video-load-start').length > 0;
+
+    if (switchMarkExists) {
+      performance.mark('video-load-end');
+      performance.measure('Video Load Time', 'video-load-start', 'video-load-end');
+      const duration = performance.getEntriesByName('Video Load Time')[0]?.duration ?? 0;
+      console.log(`🔁 Switched video loaded in ${duration.toFixed(2)} ms`);
+    } else if (initialMarkExists) {
+      performance.mark('initial-video-load-end');
+      performance.measure('Initial Video Load', 'initial-video-load-start', 'initial-video-load-end');
+      const duration = performance.getEntriesByName('Initial Video Load')[0]?.duration ?? 0;
+      console.log(`🚀 Initial video loaded in ${duration.toFixed(2)} ms`);
+    } else {
+      console.warn('⚠️ No performance mark found for video load timing.');
+    }
+
+    performance.clearMarks();
+    performance.clearMeasures();
   }
+  
 
   @HostListener('document:keydown.escape', ['$event'])
   handleEscape(event: KeyboardEvent) {
@@ -83,9 +110,11 @@ export class VideoComponent {
 
     const videoElement = this.videoPlayer.nativeElement;
 
+    // Start performance timer
+    performance.mark('video-load-start');
 
    // Trick: reload the <video> element manually
-   setTimeout(() => {
+    setTimeout(() => {
      videoElement.load();
      videoElement.play();
    }, 0);
