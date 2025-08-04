@@ -17,7 +17,8 @@
         autoplay
         loop
         playsinline
-        preload="auto"
+        preload="none"
+        fetchpriority="high"
         (loadeddata)="onVideoLoaded()"
       >
         <source [src]="videoPath" type="video/mp4" />
@@ -29,7 +30,8 @@
         class="fullscreen-video"
         autoplay
         playsinline
-        preload="auto"
+        preload="none"
+        fetchpriority="high"
         (loadeddata)="onVideoLoaded()"
       >
         <source [src]="videoPath" type="video/mp4" />
