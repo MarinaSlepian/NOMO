@@ -30,7 +30,7 @@ app-dashboard {
 }
 
 .dashboard-image {
-  width: 100%;      /* or any size you prefer */
+  width: 90%;      /* or any size you prefer */
   height: auto;     /* maintain aspect ratio */
   margin-top: 2rem;     /* Move image down */
   margin-bottom: 3rem; /* optional: space below the image */
