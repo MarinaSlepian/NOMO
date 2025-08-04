@@ -1,7 +1,7 @@
 .dashboard-panel {
   height: 90vh;
   min-height: 400px;
-  width: 12vw;
+  width: 11rem;
   background-color: rgb(229, 229, 229);
   color: yellowgreen;
   display: flex;
@@ -30,7 +30,7 @@ app-dashboard {
 }
 
 .dashboard-image {
-  width: 12vw;      /* or any size you prefer */
+  width: 90%;      /* or any size you prefer */
   height: auto;     /* maintain aspect ratio */
   margin-top: 2rem;     /* Move image down */
   margin-bottom: 3rem; /* optional: space below the image */
