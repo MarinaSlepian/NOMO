@@ -32,7 +32,7 @@
   text-align: center;
   font-size: 1.3rem;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  margin-top: -2rem; /* or 0 if you want it flush with the top */
+  margin-top: -1rem; /* or 0 if you want it flush with the top */
 
 }
 
@@ -142,3 +142,36 @@ input:focus {
   box-shadow: none;
 }
 
+/* ✅ Responsive scaling on small screens */
+@media (max-width: 800px) {
+  .auth-container {
+    flex-wrap: nowrap;
+    flex-direction: row;
+    padding: 0.5rem;
+    width: 100%;
+  }
+
+  .form-wrapper,
+  .image-wrapper {
+    flex: 1 1 50%;
+    max-width: 50%;
+    padding: 0.25rem;
+  }
+
+  .form-wrapper h2 {
+    font-size: 1rem;
+    margin-top: 0rem
+  }
+
+  form input,
+  .form-button {
+    font-size: 0.9rem;
+    padding: 0.25rem;
+  }
+
+  .image-wrapper img {
+    max-height: 200px;
+    width: 100%;
+    margin-top: 0;
+  }
+}
