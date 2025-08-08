@@ -11,7 +11,7 @@ export const BUTTONS_ACTIONS_ICONS = [
       id: '2', //CRY
       name: '0',
       avatar: 'user-2.png',
-      numVideos: '3',
+      numVideos: '4',
       subtextKey:"subtext.CRY"
     },
     {
@@ -25,17 +25,17 @@ export const BUTTONS_ACTIONS_ICONS = [
       id: '4',//RUN
       name: '0',
       avatar: 'user-4.png',
-      numVideos: '7',
+      numVideos: '8',
       subtextKey:"subtext.RUN"
     },
     {
       id: '5',//JUMP
       name: '0',
       avatar: 'user-5.png',
-      numVideos: '6',
+      numVideos: '7',
       subtextKey:"subtext.JUMP"
     },
-    {
+    { 
       id: '6',//KISS
       name: '0',
       avatar: 'user-6.png',
