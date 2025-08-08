@@ -215,6 +215,8 @@ constructor(private translate: TranslateService, private swUpdate: SwUpdate) {
   //authentication dialog
   onAuthDialogClosed() {
     this.showAuthDialog = false;
+    this.onSelectAppButton(this.currentConfig.selectedApp);
+
   }
 
   @HostListener('window:resize')
