@@ -53,7 +53,7 @@ export class AppComponent implements OnInit{
   isShowDashboard = true;
 
 constructor(private translate: TranslateService, private swUpdate: SwUpdate) {
-  console.log('🚀 NOMO App version 4 running');
+  console.log('🚀 NOMO App version 5 running');
 
   this.swUpdate.versionUpdates.subscribe(event => {
     if (event.type === 'VERSION_READY') {
@@ -198,24 +198,29 @@ constructor(private translate: TranslateService, private swUpdate: SwUpdate) {
      this.isAudioNeeded = false;
     }
     
-  
-    
+    console.log("in onSelectAppButton email is", this.getLoggedInEmail());
+
     //send usage info to server
     //this.httpClient.put('http://localhost:3000/app-usage',{
 
-    this.httpClient.put('https://nomo-cj4l.onrender.com/app-usage',{
-    appId: this.currentConfig.selectedApp,
-    deviceId: this.deviceId,
-    email: this.getLoggedInEmail()
-    } ).subscribe({
-    next: (resData) => console.log (resData),
-    });
+    if(this.getLoggedInEmail())
+    {
+      this.httpClient.put('https://nomo-cj4l.onrender.com/app-usage',{
+      appId: this.currentConfig.selectedApp,
+      deviceId: this.deviceId,
+      email: this.getLoggedInEmail()
+      } ).subscribe({
+      next: (resData) => console.log (resData),
+      });
+    }
 
   } 
   //authentication dialog
   onAuthDialogClosed() {
     this.showAuthDialog = false;
+    console.log("after calling showAuthDialog = false email",this.getLoggedInEmail() );
     this.onSelectAppButton(this.currentConfig.selectedApp);
+    console.log("after calling onSelectAppButton")
 
   }
 
