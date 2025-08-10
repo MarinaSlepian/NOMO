@@ -9,6 +9,9 @@
       <div class="name-wrapper">
         <span class="name">{{ user.name }}</span>
       </div>
+      @if(user.isLocked){
+        <img class="lock-img" src="assets/lock-32.png" alt="locked" />
+      }
     </button> 
   </div>
        

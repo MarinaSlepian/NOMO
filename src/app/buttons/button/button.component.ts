@@ -14,6 +14,7 @@ interface User {
   name: string;
   numVideos: string;
   subtextKey: string;
+  isLocked: boolean;
 }
 
 @Component({

@@ -89,3 +89,14 @@ button:active,
   justify-content: center;
   overflow: hidden;
 }
+
+
+.lock-img {
+  position: absolute;
+  bottom: 0.35rem;  /* pick the corner you want */
+  right: 0.35rem;
+  width: 1.4rem;
+  height: 1.4rem;
+  z-index: 2;       /* ensure it sits above content */
+  pointer-events: none; /* clicks pass through */
+}
