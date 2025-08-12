@@ -13,10 +13,18 @@
         <img class="lock-img" src="assets/lock-32.png" alt="locked" />
       }
     </button> 
-  </div>
-       
+</div>
+
+<app-pay-dialog
+  [open]="isPayDialogOpen"
+  [priceILS]="PRICE_ILS"
+  [currency]="CURRENCY"
+  description="NOMO access"
+  (closed)="cancelPayment()">
+</app-pay-dialog>
    
-  @if(isShowVideo){  
+@if(isShowVideo){  
     <app-video [videoPath]="fullVideoPath" (cancel)="onCancelVideo()" [numOfVideos]="user.numVideos" />
-  }
+}
     
+  

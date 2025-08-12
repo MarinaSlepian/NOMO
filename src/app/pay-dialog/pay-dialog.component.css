@@ -1,0 +1,19 @@
+.backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.4);
+  z-index: 999;
+}
+
+.pay-dialog {
+  position: fixed; z-index: 1000;
+  top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: min(420px, calc(100% - 2rem));
+  background: #fff; color: #111;
+  border-radius: 16px; padding: 1rem 1.25rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+}
+.pay-dialog h3 { margin: 0 0 .5rem; }
+.pay-dialog p { margin: 0 0 1rem; }
+.pay-dialog .error { color: #b00020; margin-bottom: .75rem; }
+.pay-dialog .actions { display: flex; gap: .5rem; justify-content: flex-end; }
+.pay-dialog .actions button { padding: .5rem .9rem; border-radius: 10px; }

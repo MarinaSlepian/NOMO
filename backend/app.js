@@ -1,10 +1,12 @@
 // app.js
+import 'dotenv/config';
 import express from "express";
 import { pool } from "./db.js";
 import fetch from 'node-fetch';
 import { UAParser } from 'ua-parser-js';
 import cardcomRouter from "./payments/cardcom.js";
 import authRouter from "./auth.js"; // 👈 import auth routes
+
 
 const parser = new UAParser();
 const app = express();
@@ -23,6 +25,15 @@ app.use((req, res, next) => {
 
 // Routes
 app.use("/api/pay", cardcomRouter);
+// ✅ Success/fail pages
+app.get("/pay/success", (req, res) => {
+  res.send("Payment received. You can close this window.");
+});
+
+app.get("/pay/failed", (req, res) => {
+  res.send("Payment failed or canceled.");
+});
+
 app.use("/", authRouter); // 👈 signup/login now live here
 
 app.all("/route-check", (req, res) => {

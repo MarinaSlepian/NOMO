@@ -1,33 +1,84 @@
 // payments/cardcom.js
 import express from "express";
 import fetch from "node-fetch";
+import { pool } from "../db.js"; // 👈 add this
 
 const router = express.Router();
 
-// ✅ env (DON'T hardcode secrets)
-const TERMINAL = process.env.CARDCOM_TERMINAL;     // e.g. 173449
-const API_NAME = process.env.CARDCOM_API_NAME;     // e.g. ELtFz5RUS...
-const BASE_URL = process.env.PUBLIC_BASE_URL;      // e.g. https://yourapi.com
+const TERMINAL = process.env.CARDCOM_TERMINAL;
+const API_NAME = process.env.CARDCOM_API_NAME;
+const BASE_URL = process.env.PUBLIC_BASE_URL;
 
-// Small helper
+// helpers to persist
+async function logEvent({ orderId, lowProfileId, type, payload }) {
+  await pool.query(
+    `INSERT INTO payment_events (order_id, low_profile_id, event_type, payload)
+     VALUES ($1, $2, $3, $4)`,
+    [orderId, lowProfileId || null, type, payload ? JSON.stringify(payload) : null]
+  );
+}
+
+async function saveStart({ orderId, lowProfileId, userId, amountMinor, currency }) {
+  await pool.query(
+    `INSERT INTO payments (order_id, low_profile_id, user_id, amount_minor, currency, status)
+     VALUES ($1, $2, $3, $4, $5, 'pending')
+     ON CONFLICT (order_id) DO UPDATE
+     SET low_profile_id = EXCLUDED.low_profile_id,
+         amount_minor   = EXCLUDED.amount_minor,
+         currency       = EXCLUDED.currency,
+         updated_at     = now()`,
+    [orderId, lowProfileId, userId || null, amountMinor, currency]
+  );
+  await logEvent({ orderId, lowProfileId, type: 'start_ok' });
+}
+
+async function markPaid({ lowProfileId, orderId, txId, amountMinor, cardType, last4, payload }) {
+  await pool.query(
+    `UPDATE payments
+       SET status='paid',
+           transaction_id=$1,
+           card_type=$2,
+           card_last4=$3,
+           amount_minor=COALESCE($4, amount_minor),
+           verify_payload=$5,
+           updated_at=now()
+     WHERE low_profile_id=$6`,
+    [txId || null, cardType || null, last4 || null, amountMinor || null, JSON.stringify(payload || null), lowProfileId]
+  );
+  await logEvent({ orderId, lowProfileId, type: 'verify_ok', payload });
+}
+
+async function markFailed({ lowProfileId, orderId, reason, payload }) {
+  await pool.query(
+    `UPDATE payments
+       SET status='failed',
+           failure_reason=$1,
+           verify_payload=$2,
+           updated_at=now()
+     WHERE low_profile_id=$3`,
+    [reason || 'unknown', JSON.stringify(payload || null), lowProfileId]
+  );
+  await logEvent({ orderId, lowProfileId, type: 'verify_fail', payload });
+}
+
+// Small helper for Cardcom HTTP POST
 async function cardcomFetch(url, body) {
   const resp = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const data = await resp.json();
-  return data;
+  return await resp.json();
 }
 
 /**
  * POST /api/pay/start
- * Body: { amount:number, orderId:string, description?:string, currency?:number }
+ * Body: { amount:number, orderId:string, description?:string, currency?:number, userId?:number }
  * Returns: { url, lowProfileId }
  */
 router.post("/start", async (req, res) => {
   try {
-    const { amount, orderId, description = "NOMO payment", currency = 1 } = req.body;
+    const { amount, orderId, description = "NOMO payment", currency = 1, userId } = req.body;
     if (!amount || !orderId) {
       return res.status(400).json({ error: "amount and orderId are required" });
     }
@@ -36,14 +87,14 @@ router.post("/start", async (req, res) => {
       TerminalNumber: Number(TERMINAL),
       ApiName: API_NAME,
       Operation: "ChargeOnly",
-      Amount: Number(amount),
-      ISOCoinId: Number(currency), // 1=ILS, 2=USD...
+      Amount: Number(amount),          // Cardcom expects major units (₪)
+      ISOCoinId: Number(currency),     // 1=ILS
       ProductName: description,
-      ReturnValue: String(orderId),
+      ReturnValue: String(orderId),    // comes back in verification
       SuccessRedirectUrl: `${BASE_URL}/pay/success`,
       FailedRedirectUrl: `${BASE_URL}/pay/failed`,
       WebHookUrl: `${BASE_URL}/api/pay/webhook`,
-      Language: "EN", // or "HE"
+      Language: "EN",
     };
 
     const data = await cardcomFetch(
@@ -52,33 +103,41 @@ router.post("/start", async (req, res) => {
     );
 
     if (data?.ResponseCode === 0 && data?.Url) {
-      // TIP: store data.LowProfileId ↔ orderId in DB for later verification
+      // persist "pending"
+      const amountMinor = Math.round(Number(amount) * 100); // ₪ -> agorot
+      await saveStart({
+        orderId,
+        lowProfileId: String(data.LowProfileId),
+        userId,
+        amountMinor,
+        currency: Number(currency),
+      });
+
       return res.json({ url: data.Url, lowProfileId: data.LowProfileId });
     }
+
+    await logEvent({ orderId, lowProfileId: null, type: 'start_fail', payload: data });
     return res.status(400).json({ error: data?.Description || "Cardcom error", raw: data });
   } catch (err) {
     console.error("Cardcom /start error:", err);
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
-// This endpoint expects raw text from Cardcom. Use a text parser just for this route:
+// Webhook expects raw text
 router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
   try {
-    // Parse whatever Cardcom sent; often LowProfileId/ReturnValue come as form/text
     const raw = req.body || "";
-    // Example: try to extract LowProfileId from raw text or querystring if they send it that way
     const lowProfileId =
       /LowProfileId=(\d+)/.exec(raw)?.[1] ||
       new URLSearchParams(raw).get("LowProfileId");
 
     if (!lowProfileId) {
       console.warn("Webhook without LowProfileId. Raw:", raw);
-      // Always 200 so Cardcom doesn't retry endlessly, but mark as fail internally
-      return res.status(200).send("MISSING LOWPROFILEID");
+      return res.status(200).send("MISSING LOWPROFILEID"); // ack to avoid retries
     }
 
-    // Verify with Cardcom from the SERVER (important!)
+    // Verify with Cardcom
     const url = new URL("https://secure.cardcom.solutions/api/v11/LowProfile/GetLpResult");
     url.searchParams.set("TerminalNumber", TERMINAL);
     url.searchParams.set("ApiName", API_NAME);
@@ -87,30 +146,44 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     const verifyResp = await fetch(url.toString());
     const verifyData = await verifyResp.json();
 
-    // Success?
+    const orderId = verifyData?.ReturnValue ? String(verifyData.ReturnValue) : null;
+
     if (verifyData?.ResponseCode === 0) {
-      // Mark PAID in your DB here using verifyData.ReturnValue (your orderId) etc.
-      // save: verifyData.TransactionId, verifyData.Amount, verifyData.CardType, etc.
-      console.log("✅ Cardcom verified:", {
-        orderId: verifyData?.ReturnValue,
-        tx: verifyData?.TransactionId,
-        amount: verifyData?.Amount,
+      // Pull useful fields (guarding if not present)
+      const txId   = verifyData.TransactionId ? String(verifyData.TransactionId) : null;
+      const amount = Number(verifyData.Amount ?? NaN); // major units
+      const amountMinor = Number.isFinite(amount) ? Math.round(amount * 100) : null;
+      const cardType = verifyData.CardType || null;
+      const last4    = verifyData.CardMask ? String(verifyData.CardMask).slice(-4) : null;
+
+      await markPaid({
+        lowProfileId,
+        orderId,
+        txId,
+        amountMinor,
+        cardType,
+        last4,
+        payload: verifyData
       });
+
       return res.status(200).send("OK");
     }
 
-    console.warn("❌ Cardcom verification failed:", verifyData);
-    return res.status(200).send("FAIL"); // still 200 to acknowledge receipt
+    await markFailed({
+      lowProfileId,
+      orderId,
+      reason: verifyData?.Description || `code:${verifyData?.ResponseCode}`,
+      payload: verifyData
+    });
+
+    return res.status(200).send("FAIL"); // still 200 to acknowledge
   } catch (err) {
     console.error("Cardcom /webhook error:", err);
-    res.status(200).send("ERROR"); // acknowledge so they don't spam retries
+    return res.status(200).send("ERROR"); // ack so they don't spam retries
   }
 });
 
-/**
- * Optional: GET /api/pay/status/:lowProfileId
- * lets you check a payment manually from your back-office
- */
+// Manual status check
 router.get("/status/:lowProfileId", async (req, res) => {
   try {
     const { lowProfileId } = req.params;

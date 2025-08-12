@@ -2,12 +2,12 @@ import { Component ,Input} from '@angular/core';
 import { VideoComponent } from '../../video/video.component';
 import { TranslateService } from '@ngx-translate/core';
 import { TranslateModule } from '@ngx-translate/core';
+import { PayService } from '../../services/pay.service'; 
+import { PayDialogComponent } from '../../pay-dialog/pay-dialog.component';
 
-//type User =  {
-//  id: string;
-//  avatar: string;
-//  name: string;
-//}
+
+
+
 interface User {
   id: string;
   avatar: string;
@@ -20,7 +20,7 @@ interface User {
 @Component({
   selector: 'app-button',
   standalone: true,
-  imports: [VideoComponent, TranslateModule],
+  imports: [VideoComponent, TranslateModule, PayDialogComponent],
   templateUrl: './button.component.html',
   styleUrls: ['./button.component.css']
 })
@@ -32,10 +32,16 @@ export class ButtonComponent {
   @Input({required:true}) isSubtextNeeded!: boolean;
   @Input({required:true}) isAudioNeeded!: boolean;
 
+  readonly PRICE_ILS = 39;   // one price for everything
+  readonly CURRENCY = 1;     // 1 = ILS
+  isPayDialogOpen = false;
+  isPaying = false;
+  payError = '';
+
   fullVideoPath = '';
   isShowVideo = false;
   
-  constructor(public translate: TranslateService) {}
+  constructor(public translate: TranslateService, private pay: PayService) {}
 
   get imagePath() {
     if(this.currentApp === '1')
@@ -56,7 +62,12 @@ export class ButtonComponent {
 
   async onSelectButton()//buttonClick
   { 
- 
+    // 🔒 If locked → trigger payment and exit
+    if (this.user.isLocked) {
+      // 🔒 instead of redirecting immediately — open dialog
+      this.openPayDialog();
+      return;
+    }  
     let numClicks = Number(this.user.name);
     numClicks++;
     this.user.name = numClicks.toString();
@@ -113,5 +124,47 @@ export class ButtonComponent {
       audio.play().catch((err) => reject('Play failed: ' + err));
     });
   }
+
+  private makeOrderId(): string {
+    // Example: ORD-<timestamp>-<4char random>
+    const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+    return `ORD-${Date.now()}-${rand}`;
+  }
+
+  openPayDialog() {
+    this.payError = '';
+    this.isPayDialogOpen = true;
+  }
+
+  cancelPayment() {
+    if (this.isPaying) return;
+    this.isPayDialogOpen = false;
+  }
+
+  confirmPayment() {
+    if (this.isPaying) return;
+    this.isPaying = true;
+    this.payError = '';
+
+    const orderId = this.makeOrderId();
+    const amount = this.PRICE_ILS;
+    const description = 'NOMO access';
+    const currency = this.CURRENCY;
+
+    console.log("payment choosen");
+    this.pay.startPayment({ amount, orderId, description, currency /*, userId*/ })
+      .subscribe({
+        next: ({ url, lowProfileId }) => {
+          sessionStorage.setItem('lastLowProfileId', String(lowProfileId));
+          sessionStorage.setItem('lastOrderId', orderId);
+          window.location.href = url; // go to Cardcom hosted page
+        },
+        error: err => {
+          console.error('Payment init failed', err);
+          this.payError = err?.error?.error || 'Payment init failed';
+          this.isPaying = false; // allow retry
+        }
+      });
+  }  
 }
 

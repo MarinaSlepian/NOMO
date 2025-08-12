@@ -202,14 +202,14 @@ constructor(private translate: TranslateService, private swUpdate: SwUpdate) {
 
     //send usage info to server
     //this.httpClient.put('http://localhost:3000/app-usage',{
-
-    if(this.getLoggedInEmail())
+    const eMail = this.getLoggedInEmail();
+    if(eMail)
     {
       this.httpClient.put('https://nomo-cj4l.onrender.com/app-usage',{
       appId: this.currentConfig.selectedApp,
       deviceId: this.deviceId,
-      email: this.getLoggedInEmail()
-      } ).subscribe({
+      email: eMail
+      } ).subscribe({ 
       next: (resData) => console.log (resData),
       });
     }

@@ -81,6 +81,14 @@
   "SAD": "SAD",
   "SHAMEFUL": "SHAMEFUL"
 
+  },
+  
+"pay": {
+    "title": "Unlock access",
+    "desc": "Pay ₪{{price}} to unlock access to this content.",
+    "processing": "Processing…",
+    "confirm": "Continue to payment",
+    "cancel": "Cancel"
   }
 }
 
