@@ -81,7 +81,7 @@ async function cardcomFetch(url, body) {
 function normalizeUrl(u, fallbackPath) {
   try {
     if (!u) throw new Error("missing");
-    const parsed = new URL(u);               // throws if invalid
+    const parsed = new URL(u); // throws if invalid
     if (!/^https?:$/.test(parsed.protocol)) throw new Error("protocol");
     return parsed.toString();
   } catch {
@@ -124,8 +124,8 @@ router.post("/start", async (req, res) => {
       TerminalNumber: TERMINAL,
       ApiName: API_NAME,
       Operation: "ChargeOnly",
-      Amount: amt,                         // major units (₪)
-      ISOCoinId: Number(currency) || 1,    // 1 = ILS
+      Amount: amt,                      // major units (₪)
+      ISOCoinId: Number(currency) || 1, // 1 = ILS
       ProductName: description,
       ReturnValue: oid,
       SuccessRedirectUrl,
@@ -164,17 +164,16 @@ router.post("/start", async (req, res) => {
   }
 });
 
-// Webhook expects raw text
+// Webhook expects raw text; verify with POST (not GET)
 router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
   try {
     const raw = req.body || "";
     console.log("📬 Webhook raw:", raw?.slice(0, 400)); // truncated log
 
-    // Cardcom sometimes sends URL-encoded text; support both numeric and UUID IDs
+    // Support URL-encoded text; allow numeric or UUID LowProfileId
     const qs = new URLSearchParams(raw);
     const lpFromQS = qs.get("LowProfileId");
-    const lpFromRegex =
-      /(?:^|[&])LowProfileId=([^&]+)/i.exec(raw)?.[1]; // capture any non-& chars
+    const lpFromRegex = /(?:^|[&])LowProfileId=([^&]+)/i.exec(raw)?.[1];
     const lowProfileId = (lpFromQS || lpFromRegex || "").trim();
 
     if (!lowProfileId) {
@@ -182,13 +181,15 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       return res.status(200).send("MISSING LOWPROFILEID"); // ack to avoid retries
     }
 
-    const url = new URL("https://secure.cardcom.solutions/api/v11/LowProfile/GetLpResult");
-    url.searchParams.set("TerminalNumber", String(TERMINAL));
-    url.searchParams.set("ApiName", API_NAME);
-    url.searchParams.set("LowProfileId", lowProfileId);
-
-    const verifyResp = await fetch(url.toString());
-    const verifyData = await verifyResp.json();
+    // Verify with Cardcom via POST
+    const verifyData = await cardcomFetch(
+      "https://secure.cardcom.solutions/api/v11/LowProfile/GetLpResult",
+      {
+        TerminalNumber: Number(TERMINAL),
+        ApiName: API_NAME,
+        LowProfileId: lowProfileId,
+      }
+    );
 
     console.log("🔎 Verify result:", {
       LowProfileId: lowProfileId,
@@ -225,17 +226,26 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
   }
 });
 
-// Manual status check (GET by param)
+// Manual status check (GET by param) — calls Cardcom via POST under the hood
 router.get("/status/:lowProfileId", async (req, res) => {
   try {
     const { lowProfileId } = req.params;
-    const url = new URL("https://secure.cardcom.solutions/api/v11/LowProfile/GetLpResult");
-    url.searchParams.set("TerminalNumber", String(TERMINAL));
-    url.searchParams.set("ApiName", API_NAME);
-    url.searchParams.set("LowProfileId", lowProfileId);
 
-    const r = await fetch(url.toString());
-    const data = await r.json();
+    const data = await cardcomFetch(
+      "https://secure.cardcom.solutions/api/v11/LowProfile/GetLpResult",
+      {
+        TerminalNumber: Number(TERMINAL),
+        ApiName: API_NAME,
+        LowProfileId: String(lowProfileId),
+      }
+    );
+
+    console.log("🛰️ Manual status check (GET):", {
+      LowProfileId: lowProfileId,
+      ResponseCode: data?.ResponseCode,
+      Description: data?.Description,
+    });
+
     res.json(data);
   } catch (err) {
     console.error("Cardcom /status (GET) error:", err);
@@ -243,21 +253,22 @@ router.get("/status/:lowProfileId", async (req, res) => {
   }
 });
 
-// Manual status check (POST body: { lowProfileId })
+// Manual status check (POST body: { lowProfileId }) — also POST to Cardcom
 router.post("/status", express.json(), async (req, res) => {
   try {
     const lowProfileId = String(req.body?.lowProfileId || "").trim();
     if (!lowProfileId) return res.status(400).json({ error: "lowProfileId required" });
 
-    const url = new URL("https://secure.cardcom.solutions/api/v11/LowProfile/GetLpResult");
-    url.searchParams.set("TerminalNumber", String(TERMINAL));
-    url.searchParams.set("ApiName", API_NAME);
-    url.searchParams.set("LowProfileId", lowProfileId);
+    const data = await cardcomFetch(
+      "https://secure.cardcom.solutions/api/v11/LowProfile/GetLpResult",
+      {
+        TerminalNumber: Number(TERMINAL),
+        ApiName: API_NAME,
+        LowProfileId: lowProfileId,
+      }
+    );
 
-    const r = await fetch(url.toString());
-    const data = await r.json();
-
-    console.log("🛰️ Manual status check:", {
+    console.log("🛰️ Manual status check (POST):", {
       LowProfileId: lowProfileId,
       ResponseCode: data?.ResponseCode,
       Description: data?.Description
