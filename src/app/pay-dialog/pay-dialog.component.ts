@@ -17,7 +17,7 @@ export class PayDialogComponent {
   @Input() open = false;
 
   /** One price for all modules (major units, e.g., ₪) */
-  @Input() priceILS = 39;
+  @Input() priceILS = 1;//marina temp, was 39
 
   /** Cardcom currency code, 1 = ILS */
   @Input() currency = 1;

@@ -32,7 +32,7 @@ export class ButtonComponent {
   @Input({required:true}) isSubtextNeeded!: boolean;
   @Input({required:true}) isAudioNeeded!: boolean;
 
-  readonly PRICE_ILS = 39;   // one price for everything
+  readonly PRICE_ILS = 1;   // one price for everything temp 1 was 39
   readonly CURRENCY = 1;     // 1 = ILS
   isPayDialogOpen = false;
   isPaying = false;
