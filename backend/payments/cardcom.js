@@ -28,7 +28,7 @@ async function logEvent({ orderId, lowProfileId, type, payload }) {
 
 async function saveStart({ orderId, lowProfileId, userEmail, amountMinor, currency }) {
   await pool.query(
-    `INSERT INTO payments (order_id, low_profile_id, user_id, amount_minor, currency, status)
+    `INSERT INTO payments (order_id, low_profile_id, user_email, amount_minor, currency, status)
      VALUES ($1, $2, $3, $4, $5, 'pending')
      ON CONFLICT (order_id) DO UPDATE
      SET low_profile_id = EXCLUDED.low_profile_id,
@@ -38,7 +38,7 @@ async function saveStart({ orderId, lowProfileId, userEmail, amountMinor, curren
          updated_at     = now()`,
     [orderId, lowProfileId, userEmail || null, amountMinor, currency]
   );
-  await logEvent({ orderId, lowProfileId, type: "start_ok" });
+  await logEvent({ orderId, lowProfileId, type: 'start_ok' });
 }
 
 async function markPaid({ lowProfileId, orderId, txId, amountMinor, cardType, last4, payload }) {
