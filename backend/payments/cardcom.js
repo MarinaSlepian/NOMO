@@ -205,16 +205,39 @@ router.post("/start", async (req, res) => {
 });
 
 // ===== /webhook =====
-router.post("/webhook", async (req, res) => {
+router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
   try {
-    // ... your existing webhook parsing code ...
+    const rawBody = req.body;
+    let parsed;
+
+    try {
+      parsed = typeof rawBody === "string" ? JSON.parse(rawBody) : rawBody;
+    } catch {
+      // If not JSON, try to parse as URL-encoded form
+      parsed = Object.fromEntries(new URLSearchParams(rawBody));
+    }
+
+    const lowProfileId =
+      parsed?.LowProfileId || parsed?.lowprofileid || parsed?.lowProfileId || "";
+    if (!lowProfileId) throw new Error("Missing LowProfileId in webhook");
+
+    const verifyData = await cardcomFetch(
+      "https://secure.cardcom.solutions/api/v11/LowProfile/GetLpResult",
+      {
+        TerminalNumber: TERMINAL,
+        ApiName: API_NAME,
+        LowProfileId: lowProfileId,
+      }
+    );
+
+    const orderId = verifyData?.ReturnValue ? String(verifyData.ReturnValue) : null;
 
     if (verifyData?.ResponseCode === 0) {
-      const txId   = verifyData.TransactionId ? String(verifyData.TransactionId) : null;
+      const txId = verifyData.TransactionId ? String(verifyData.TransactionId) : null;
       const amount = Number(verifyData.Amount ?? NaN);
       const amountMinor = Number.isFinite(amount) ? Math.round(amount * 100) : null;
       const cardType = verifyData.CardType || null;
-      const last4    = verifyData.CardMask ? String(verifyData.CardMask).slice(-4) : null;
+      const last4 = verifyData.CardMask ? String(verifyData.CardMask).slice(-4) : null;
 
       // ✅ Get planDays from DB (fallback to DEFAULT_PLAN_DAYS)
       const { rows: pdRows } = await pool.query(
@@ -231,14 +254,22 @@ router.post("/webhook", async (req, res) => {
         cardType,
         last4,
         payload: verifyData,
-        planDays
+        planDays,
       });
 
       console.log("✅ Webhook OK:", { lowProfileId, orderId, txId });
       return res.status(200).send("OK");
     }
 
-    // ... rest of your fail handling ...
+    await markFailed({
+      lowProfileId,
+      orderId,
+      reason: verifyData?.Description || `code:${verifyData?.ResponseCode}`,
+      payload: verifyData,
+    });
+
+    console.warn("🟡 Webhook FAIL:", { lowProfileId, orderId, desc: verifyData?.Description });
+    return res.status(200).send("FAIL");
   } catch (err) {
     console.error("❌ Cardcom /webhook error:", err);
     return res.status(200).send("ERROR");
