@@ -71,6 +71,7 @@ export class PricingDialogComponent implements OnInit {
       return;
     }
     this.planSelected.emit(plan);
+    this.close();
   }
 
   // Закрытие по Esc

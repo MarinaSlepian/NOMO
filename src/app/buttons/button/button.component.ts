@@ -147,7 +147,6 @@ export class ButtonComponent {
     if (this.isPaying) return;
     this.isPaying = true;
     this.payError = '';
-
     const orderId = this.makeOrderId();
     const amount = this.PRICE_ILS;
     const description = 'NOMO access';
@@ -156,9 +155,9 @@ export class ButtonComponent {
     if(planSelected == "quarterly")
       planDays = 92;
     else if(planSelected == "yearly")
-      planDays = 352;
+      planDays = 365;
 
-    console.log("payment choosen");
+    console.log("payment chosen, plan selected is ", planSelected);
     this.pay.startPayment({ amount, orderId, description, currency ,planDays })
       .subscribe({
         next: ({ url, lowProfileId }) => {

@@ -28,17 +28,18 @@ async function logEvent({ orderId, lowProfileId, type, payload }) {
   );
 }
 
-async function saveStart({ orderId, lowProfileId, userEmail, amountMinor, currency }) {
+async function saveStart({ orderId, lowProfileId, userEmail, amountMinor, currency, planDays }) {
   await pool.query(
-    `INSERT INTO payments (order_id, low_profile_id, user_email, amount_minor, currency, status)
-     VALUES ($1, $2, $3, $4, $5, 'pending')
+    `INSERT INTO payments (order_id, low_profile_id, user_email, amount_minor, currency, status, plan_days)
+     VALUES ($1, $2, $3, $4, $5, 'pending', $6)
      ON CONFLICT (order_id) DO UPDATE
      SET low_profile_id = EXCLUDED.low_profile_id,
          user_email     = COALESCE(EXCLUDED.user_email, payments.user_email),
          amount_minor   = EXCLUDED.amount_minor,
          currency       = EXCLUDED.currency,
+         plan_days      = COALESCE(EXCLUDED.plan_days, payments.plan_days),
          updated_at     = now()`,
-    [orderId, lowProfileId, userEmail || null, amountMinor, currency]
+    [orderId, lowProfileId, userEmail || null, amountMinor, currency, planDays || DEFAULT_PLAN_DAYS]
   );
   await logEvent({ orderId, lowProfileId, type: 'start_ok' });
 }
@@ -135,7 +136,8 @@ router.post("/start", async (req, res) => {
       currency = 1,
       userEmail,
       successUrl,
-      failUrl
+      failUrl,
+      planDays = DEFAULT_PLAN_DAYS   // ✅ read from frontend, default to 30
     } = req.body;
 
     const amt = Number(amount);
@@ -156,8 +158,8 @@ router.post("/start", async (req, res) => {
       TerminalNumber: TERMINAL,
       ApiName: API_NAME,
       Operation: "ChargeOnly",
-      Amount: amt,                      // major units (₪)
-      ISOCoinId: Number(currency) || 1, // 1 = ILS
+      Amount: amt,
+      ISOCoinId: Number(currency) || 1,
       ProductName: description,
       ReturnValue: oid,
       SuccessRedirectUrl,
@@ -165,8 +167,6 @@ router.post("/start", async (req, res) => {
       WebHookUrl,
       Language: "EN",
     };
-
-    console.log("➡️ /start payload:", { oid, amt, SuccessRedirectUrl, FailedRedirectUrl });
 
     const data = await cardcomFetch(
       "https://secure.cardcom.solutions/api/v11/LowProfile/Create",
@@ -176,14 +176,14 @@ router.post("/start", async (req, res) => {
     console.log("🟠 Cardcom Create response:", data);
 
     if (data?.ResponseCode === 0 && data?.Url) {
-      const amountMinor = Math.round(amt * 100); // ₪ -> agorot
+      const amountMinor = Math.round(amt * 100);
       await saveStart({
         orderId: oid,
         lowProfileId: String(data.LowProfileId),
         userEmail,
         amountMinor,
         currency: Number(currency) || 1,
-        planDays
+        planDays // ✅ now passed into saveStart
       });
 
       console.log("✅ Start OK:", { LowProfileId: data.LowProfileId, orderId: oid });
@@ -200,66 +200,7 @@ router.post("/start", async (req, res) => {
 
 router.post("/webhook", async (req, res) => {
   try {
-    // 1) Normalize body -> text
-    const any = req.body; // could be string | Buffer | object
-    let rawText = "";
-
-    if (typeof any === "string") {
-      rawText = any;
-    } else if (Buffer.isBuffer(any)) {
-      rawText = any.toString("utf8");
-    } else if (any && typeof any === "object") {
-      // Convert object like { LowProfileId: "..." } to querystring
-      rawText = new URLSearchParams(
-        Object.entries(any).map(([k, v]) => [k, v == null ? "" : String(v)])
-      ).toString();
-    } else {
-      rawText = String(any ?? "");
-    }
-
-    console.log("📬 Webhook body (normalized):", rawText.slice(0, 400));
-
-    // 2) Extract LowProfileId (support URL-encoded and raw)
-    const qs = new URLSearchParams(rawText);
-    let lowProfileId =
-      qs.get("LowProfileId") ||
-      qs.get("lowprofileid") ||
-      (/LowProfileId=([^&\s]+)/i.exec(rawText)?.[1]) ||
-      "";
-
-    lowProfileId = lowProfileId.trim();
-
-    // As an extra fallback, pull a UUID-looking token if present
-    if (!lowProfileId) {
-      const m = /[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i.exec(
-        rawText
-      );
-      if (m) lowProfileId = m[0];
-    }
-
-    if (!lowProfileId) {
-      console.warn("Webhook without LowProfileId");
-      return res.status(200).send("MISSING LOWPROFILEID"); // ack to avoid retries
-    }
-
-    // 3) Verify with Cardcom (POST)
-    const verifyData = await cardcomFetch(
-      "https://secure.cardcom.solutions/api/v11/LowProfile/GetLpResult",
-      {
-        TerminalNumber: Number(TERMINAL),
-        ApiName: API_NAME,
-        LowProfileId: lowProfileId,
-      }
-    );
-
-    console.log("🔎 Verify result:", {
-      LowProfileId: lowProfileId,
-      ResponseCode: verifyData?.ResponseCode,
-      Description: verifyData?.Description,
-      ReturnValue: verifyData?.ReturnValue,
-    });
-
-    const orderId = verifyData?.ReturnValue ? String(verifyData.ReturnValue) : null;
+    // ... your existing webhook parsing code ...
 
     if (verifyData?.ResponseCode === 0) {
       const txId   = verifyData.TransactionId ? String(verifyData.TransactionId) : null;
@@ -268,24 +209,32 @@ router.post("/webhook", async (req, res) => {
       const cardType = verifyData.CardType || null;
       const last4    = verifyData.CardMask ? String(verifyData.CardMask).slice(-4) : null;
 
-      await markPaid({ lowProfileId, orderId, txId, amountMinor, cardType, last4, payload: verifyData,planDays });
+      // ✅ Get planDays from DB (fallback to DEFAULT_PLAN_DAYS)
+      const { rows: pdRows } = await pool.query(
+        `SELECT plan_days FROM payments WHERE low_profile_id = $1 LIMIT 1`,
+        [lowProfileId]
+      );
+      const planDays = pdRows[0]?.plan_days || DEFAULT_PLAN_DAYS;
+
+      await markPaid({
+        lowProfileId,
+        orderId,
+        txId,
+        amountMinor,
+        cardType,
+        last4,
+        payload: verifyData,
+        planDays
+      });
+
       console.log("✅ Webhook OK:", { lowProfileId, orderId, txId });
       return res.status(200).send("OK");
     }
 
-    await markFailed({
-      lowProfileId,
-      orderId,
-      reason: verifyData?.Description || `code:${verifyData?.ResponseCode}`,
-      payload: verifyData
-    });
-
-    
-    console.warn("🟡 Webhook FAIL:", { lowProfileId, orderId, desc: verifyData?.Description });
-    return res.status(200).send("FAIL");
+    // ... rest of your fail handling ...
   } catch (err) {
     console.error("❌ Cardcom /webhook error:", err);
-    return res.status(200).send("ERROR"); // ack so Cardcom doesn't retry forever
+    return res.status(200).send("ERROR");
   }
 });
 
