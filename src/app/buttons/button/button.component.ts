@@ -3,9 +3,9 @@ import { VideoComponent } from '../../video/video.component';
 import { TranslateService } from '@ngx-translate/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { PayService } from '../../services/pay.service'; 
-import { PayDialogComponent } from '../../pay-dialog/pay-dialog.component';
 import { PricingConfig } from '../../pricing-dialog/pricing-dialog.component';
 import { PricingDialogComponent } from '../../pricing-dialog/pricing-dialog.component';
+import { AuthService } from '../../auth/auth.service';
 
 
 
@@ -22,7 +22,7 @@ interface User {
 @Component({
   selector: 'app-button',
   standalone: true,
-  imports: [VideoComponent, TranslateModule, PayDialogComponent,PricingDialogComponent],
+  imports: [VideoComponent, TranslateModule,PricingDialogComponent],
   templateUrl: './button.component.html',
   styleUrls: ['./button.component.css']
 })
@@ -43,7 +43,7 @@ export class ButtonComponent {
   fullVideoPath = '';
   isShowVideo = false;
   
-  constructor(public translate: TranslateService, private pay: PayService) {}
+  constructor(public translate: TranslateService, private pay: PayService, private auth: AuthService) {}
 
   get imagePath() {
     if(this.currentApp === '1')
@@ -156,9 +156,10 @@ export class ButtonComponent {
       planDays = 92;
     else if(planSelected == "yearly")
       planDays = 365;
+    const userEmail = this.auth.getLoggedInEmail();
 
     console.log("payment chosen, plan selected is ", planSelected);
-    this.pay.startPayment({ amount, orderId, description, currency ,planDays })
+    this.pay.startPayment({ amount, orderId, description, currency ,userEmail,planDays })
       .subscribe({
         next: ({ url, lowProfileId }) => {
           sessionStorage.setItem('lastLowProfileId', String(lowProfileId));

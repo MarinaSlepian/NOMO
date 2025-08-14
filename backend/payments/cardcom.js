@@ -198,45 +198,88 @@ router.post("/start", async (req, res) => {
   }
 });
 
-router.post("/webhook", async (req, res) => {
+// ===== /webhook =====
+router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
   try {
-    // ... your existing webhook parsing code ...
+    // 1) Normalize body -> text (Cardcom often sends text/plain or form-encoded)
+    const rawText = typeof req.body === "string" ? req.body : String(req.body ?? "");
+    console.log("📬 Webhook body (normalized):", rawText.slice(0, 400));
+
+    // 2) Extract LowProfileId (support URL-encoded and raw)
+    const qs = new URLSearchParams(rawText);
+    let lowProfileId =
+      qs.get("LowProfileId") ||
+      qs.get("lowprofileid") ||
+      (/LowProfileId=([^&\s]+)/i.exec(rawText)?.[1]) ||
+      "";
+
+    if (!lowProfileId) {
+      const m = /[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i.exec(rawText);
+      if (m) lowProfileId = m[0];
+    }
+
+    lowProfileId = lowProfileId.trim();
+    if (!lowProfileId) {
+      console.warn("Webhook without LowProfileId");
+      return res.status(200).send("MISSING LOWPROFILEID"); // ack to avoid retries
+    }
+
+    // 3) Verify with Cardcom (POST to v11 GetLpResult) -> verifyData
+    const verifyData = await cardcomFetch(
+      "https://secure.cardcom.solutions/api/v11/LowProfile/GetLpResult",
+      {
+        TerminalNumber: Number(TERMINAL),
+        ApiName: API_NAME,
+        LowProfileId: lowProfileId,
+      }
+    );
+
+    const orderId = verifyData?.ReturnValue ? String(verifyData.ReturnValue) : null;
+    console.log("🔎 Verify result:", {
+      LowProfileId: lowProfileId,
+      ResponseCode: verifyData?.ResponseCode,
+      Description: verifyData?.Description,
+      ReturnValue: orderId,
+    });
 
     if (verifyData?.ResponseCode === 0) {
-      const txId   = verifyData.TransactionId ? String(verifyData.TransactionId) : null;
+      // 4) Success path: compute amount, fetch planDays from DB, mark paid
       const amount = Number(verifyData.Amount ?? NaN);
       const amountMinor = Number.isFinite(amount) ? Math.round(amount * 100) : null;
-      const cardType = verifyData.CardType || null;
-      const last4    = verifyData.CardMask ? String(verifyData.CardMask).slice(-4) : null;
 
-      // ✅ Get planDays from DB (fallback to DEFAULT_PLAN_DAYS)
       const { rows: pdRows } = await pool.query(
         `SELECT plan_days FROM payments WHERE low_profile_id = $1 LIMIT 1`,
         [lowProfileId]
       );
-      const planDays = pdRows[0]?.plan_days || DEFAULT_PLAN_DAYS;
+      const planDays = pdRows?.[0]?.plan_days || DEFAULT_PLAN_DAYS;
 
       await markPaid({
         lowProfileId,
         orderId,
-        txId,
         amountMinor,
-        cardType,
-        last4,
         payload: verifyData,
         planDays
       });
 
-      console.log("✅ Webhook OK:", { lowProfileId, orderId, txId });
+      console.log("✅ Webhook OK:", { lowProfileId, orderId });
       return res.status(200).send("OK");
     }
 
-    // ... rest of your fail handling ...
+    // 5) Failure path (still 200 to acknowledge)
+    await markFailed({
+      lowProfileId,
+      orderId,
+      reason: verifyData?.Description || `code:${verifyData?.ResponseCode}`,
+      payload: verifyData
+    });
+    console.warn("🟡 Webhook FAIL:", { lowProfileId, orderId, desc: verifyData?.Description });
+    return res.status(200).send("FAIL");
   } catch (err) {
     console.error("❌ Cardcom /webhook error:", err);
-    return res.status(200).send("ERROR");
+    return res.status(200).send("ERROR"); // ack so Cardcom doesn't retry forever
   }
 });
+
 
 
 // Manual status check (GET by param) — calls Cardcom via POST under the hood
