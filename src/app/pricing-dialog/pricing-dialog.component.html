@@ -1,0 +1,75 @@
+<dialog #dialogEl (click)="onBackdropClick($event)">
+  <div class="pricing-wrap"
+       role="document"
+       [attr.aria-label]="'pricing.dialogLabel' | translate">
+
+    <!-- Левая зона: Полная версия -->
+    <section class="full-version">
+      <header class="hero">
+        <h2>{{ 'pricing.fullVersion' | translate }}</h2>
+      </header>
+
+      <div class="cards">
+        <!-- Месяц -->
+        <article class="card red">
+          <h3 class="card-title">{{ 'pricing.monthlyTitle' | translate }}</h3>
+          <div class="price-block">
+            <div class="price">
+              {{ config.currency }} {{ config.monthly }} 
+            </div>
+            <div class="per">{{ 'pricing.perMonth' | translate }}</div>
+          </div>
+          <button #firstFocus class="choose" (click)="select('monthly')">
+            {{ 'pricing.choose' | translate }}
+          </button>
+        </article>
+
+        <!-- Раз в 3 месяца -->
+        <article class="card green">
+          <h3 class="card-title">{{ 'pricing.quarterlyTitle' | translate }}</h3>
+          <div class="price-block">
+            <div class="price">
+              {{ config.currency }} {{ config.quarterly }} 
+            </div>
+            <div class="per">{{ 'pricing.perMonth' | translate }}</div>
+          </div>
+          <button class="choose" (click)="select('quarterly')">
+            {{ 'pricing.choose' | translate }}
+          </button>
+        </article>
+
+        <!-- Год -->
+        <article class="card blue">
+          <h3 class="card-title">{{ 'pricing.yearlyTitle' | translate }}</h3>
+          <div class="price-block">
+            <div class="price">
+               {{ config.currency }} {{ config.yearly }}
+            </div>
+            <div class="per">{{ 'pricing.perMonth' | translate }}</div>
+          </div>
+          <button class="choose" (click)="select('yearly')">
+            {{ 'pricing.choose' | translate }}
+          </button>
+        </article>
+      </div>
+    </section>
+
+    <!-- Правая колонка: Ограниченная версия -->
+    <aside class="limited">
+      <h3>{{ 'pricing.limitedVersion' | translate }}</h3>
+      <div class="limited-art" aria-hidden="true">
+        <img src="assets/payment.png" alt="" />
+      </div>
+      <div class="limited-price">{{ 'pricing.free' | translate }}</div>
+      <button class="choose ghost" (click)="select('free')">
+        {{ 'pricing.choose' | translate }}
+      </button>
+    </aside>
+
+    <!-- Кнопка закрытия -->
+    <button class="close-btn"
+            type="button"
+            (click)="close()"
+            [attr.aria-label]="'pricing.close' | translate">×</button>
+  </div>
+</dialog>

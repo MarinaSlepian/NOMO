@@ -89,6 +89,19 @@
     "processing": "Processing…",
     "confirm": "Continue to payment",
     "cancel": "Cancel"
+  },
+
+"pricing": {
+    "dialogLabel": "Choose a plan",
+    "fullVersion": "Full version",
+    "monthlyTitle": "monthly payment",
+    "quarterlyTitle": "pay once every 3 months",
+    "yearlyTitle": "annual payment",
+    "perMonth": "per month",
+    "choose": "choose",
+    "limitedVersion": "Limited version",
+    "free": "free",
+    "close": "Close"
   }
 }
 

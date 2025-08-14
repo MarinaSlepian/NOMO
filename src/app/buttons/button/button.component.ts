@@ -4,6 +4,8 @@ import { TranslateService } from '@ngx-translate/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { PayService } from '../../services/pay.service'; 
 import { PayDialogComponent } from '../../pay-dialog/pay-dialog.component';
+import { PricingConfig } from '../../pricing-dialog/pricing-dialog.component';
+import { PricingDialogComponent } from '../../pricing-dialog/pricing-dialog.component';
 
 
 
@@ -20,7 +22,7 @@ interface User {
 @Component({
   selector: 'app-button',
   standalone: true,
-  imports: [VideoComponent, TranslateModule, PayDialogComponent],
+  imports: [VideoComponent, TranslateModule, PayDialogComponent,PricingDialogComponent],
   templateUrl: './button.component.html',
   styleUrls: ['./button.component.css']
 })

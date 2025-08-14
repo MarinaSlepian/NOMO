@@ -15,13 +15,24 @@
     </button> 
 </div>
 
-<app-pay-dialog
+<!--<app-pay-dialog
   [open]="isPayDialogOpen"
   [priceILS]="PRICE_ILS"
   [currency]="CURRENCY"
   description="NOMO access"
   (closed)="cancelPayment()">
-</app-pay-dialog>
+</app-pay-dialog>-->
+<app-pricing-dialog
+  [open]="isPayDialogOpen"
+  [config]="{
+    currency: '₪',
+    monthly: 39,
+    quarterly: 29,
+    yearly: 20
+  }"
+  (planSelected)="confirmPayment()"
+  (closed)="isPayDialogOpen = false">
+</app-pricing-dialog>
    
 @if(isShowVideo){  
     <app-video [videoPath]="fullVideoPath" (cancel)="onCancelVideo()" [numOfVideos]="user.numVideos" />

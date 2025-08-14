@@ -89,5 +89,20 @@
     "processing": "מעבד…",
     "confirm": "המשך לתשלום",
     "cancel": "ביטול"
+  },
+
+  
+  "pricing": {
+    "dialogLabel": "בחירת מסלול",
+    "fullVersion": "גרסה מלאה",
+    "monthlyTitle": "תשלום חודשי",
+    "quarterlyTitle": "תשלום פעם ב-3 חודשים",
+    "yearlyTitle": "תשלום שנתי",
+    "perMonth": "לחודש",
+    "choose": "בחרי/בחר",
+    "limitedVersion": "גרסה מוגבלת",
+    "free": "חינם",
+    "close": "סגירה"
   }
+
   }

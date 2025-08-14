@@ -89,5 +89,17 @@
     "processing": "Обработка…",
     "confirm": "Перейти к оплате",
     "cancel": "Отмена"
+  },
+ "pricing": {
+    "dialogLabel": "Выбор тарифа",
+    "fullVersion": "Полная версия",
+    "monthlyTitle": "помесячная оплата",
+    "quarterlyTitle": "оплата раз в 3 месяца",
+    "yearlyTitle": "годовая оплата",
+    "perMonth": "в месяц",
+    "choose": "выбрать",
+    "limitedVersion": "Ограниченная версия",
+    "free": "бесплатно",
+    "close": "Закрыть"
   }
 }
