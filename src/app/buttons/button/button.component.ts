@@ -143,7 +143,7 @@ export class ButtonComponent {
     this.isPayDialogOpen = false;
   }
 
-  confirmPayment() {
+  confirmPayment(planSelected: string) {
     if (this.isPaying) return;
     this.isPaying = true;
     this.payError = '';
@@ -152,9 +152,14 @@ export class ButtonComponent {
     const amount = this.PRICE_ILS;
     const description = 'NOMO access';
     const currency = this.CURRENCY;
+    let planDays = 31;//monthly
+    if(planSelected == "quarterly")
+      planDays = 92;
+    else if(planSelected == "yearly")
+      planDays = 352;
 
     console.log("payment choosen");
-    this.pay.startPayment({ amount, orderId, description, currency /*, userId*/ })
+    this.pay.startPayment({ amount, orderId, description, currency ,planDays })
       .subscribe({
         next: ({ url, lowProfileId }) => {
           sessionStorage.setItem('lastLowProfileId', String(lowProfileId));

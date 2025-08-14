@@ -43,8 +43,7 @@ async function saveStart({ orderId, lowProfileId, userEmail, amountMinor, curren
   await logEvent({ orderId, lowProfileId, type: 'start_ok' });
 }
 
-async function markPaid({ lowProfileId, orderId, amountMinor, payload }) {
-  // Extend access from the latest of (now, existing access_until)
+async function markPaid({ lowProfileId, orderId, amountMinor, payload, planDays }) {
   const sql = `
     WITH me AS (
       SELECT user_email, COALESCE(plan_days, $7) AS plan_days
@@ -72,17 +71,17 @@ async function markPaid({ lowProfileId, orderId, amountMinor, payload }) {
            plan_days     = (SELECT plan_days FROM base),
            updated_at    = now()
      WHERE p.low_profile_id = $6
-     RETURNING user_email, access_from, access_until;
+     RETURNING user_email, access_from, access_until, plan_days;
   `;
 
   const { rows } = await pool.query(sql, [
-    null,                // kept for param alignment if you had tx id earlier; or remove
-    null,
+    null,                              // placeholder for tx_id if needed later
+    null,                              // placeholder for card_type if needed later
     amountMinor || null,
     JSON.stringify(payload || null),
     orderId || null,
     lowProfileId,
-    DEFAULT_PLAN_DAYS
+    planDays                           // <-- now coming from frontend
   ]);
 
   await logEvent({ orderId, lowProfileId, type: 'verify_ok', payload });
@@ -184,7 +183,7 @@ router.post("/start", async (req, res) => {
         userEmail,
         amountMinor,
         currency: Number(currency) || 1,
-        planDays: DEFAULT_PLAN_DAYS
+        planDays
       });
 
       console.log("✅ Start OK:", { LowProfileId: data.LowProfileId, orderId: oid });
@@ -269,7 +268,7 @@ router.post("/webhook", async (req, res) => {
       const cardType = verifyData.CardType || null;
       const last4    = verifyData.CardMask ? String(verifyData.CardMask).slice(-4) : null;
 
-      await markPaid({ lowProfileId, orderId, txId, amountMinor, cardType, last4, payload: verifyData });
+      await markPaid({ lowProfileId, orderId, txId, amountMinor, cardType, last4, payload: verifyData,planDays });
       console.log("✅ Webhook OK:", { lowProfileId, orderId, txId });
       return res.status(200).send("OK");
     }
@@ -280,6 +279,8 @@ router.post("/webhook", async (req, res) => {
       reason: verifyData?.Description || `code:${verifyData?.ResponseCode}`,
       payload: verifyData
     });
+
+    
     console.warn("🟡 Webhook FAIL:", { lowProfileId, orderId, desc: verifyData?.Description });
     return res.status(200).send("FAIL");
   } catch (err) {

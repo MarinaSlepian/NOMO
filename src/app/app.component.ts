@@ -82,9 +82,7 @@ ngOnInit(): void {
         if (e.active) {
           // unlock premium features
           //this.accessUntil = e.until;
-          for (let i = 0; i < this.buttons.length; i++) {
-            this.buttons[i].isLocked = false;
-          }
+          this.setButtonsLock(false);
         } 
       });
     }
@@ -152,6 +150,12 @@ ngOnInit(): void {
     });
 
     
+  }
+
+  setButtonsLock(isLocked: boolean){
+    for (let i = 0; i < this.buttons.length; i++) {
+      this.buttons[i].isLocked = isLocked;
+    }
   }
 
   hideShowDashboard(isShow: boolean) {

@@ -10,6 +10,7 @@ export interface StartPaymentRequest {
   description?: string;
   currency?: number;              // 1 = ILS
   userEmail?: string;   
+  planDays?: number; 
   /** Optional overrides (normally auto-filled from window.location.origin) */
   successUrl?: string;
   failUrl?: string;
