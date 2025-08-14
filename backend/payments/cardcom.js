@@ -47,9 +47,9 @@ async function saveStart({ orderId, lowProfileId, userEmail, amountMinor, curren
 async function markPaid({ lowProfileId, orderId, amountMinor, payload, planDays }) {
   const sql = `
     WITH me AS (
-      SELECT user_email, COALESCE(plan_days, $7) AS plan_days
+      SELECT user_email, COALESCE(plan_days, $5) AS plan_days
       FROM payments
-      WHERE low_profile_id = $6
+      WHERE low_profile_id = $4
     ),
     base AS (
       SELECT
@@ -64,30 +64,29 @@ async function markPaid({ lowProfileId, orderId, amountMinor, payload, planDays 
     )
     UPDATE payments p
        SET status        = 'paid',
-           amount_minor  = COALESCE($3, amount_minor),
-           verify_payload= $4,
+           amount_minor  = COALESCE($1, amount_minor),
+           verify_payload= $2,
            paid_at       = now(),
            access_from   = (SELECT s FROM start_at),
            access_until  = (SELECT s FROM start_at) + ((SELECT plan_days FROM base) || ' days')::interval,
            plan_days     = (SELECT plan_days FROM base),
            updated_at    = now()
-     WHERE p.low_profile_id = $6
+     WHERE p.low_profile_id = $4
      RETURNING user_email, access_from, access_until, plan_days;
   `;
 
   const { rows } = await pool.query(sql, [
-    null,                              // placeholder for tx_id if needed later
-    null,                              // placeholder for card_type if needed later
     amountMinor || null,
     JSON.stringify(payload || null),
     orderId || null,
     lowProfileId,
-    planDays                           // <-- now coming from frontend
+    planDays
   ]);
 
   await logEvent({ orderId, lowProfileId, type: 'verify_ok', payload });
   return rows[0];
 }
+
 
 async function markFailed({ lowProfileId, orderId, reason, payload }) {
   await pool.query(
