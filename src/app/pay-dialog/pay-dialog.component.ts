@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { TranslateService } from '@ngx-translate/core';
 import { PayService } from '../services/pay.service';
+import { AuthService } from '../auth/auth.service';
 
 @Component({
   selector: 'app-pay-dialog',
@@ -36,7 +37,8 @@ export class PayDialogComponent {
 
   constructor(
     private pay: PayService,
-    public translate: TranslateService // 👈 add this
+    public translate: TranslateService,
+    private authService: AuthService
     ) {}
 
   private makeOrderId(): string {
@@ -62,7 +64,7 @@ export class PayDialogComponent {
       orderId,
       description: this.description,
       currency: this.currency,
-      userId: this.userId
+      userEmail: this.authService.getLoggedInEmail()
     }).subscribe({
       next: ({ url, lowProfileId }) => {
         sessionStorage.setItem('lastLowProfileId', String(lowProfileId));

@@ -9,7 +9,7 @@ export interface StartPaymentRequest {
   orderId: string;                // your internal id
   description?: string;
   currency?: number;              // 1 = ILS
-  userId?: number | string;       // may come as string from auth
+  userEmail?: string;   
   /** Optional overrides (normally auto-filled from window.location.origin) */
   successUrl?: string;
   failUrl?: string;

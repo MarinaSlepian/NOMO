@@ -12,8 +12,8 @@ import { DashboardComponent } from './dashboard/dashboard.component';
 import { v4 as uuidv4 } from 'uuid';
 import { SequenceChooserComponent } from './sequence-chooser/sequence-chooser.component';
 import { AuthComponent } from './auth/auth.component';
-import { jwtDecode } from 'jwt-decode'; 
 import { SwUpdate } from '@angular/service-worker';
+import { AuthService } from './auth/auth.service';
 
 interface MyTokenPayload {
   email: string;
@@ -52,7 +52,7 @@ export class AppComponent implements OnInit{
   isPortraitOnMobile = false;
   isShowDashboard = true;
 
-constructor(private translate: TranslateService, private swUpdate: SwUpdate) {
+constructor(private translate: TranslateService, private swUpdate: SwUpdate, private authService: AuthService) {
   console.log('🚀 NOMO App version 5 running');
 
   this.swUpdate.versionUpdates.subscribe(event => {
@@ -98,19 +98,7 @@ constructor(private translate: TranslateService, private swUpdate: SwUpdate) {
     //check orientation
     this.checkOrientation();
   }
-  getLoggedInEmail(): string | undefined {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const decoded = jwtDecode<{ email: string }>(token);
-        console.log("Logged-in email:", decoded.email);
-        return decoded.email;
-      } catch (e) {
-        console.warn("❌ Failed to decode token:", e);
-      }
-    }
-    return undefined;
-  }
+
   installRequested() {
     this.showInstallButton = true; // Now you can show a button in the template
 
@@ -198,11 +186,11 @@ constructor(private translate: TranslateService, private swUpdate: SwUpdate) {
      this.isAudioNeeded = false;
     }
     
-    console.log("in onSelectAppButton email is", this.getLoggedInEmail());
+    console.log("in onSelectAppButton email is", this.authService.getLoggedInEmail());
 
     //send usage info to server
     //this.httpClient.put('http://localhost:3000/app-usage',{
-    const eMail = this.getLoggedInEmail();
+    const eMail = this.authService.getLoggedInEmail();
     if(eMail)
     {
       this.httpClient.put('https://nomo-cj4l.onrender.com/app-usage',{
@@ -218,7 +206,7 @@ constructor(private translate: TranslateService, private swUpdate: SwUpdate) {
   //authentication dialog
   onAuthDialogClosed() {
     this.showAuthDialog = false;
-    console.log("after calling showAuthDialog = false email",this.getLoggedInEmail() );
+    console.log("after calling showAuthDialog = false email",this.authService.getLoggedInEmail() );
     this.onSelectAppButton(this.currentConfig.selectedApp);
     console.log("after calling onSelectAppButton")
 

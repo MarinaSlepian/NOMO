@@ -26,16 +26,17 @@ async function logEvent({ orderId, lowProfileId, type, payload }) {
   );
 }
 
-async function saveStart({ orderId, lowProfileId, userId, amountMinor, currency }) {
+async function saveStart({ orderId, lowProfileId, userEmail, amountMinor, currency }) {
   await pool.query(
     `INSERT INTO payments (order_id, low_profile_id, user_id, amount_minor, currency, status)
      VALUES ($1, $2, $3, $4, $5, 'pending')
      ON CONFLICT (order_id) DO UPDATE
      SET low_profile_id = EXCLUDED.low_profile_id,
+         user_email     = EXCLUDED.user_email,
          amount_minor   = EXCLUDED.amount_minor,
          currency       = EXCLUDED.currency,
          updated_at     = now()`,
-    [orderId, lowProfileId, userId || null, amountMinor, currency]
+    [orderId, lowProfileId, userEmail || null, amountMinor, currency]
   );
   await logEvent({ orderId, lowProfileId, type: "start_ok" });
 }
@@ -101,7 +102,7 @@ router.post("/start", async (req, res) => {
       orderId,
       description = "NOMO payment",
       currency = 1,
-      userId,
+      userEmail,
       successUrl,
       failUrl
     } = req.body;
@@ -148,7 +149,7 @@ router.post("/start", async (req, res) => {
       await saveStart({
         orderId: oid,
         lowProfileId: String(data.LowProfileId),
-        userId,
+        userEmail,
         amountMinor,
         currency: Number(currency) || 1,
       });
@@ -164,24 +165,51 @@ router.post("/start", async (req, res) => {
   }
 });
 
-// Webhook expects raw text; verify with POST (not GET)
-router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
+router.post("/webhook", async (req, res) => {
   try {
-    const raw = req.body || "";
-    console.log("📬 Webhook raw:", raw?.slice(0, 400)); // truncated log
+    // 1) Normalize body -> text
+    const any = req.body; // could be string | Buffer | object
+    let rawText = "";
 
-    // Support URL-encoded text; allow numeric or UUID LowProfileId
-    const qs = new URLSearchParams(raw);
-    const lpFromQS = qs.get("LowProfileId");
-    const lpFromRegex = /(?:^|[&])LowProfileId=([^&]+)/i.exec(raw)?.[1];
-    const lowProfileId = (lpFromQS || lpFromRegex || "").trim();
+    if (typeof any === "string") {
+      rawText = any;
+    } else if (Buffer.isBuffer(any)) {
+      rawText = any.toString("utf8");
+    } else if (any && typeof any === "object") {
+      // Convert object like { LowProfileId: "..." } to querystring
+      rawText = new URLSearchParams(
+        Object.entries(any).map(([k, v]) => [k, v == null ? "" : String(v)])
+      ).toString();
+    } else {
+      rawText = String(any ?? "");
+    }
+
+    console.log("📬 Webhook body (normalized):", rawText.slice(0, 400));
+
+    // 2) Extract LowProfileId (support URL-encoded and raw)
+    const qs = new URLSearchParams(rawText);
+    let lowProfileId =
+      qs.get("LowProfileId") ||
+      qs.get("lowprofileid") ||
+      (/LowProfileId=([^&\s]+)/i.exec(rawText)?.[1]) ||
+      "";
+
+    lowProfileId = lowProfileId.trim();
+
+    // As an extra fallback, pull a UUID-looking token if present
+    if (!lowProfileId) {
+      const m = /[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i.exec(
+        rawText
+      );
+      if (m) lowProfileId = m[0];
+    }
 
     if (!lowProfileId) {
       console.warn("Webhook without LowProfileId");
       return res.status(200).send("MISSING LOWPROFILEID"); // ack to avoid retries
     }
 
-    // Verify with Cardcom via POST
+    // 3) Verify with Cardcom (POST)
     const verifyData = await cardcomFetch(
       "https://secure.cardcom.solutions/api/v11/LowProfile/GetLpResult",
       {
@@ -219,12 +247,13 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       payload: verifyData
     });
     console.warn("🟡 Webhook FAIL:", { lowProfileId, orderId, desc: verifyData?.Description });
-    return res.status(200).send("FAIL"); // still 200 to acknowledge
+    return res.status(200).send("FAIL");
   } catch (err) {
     console.error("❌ Cardcom /webhook error:", err);
-    return res.status(200).send("ERROR"); // ack so they don't spam retries
+    return res.status(200).send("ERROR"); // ack so Cardcom doesn't retry forever
   }
 });
+
 
 // Manual status check (GET by param) — calls Cardcom via POST under the hood
 router.get("/status/:lowProfileId", async (req, res) => {

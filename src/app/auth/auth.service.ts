@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, map } from 'rxjs';
+import { jwtDecode } from 'jwt-decode'; 
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -69,5 +70,19 @@ export class AuthService {
 
   isLoggedIn(): boolean {
     return !!localStorage.getItem('token');
+  }
+
+  getLoggedInEmail(): string | undefined {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const decoded = jwtDecode<{ email: string }>(token);
+        console.log("Logged-in email:", decoded.email);
+        return decoded.email;
+      } catch (e) {
+        console.warn("❌ Failed to decode token:", e);
+      }
+    }
+    return undefined;
   }
 }
