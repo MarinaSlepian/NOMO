@@ -150,3 +150,30 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+// Example auth guard. Replace with your JWT/session logic.
+function requireAuth(req, res, next) {
+  if (!req.user?.email) return res.status(401).json({ error: 'unauthorized' });
+  next();
+}
+
+// GET /api/access/me  -> { active: boolean, until: ISO | null }
+app.get('/api/access/me', requireAuth, async (req, res) => {
+  try {
+    const email = req.user.email; // trusted from auth middleware
+    const { rows } = await pool.query(
+      `SELECT MAX(access_until) AS until
+         FROM payments
+        WHERE user_email = $1 AND status = 'paid'`,
+      [email]
+    );
+    const until = rows[0]?.until || null;
+    res.json({
+      active: !!until && new Date(until) > new Date(),
+      until
+    });
+  } catch (e) {
+    console.error('access/me error', e);
+    res.status(500).json({ error: 'internal' });
+  }
+});

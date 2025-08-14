@@ -3,6 +3,8 @@ import express from "express";
 import fetch from "node-fetch";
 import { pool } from "../db.js";
 
+const DEFAULT_PLAN_DAYS = 30; // adjust as needed
+
 const router = express.Router();
 
 // === Required envs ===
@@ -32,7 +34,7 @@ async function saveStart({ orderId, lowProfileId, userEmail, amountMinor, curren
      VALUES ($1, $2, $3, $4, $5, 'pending')
      ON CONFLICT (order_id) DO UPDATE
      SET low_profile_id = EXCLUDED.low_profile_id,
-         user_email     = EXCLUDED.user_email,
+         user_email     = COALESCE(EXCLUDED.user_email, payments.user_email),
          amount_minor   = EXCLUDED.amount_minor,
          currency       = EXCLUDED.currency,
          updated_at     = now()`,
@@ -41,20 +43,50 @@ async function saveStart({ orderId, lowProfileId, userEmail, amountMinor, curren
   await logEvent({ orderId, lowProfileId, type: 'start_ok' });
 }
 
-async function markPaid({ lowProfileId, orderId, txId, amountMinor, cardType, last4, payload }) {
-  await pool.query(
-    `UPDATE payments
-       SET status='paid',
-           transaction_id=$1,
-           card_type=$2,
-           card_last4=$3,
-           amount_minor=COALESCE($4, amount_minor),
-           verify_payload=$5,
-           updated_at=now()
-     WHERE low_profile_id=$6`,
-    [txId || null, cardType || null, last4 || null, amountMinor || null, JSON.stringify(payload || null), lowProfileId]
-  );
-  await logEvent({ orderId, lowProfileId, type: "verify_ok", payload });
+async function markPaid({ lowProfileId, orderId, amountMinor, payload }) {
+  // Extend access from the latest of (now, existing access_until)
+  const sql = `
+    WITH me AS (
+      SELECT user_email, COALESCE(plan_days, $7) AS plan_days
+      FROM payments
+      WHERE low_profile_id = $6
+    ),
+    base AS (
+      SELECT
+        (SELECT COALESCE(MAX(access_until), now())
+           FROM payments p2
+          WHERE p2.user_email = (SELECT user_email FROM me)
+            AND p2.status = 'paid') AS last_until,
+        (SELECT plan_days FROM me) AS plan_days
+    ),
+    start_at AS (
+      SELECT GREATEST(now(), (SELECT last_until FROM base)) AS s
+    )
+    UPDATE payments p
+       SET status        = 'paid',
+           amount_minor  = COALESCE($3, amount_minor),
+           verify_payload= $4,
+           paid_at       = now(),
+           access_from   = (SELECT s FROM start_at),
+           access_until  = (SELECT s FROM start_at) + ((SELECT plan_days FROM base) || ' days')::interval,
+           plan_days     = (SELECT plan_days FROM base),
+           updated_at    = now()
+     WHERE p.low_profile_id = $6
+     RETURNING user_email, access_from, access_until;
+  `;
+
+  const { rows } = await pool.query(sql, [
+    null,                // kept for param alignment if you had tx id earlier; or remove
+    null,
+    amountMinor || null,
+    JSON.stringify(payload || null),
+    orderId || null,
+    lowProfileId,
+    DEFAULT_PLAN_DAYS
+  ]);
+
+  await logEvent({ orderId, lowProfileId, type: 'verify_ok', payload });
+  return rows[0];
 }
 
 async function markFailed({ lowProfileId, orderId, reason, payload }) {
@@ -152,7 +184,9 @@ router.post("/start", async (req, res) => {
         userEmail,
         amountMinor,
         currency: Number(currency) || 1,
+        planDays: DEFAULT_PLAN_DAYS
       });
+
       console.log("✅ Start OK:", { LowProfileId: data.LowProfileId, orderId: oid });
       return res.json({ url: data.Url, lowProfileId: data.LowProfileId });
     }

@@ -14,6 +14,7 @@ import { SequenceChooserComponent } from './sequence-chooser/sequence-chooser.co
 import { AuthComponent } from './auth/auth.component';
 import { SwUpdate } from '@angular/service-worker';
 import { AuthService } from './auth/auth.service';
+import { EntitlementService } from './services/entitlement.service';
 
 interface MyTokenPayload {
   email: string;
@@ -52,7 +53,8 @@ export class AppComponent implements OnInit{
   isPortraitOnMobile = false;
   isShowDashboard = true;
 
-constructor(private translate: TranslateService, private swUpdate: SwUpdate, private authService: AuthService) {
+constructor(private translate: TranslateService, private swUpdate: SwUpdate, 
+            private authService: AuthService, private entitlement: EntitlementService) {
   console.log('🚀 NOMO App version 5 running');
 
   this.swUpdate.versionUpdates.subscribe(event => {
@@ -69,12 +71,23 @@ constructor(private translate: TranslateService, private swUpdate: SwUpdate, pri
   });
 }
 
-  ngOnInit(): void {
+ngOnInit(): void {
 
     //check authentication
     const token = localStorage.getItem('token');
     this.showAuthDialog = !token; // show dialog only if token is missing
 
+    if(!this.showAuthDialog){//check if paid ==> entitled for unlocked features
+      this.entitlement.getMine().subscribe(e => {
+        if (e.active) {
+          // unlock premium features
+          //this.accessUntil = e.until;
+          for (let i = 0; i < this.buttons.length; i++) {
+            this.buttons[i].isLocked = false;
+          }
+        } 
+      });
+    }
     this.deviceId = localStorage.getItem('deviceId');
     if (!this.deviceId) {
       this.deviceId = uuidv4();
