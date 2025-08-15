@@ -237,10 +237,18 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
 
     if (verifyData?.ResponseCode === 0) {
       const txId = verifyData.TransactionId ? String(verifyData.TransactionId) : null;
-      const amount = Number(verifyData.Amount ?? NaN);
-      const amountMinor = Number.isFinite(amount) ? Math.round(amount * 100) : null;
+      const amount = Number(verifyData?.TranzactionInfo?.Amount);
+      const amountMinor = Number.isFinite(amount) && amount > 0 ? Math.round(amount * 100) : null;
+
+      console.log('🔍 TranzactionInfo.Amount: ', amount, '→ amountMinor:', amountMinor);
+
       const cardType = verifyData.CardType || null;
       const last4 = verifyData.CardMask ? String(verifyData.CardMask).slice(-4) : null;
+      console.log('🔍 last4: ', last4);
+      console.log('🔍 cardType: ', cardType);
+
+
+
 
       // ✅ Get planDays from DB (fallback to DEFAULT_PLAN_DAYS)
       const { rows: pdRows } = await pool.query(
