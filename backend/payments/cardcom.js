@@ -55,30 +55,32 @@ async function markPaid({ lowProfileId, orderId, amountMinor, payload, planDays 
     base AS (
       SELECT
         (SELECT COALESCE(MAX(access_until), now())
-           FROM payments p2
-          WHERE p2.user_email = (SELECT user_email FROM me)
-            AND p2.status = 'paid') AS last_until,
+         FROM payments p2
+         WHERE p2.user_email = (SELECT user_email FROM me)
+           AND p2.status = 'paid') AS last_until,
         (SELECT plan_days FROM me) AS plan_days
     ),
     start_at AS (
       SELECT GREATEST(now(), (SELECT last_until FROM base)) AS s
     )
     UPDATE payments p
-       SET status        = 'paid',
-           amount_minor  = COALESCE($1, amount_minor),
-           verify_payload= $2,
-           paid_at       = now(),
-           access_from   = (SELECT s FROM start_at),
-           access_until  = (SELECT s FROM start_at) + ((SELECT plan_days FROM base) || ' days')::interval,
-           plan_days     = (SELECT plan_days FROM base),
-           updated_at    = now()
+       SET status         = 'paid',
+           amount_minor   = COALESCE($1, amount_minor),
+           verify_payload = $2,
+           paid_at        = now(),
+           access_from    = (SELECT s FROM start_at),
+           access_until   = (SELECT s FROM start_at) + ((SELECT plan_days FROM base) || ' days')::interval,
+           plan_days      = (SELECT plan_days FROM base),
+           updated_at     = now(),
+           order_id       = COALESCE($3::text, order_id)  -- 👈 שימוש ב-$3
      WHERE p.low_profile_id = $4
      RETURNING user_email, access_from, access_until, plan_days;
   `;
+  console.log('markPaid version 9');
+
 
   let amtMinor = Number(amountMinor);
   if (!Number.isFinite(amtMinor)) amtMinor = null;
-
   console.log('amountMinor:', amountMinor, 'amtMinor:', amtMinor, 'type:', typeof amtMinor);
 
   const { rows } = await pool.query(sql, [
@@ -92,6 +94,7 @@ async function markPaid({ lowProfileId, orderId, amountMinor, payload, planDays 
   await logEvent({ orderId, lowProfileId, type: 'verify_ok', payload });
   return rows[0];
 }
+
 
 
 
