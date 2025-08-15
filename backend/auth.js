@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 import { pool } from './db.js';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // 🔐 SIGNUP route
 router.post('/signup', async (req, res) => {
