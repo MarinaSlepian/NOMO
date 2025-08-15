@@ -76,13 +76,13 @@ async function markPaid({ lowProfileId, orderId, amountMinor, payload, planDays 
      RETURNING user_email, access_from, access_until, plan_days;
   `;
 
-  console.log('amountMinor:', amountMinor, 'type:', typeof amountMinor);
+  let amtMinor = Number(amountMinor);
+  if (!Number.isFinite(amtMinor)) amtMinor = null;
 
-  if (typeof amountMinor !== 'number') {
-    amountMinor = null;
-  }
+  console.log('amountMinor:', amountMinor, 'amtMinor:', amtMinor, 'type:', typeof amtMinor);
+
   const { rows } = await pool.query(sql, [
-    amountMinor || null,
+    amtMinor,
     JSON.stringify(payload || null),
     orderId || null,
     lowProfileId,
