@@ -54,7 +54,8 @@ export class AppComponent implements OnInit{
   isShowDashboard = true;
 
 constructor(private translate: TranslateService, private swUpdate: SwUpdate, 
-            private authService: AuthService, private entitlement: EntitlementService) {
+            private authService: AuthService, private entitlement: EntitlementService, 
+            private auth: AuthService) {
   console.log('🚀 NOMO App version 5 running');
 
   this.swUpdate.versionUpdates.subscribe(event => {
@@ -71,23 +72,30 @@ constructor(private translate: TranslateService, private swUpdate: SwUpdate,
   });
 }
 
+checkPayment()
+{
+  //checks if active paiment and unlochk buttons if yes
+  if(this.auth.isLoggedIn()){
+    this.entitlement.getMine().subscribe(e => {
+      if (e.active) {
+        // unlock premium features
+        //this.accessUntil = e.until;
+        this.setButtonsLock(false);
+      } 
+      else{
+        console.log('not entitled for premium features');
+      }
+    });
+  }
+}
+
 ngOnInit(): void {
 
     //check authentication
-    const token = localStorage.getItem('token');
-    this.showAuthDialog = !token; // show dialog only if token is missing
+    this.showAuthDialog = !this.auth.isLoggedIn(); // show dialog only if token is missing
 
     if(!this.showAuthDialog){//check if paid ==> entitled for unlocked features
-      this.entitlement.getMine().subscribe(e => {
-        if (e.active) {
-          // unlock premium features
-          //this.accessUntil = e.until;
-          this.setButtonsLock(false);
-        } 
-        else{
-          console.log('not entitled for premium features');
-        }
-      });
+      this.checkPayment();
     }
     this.deviceId = localStorage.getItem('deviceId');
     if (!this.deviceId) {
@@ -228,6 +236,7 @@ ngOnInit(): void {
   onAuthDialogClosed() {
     this.showAuthDialog = false;
     console.log("after calling showAuthDialog = false email",this.authService.getLoggedInEmail() );
+    this.checkPayment();
     this.onSelectAppButton(this.currentConfig.selectedApp);
     console.log("after calling onSelectAppButton")
 

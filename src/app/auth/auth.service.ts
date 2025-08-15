@@ -37,13 +37,13 @@ export class AuthService {
   
   logout() {
     this.token = null;
-    localStorage.removeItem('token');
+    localStorage.removeItem('tokenV1');
     this.isLoggedIn$.next(false);
   }
 
   autoLogin() {
     console.log("autoLogin");
-    const storedToken = localStorage.getItem('token');
+    const storedToken = localStorage.getItem('tokenV1');
     const storedEmail = localStorage.getItem('email');
     if (storedToken) {
       this.token = storedToken;
@@ -60,7 +60,7 @@ export class AuthService {
 
   private setToken(token: string) {
     this.token = token;
-    localStorage.setItem('token', token);
+    localStorage.setItem('tokenV1', token);
     this.isLoggedIn$.next(true);
   }
 
@@ -69,11 +69,11 @@ export class AuthService {
   }
 
   isLoggedIn(): boolean {
-    return !!localStorage.getItem('token');
+    return !!localStorage.getItem('tokenV1');
   }
 
   getLoggedInEmail(): string | undefined {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('tokenV1');
     if (token) {
       try {
         const decoded = jwtDecode<{ email: string }>(token);
