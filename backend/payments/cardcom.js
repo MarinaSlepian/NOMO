@@ -76,7 +76,7 @@ async function markPaid({ lowProfileId, orderId, amountMinor, payload, planDays 
      WHERE p.low_profile_id = $4
      RETURNING user_email, access_from, access_until, plan_days;
   `;
-  console.log('markPaid version 9');
+  console.log('markPaid version 11');
 
 
   let amtMinor = Number(amountMinor);
@@ -236,19 +236,32 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     const orderId = verifyData?.ReturnValue ? String(verifyData.ReturnValue) : null;
 
     if (verifyData?.ResponseCode === 0) {
-      const txId = verifyData.TransactionId ? String(verifyData.TransactionId) : null;
-      const amount = Number(verifyData?.TranzactionInfo?.Amount);
-      const amountMinor = Number.isFinite(amount) && amount > 0 ? Math.round(amount * 100) : null;
+      const txId = verifyData?.TranzactionId
+        ? String(verifyData.TranzactionId)
+        : verifyData?.TranzactionInfo?.TranzactionId
+        ? String(verifyData.TranzactionInfo.TranzactionId)
+        : null;
 
-      console.log('🔍 TranzactionInfo.Amount: ', amount, '→ amountMinor:', amountMinor);
+      const tInfo = verifyData.TranzactionInfo || {};
 
-      const cardType = verifyData.CardType || null;
-      const last4 = verifyData.CardMask ? String(verifyData.CardMask).slice(-4) : null;
-      console.log('🔍 last4: ', last4);
-      console.log('🔍 cardType: ', cardType);
+      const amount = Number(tInfo?.Amount);
+      const amountMinor =
+        Number.isFinite(amount) && amount > 0 ? Math.round(amount * 100) : null;
 
+      const cardType = tInfo?.CardName || null;
+      const last4 =
+        tInfo?.Last4CardDigitsString ||
+        (tInfo?.Last4CardDigits
+          ? String(tInfo.Last4CardDigits).padStart(4, "0")
+          : null);
 
+      const brand = tInfo?.Brand || null;
+      const issuer = tInfo?.Issuer || null;
+      const cardOwner = tInfo?.CardOwnerName || null;
 
+      console.log("🔍 amount:", amount, "→ amountMinor:", amountMinor);
+      console.log("💳 last4:", last4, "cardType:", cardType);
+      console.log("💳 brand:", brand, "issuer:", issuer, "cardOwner:", cardOwner);
 
       // ✅ Get planDays from DB (fallback to DEFAULT_PLAN_DAYS)
       const { rows: pdRows } = await pool.query(
@@ -264,6 +277,9 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
         amountMinor,
         cardType,
         last4,
+        brand,
+        issuer,
+        cardOwner,
         payload: verifyData,
         planDays,
       });
@@ -272,6 +288,7 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       return res.status(200).send("OK");
     }
 
+    // If response code not 0
     await markFailed({
       lowProfileId,
       orderId,
@@ -279,13 +296,18 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       payload: verifyData,
     });
 
-    console.warn("🟡 Webhook FAIL:", { lowProfileId, orderId, desc: verifyData?.Description });
+    console.warn("🟡 Webhook FAIL:", {
+      lowProfileId,
+      orderId,
+      desc: verifyData?.Description,
+    });
     return res.status(200).send("FAIL");
   } catch (err) {
     console.error("❌ Cardcom /webhook error:", err);
     return res.status(200).send("ERROR");
   }
 });
+
 
 
 
