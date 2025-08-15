@@ -6,6 +6,8 @@ import fetch from 'node-fetch';
 import { UAParser } from 'ua-parser-js';
 import cardcomRouter from "./payments/cardcom.js";
 import authRouter from "./auth.js"; // 👈 import auth routes
+import jwt from 'jsonwebtoken';
+
 
 
 const parser = new UAParser();
