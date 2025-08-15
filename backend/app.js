@@ -153,13 +153,34 @@ app.listen(PORT, () => {
 
 // Example auth guard. Replace with your JWT/session logic.
 function requireAuth(req, res, next) {
-  if (!req.user?.email) return res.status(401).json({ error: 'unauthorized' });
-  next();
+  const authHeader = req.headers.authorization || '';
+  console.log('🔐 Received Authorization header:', authHeader); // 👈 Log full header (for dev only)
+
+  const token = authHeader.replace('Bearer ', '').trim();
+  console.log('🔍 Extracted token:', token); // 👈 Token string for debugging (for dev only)
+
+  if (!token) {
+    console.warn('🚫 No token provided');
+    return res.status(401).json({ error: 'Missing token' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET); // ⬅️ make sure you're using the correct env variable
+    console.log('✅ Token verified:', decoded); // 👈 Show decoded payload
+    req.user = decoded;
+    next();
+  } catch (err) {
+    console.error('❌ Auth failed:', err.message);
+    return res.status(401).json({ error: 'Invalid token' });
+  }
 }
+
 
 // GET /api/access/me  -> { active: boolean, until: ISO | null }
 app.get('/api/access/me', requireAuth, async (req, res) => {
   try {
+    console.log('🔐 Access granted to user:', req.user); // ✅ Log decoded user
+
     const email = req.user.email; // trusted from auth middleware
     const { rows } = await pool.query(
       `SELECT MAX(access_until) AS until

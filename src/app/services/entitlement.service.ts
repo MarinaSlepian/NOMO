@@ -8,11 +8,15 @@ export class EntitlementService {
 
 getMine() {
   const token = localStorage.getItem('token');
-  return this.http.get<{ active: boolean; until: string | null }>('/api/access/me', {
-    headers: {
-      Authorization: `Bearer ${token}`
+  return this.http.get<{ active: boolean; until: string | null }>(
+    'https://nomo-cj4l.onrender.com/api/access/me',
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     }
-  });
+  );
 }
+
 
 }
