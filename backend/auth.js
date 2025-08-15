@@ -6,6 +6,10 @@ import { pool } from './db.js';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('❌ JWT_SECRET is missing! Check your .env and restart the server.');
+  process.exit(1);
+}
 
 // 🔐 SIGNUP route
 router.post('/signup', async (req, res) => {
