@@ -6,7 +6,13 @@ export class EntitlementService {
     
   constructor(private http: HttpClient) {}
 
-  getMine() {
-    return this.http.get<{active: boolean; until: string | null}>('/api/access/me');
-  }
+getMine() {
+  const token = localStorage.getItem('token');
+  return this.http.get<{ active: boolean; until: string | null }>('/api/access/me', {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+}
+
 }

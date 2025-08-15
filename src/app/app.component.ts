@@ -84,6 +84,9 @@ ngOnInit(): void {
           //this.accessUntil = e.until;
           this.setButtonsLock(false);
         } 
+        else{
+          console.log('not entitled for premium features');
+        }
       });
     }
     this.deviceId = localStorage.getItem('deviceId');
@@ -153,6 +156,7 @@ ngOnInit(): void {
   }
 
   setButtonsLock(isLocked: boolean){
+    console.log('unlock buttons');
     for (let i = 0; i < this.buttons.length; i++) {
       this.buttons[i].isLocked = isLocked;
     }
