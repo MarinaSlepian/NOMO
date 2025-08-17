@@ -206,8 +206,10 @@ router.post("/start", async (req, res) => {
         PeriodFrequency,
         MaxNumOfPayments: 9999,
         FirstPaymentSum: amt,
+        IsSubscription: true,   // 👈 חשוב!
       });
     }
+    console.log("🟠 send body ", body);
 
     const data = await cardcomFetch(
       "https://secure.cardcom.solutions/api/v11/LowProfile/Create",
