@@ -183,12 +183,11 @@ router.post("/start", async (req, res) => {
     const FailedRedirectUrl  = normalizeUrl(failUrl, "/pay/failed");
     const WebHookUrl         = `${API_URL}/api/pay/webhook`;
 
-    const isRecurring = true;//only subscription
 
     const body = {
       TerminalNumber: TERMINAL,
       ApiName: API_NAME,
-      Operation: isRecurring ? "CreateSubscription" : "ChargeOnly",
+      Operation: "CreateSubscription",
       Amount: amt,
       ISOCoinId: Number(currency) || 1,
       ProductName: description,
@@ -200,7 +199,7 @@ router.post("/start", async (req, res) => {
     };
 
         // רק אם זה מנוי – מוסיפים פרטים נוספים
-    if (isRecurring) {
+    if (true) {
       const { PeriodTypeCode, PeriodFrequency } = getPeriodFromPlanDays(planDays);
       Object.assign(body, {
         PeriodTypeCode,
