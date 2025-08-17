@@ -326,7 +326,7 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       // Create recurring subscription
       if (cardToken) {
         const subResult = await cardcomFetch(
-          "https://secure.cardcom.solutions/api/Subscription/CreateSubscription",
+          "https://secure.cardcom.solutions/Interface/Subscription/CreateSubscription",
           {
             TerminalNumber: TERMINAL,
             ApiName: API_NAME,
