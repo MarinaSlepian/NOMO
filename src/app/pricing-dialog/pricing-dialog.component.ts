@@ -25,8 +25,8 @@ export class PricingDialogComponent implements OnInit {
   @Input() config: PricingConfig = {
     currency: '₪',
     monthly: 39,
-    quarterly: 30,
-    yearly: 25,
+    quarterly: 29,
+    yearly: 20,
     labels: {
       monthly: 'помесячная оплата',
       quarterly: 'оплата раз в 3 месяца',

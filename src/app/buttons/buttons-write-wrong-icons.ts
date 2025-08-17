@@ -13,7 +13,7 @@ export const BUTTONS_RIGHT_WRONG_ICONS = [
     avatar: 'user-2.png',
     numVideos: '2',
     subtextKey:"",
-    isLocked: false
+    isLocked: true
   },
   {
     id: '3',

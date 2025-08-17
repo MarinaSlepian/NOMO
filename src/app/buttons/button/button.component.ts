@@ -34,7 +34,6 @@ export class ButtonComponent {
   @Input({required:true}) isSubtextNeeded!: boolean;
   @Input({required:true}) isAudioNeeded!: boolean;
 
-  readonly PRICE_ILS = 1;   // one price for everything temp 1 was 39
   readonly CURRENCY = 1;     // 1 = ILS
   isPayDialogOpen = false;
   isPaying = false;
@@ -148,16 +147,23 @@ export class ButtonComponent {
     this.isPaying = true;
     this.payError = '';
     const orderId = this.makeOrderId();
-    const amount = this.PRICE_ILS;
     const description = 'NOMO access';
     const currency = this.CURRENCY;
+    let amount = 39;
     let planDays = 31;//monthly
-    if(planSelected == "quarterly")
+    if(planSelected == "quarterly"){
       planDays = 92;
-    else if(planSelected == "yearly")
+      amount = 29*3;
+    }
+    else if(planSelected == "yearly"){
       planDays = 365;
+      amount = 20*12;
+    }
     const userEmail = this.auth.getLoggedInEmail();
-
+    //temporary 
+    amount = 1;
+    planDays = 1;
+    //temporary 
     console.log("payment chosen, plan selected is ", planSelected);
     this.pay.startPayment({ amount, orderId, description, currency ,userEmail,planDays })
       .subscribe({

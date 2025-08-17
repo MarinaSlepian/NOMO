@@ -216,6 +216,7 @@ ngOnInit(): void {
     }
     
     console.log("in onSelectAppButton email is", this.authService.getLoggedInEmail());
+    this.checkPayment();
 
     //send usage info to server
     //this.httpClient.put('http://localhost:3000/app-usage',{
