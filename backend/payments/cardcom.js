@@ -344,7 +344,47 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
 });
 
 
+router.post("/create-subscription", async (req, res) => {
+  try {
+    const {
+      cardToken,
+      amount,
+      planDays = DEFAULT_PLAN_DAYS,
+      startDate = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
+    } = req.body;
 
+    const { PeriodTypeCode, PeriodFrequency } = getPeriodFromPlanDays(planDays);
+
+    const body = {
+      TerminalNumber: TERMINAL,
+      ApiUserName: API_NAME,
+      CardToken: cardToken,
+      FirstPaymentAmount: amount,
+      RecurringChargeAmount: amount,
+      MaxNumOfPayments: 9999,
+      PeriodTypeCode,
+      PeriodFrequency,
+      StartDate: startDate
+    };
+
+    const response = await cardcomFetch(
+      "https://secure.cardcom.solutions/api/RecurringCharge/CreateSubscription",
+      body
+    );
+
+    console.log("🔁 Subscription response:", response);
+
+    if (response?.ResponseCode === 0) {
+      return res.json({ success: true, subscriptionId: response.SubscriptionId });
+    } else {
+      return res.status(400).json({ error: response?.Description || "Subscription failed" });
+    }
+
+  } catch (err) {
+    console.error("❌ /create-subscription error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 // Manual status check (GET by param) — calls Cardcom via POST under the hood
 router.get("/status/:lowProfileId", async (req, res) => {
