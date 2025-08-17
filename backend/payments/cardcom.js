@@ -142,7 +142,15 @@ function normalizeUrl(u, fallbackPath) {
     return `${APP_URL}${fallbackPath}`;
   }
 }
-
+function getPeriodFromPlanDays(planDays) {
+  if (planDays >= 365) {
+    return { PeriodTypeCode: 4, PeriodFrequency: 1 }; // שנה
+  }
+  if (planDays >= 90) {
+    return { PeriodTypeCode: 3, PeriodFrequency: 3 }; // רבעון
+  }
+  return { PeriodTypeCode: 3, PeriodFrequency: 1 }; // ברירת מחדל: חודש
+}
 /**
  * POST /api/pay/start
  * Body: { amount:number, orderId:string, description?:string, currency?:number, userId?:number|string, successUrl?:string, failUrl?:string }
@@ -175,10 +183,12 @@ router.post("/start", async (req, res) => {
     const FailedRedirectUrl  = normalizeUrl(failUrl, "/pay/failed");
     const WebHookUrl         = `${API_URL}/api/pay/webhook`;
 
+    const isRecurring = true;//only subscription
+
     const body = {
       TerminalNumber: TERMINAL,
       ApiName: API_NAME,
-      Operation: "ChargeOnly",
+      Operation: isRecurring ? "CreateSubscription" : "ChargeOnly",
       Amount: amt,
       ISOCoinId: Number(currency) || 1,
       ProductName: description,
@@ -188,6 +198,17 @@ router.post("/start", async (req, res) => {
       WebHookUrl,
       Language: "EN",
     };
+
+        // רק אם זה מנוי – מוסיפים פרטים נוספים
+    if (isRecurring) {
+      const { PeriodTypeCode, PeriodFrequency } = getPeriodFromPlanDays(planDays);
+      Object.assign(body, {
+        PeriodTypeCode,
+        PeriodFrequency,
+        MaxNumOfPayments: 9999,
+        FirstPaymentSum: amt,
+      });
+    }
 
     const data = await cardcomFetch(
       "https://secure.cardcom.solutions/api/v11/LowProfile/Create",
@@ -218,6 +239,7 @@ router.post("/start", async (req, res) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 });
+
 
 // ===== /webhook =====
 router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {

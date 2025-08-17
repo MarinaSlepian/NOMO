@@ -147,22 +147,23 @@ export class ButtonComponent {
     this.isPaying = true;
     this.payError = '';
     const orderId = this.makeOrderId();
-    const description = 'NOMO access';
+    let description = 'NOMO monthly subscription';
     const currency = this.CURRENCY;
-    let amount = 39;
+    let amount = 30;
     let planDays = 31;//monthly
     if(planSelected == "quarterly"){
-      planDays = 92;
+      planDays = 90;
       amount = 29*3;
+      description = "NOMO quarterly subscription"
     }
     else if(planSelected == "yearly"){
       planDays = 365;
       amount = 20*12;
+      description = "NOMO yearly subscription"
     }
     const userEmail = this.auth.getLoggedInEmail();
     //temporary 
     amount = 1;
-    planDays = 1;
     //temporary 
     console.log("payment chosen, plan selected is ", planSelected);
     this.pay.startPayment({ amount, orderId, description, currency ,userEmail,planDays })
