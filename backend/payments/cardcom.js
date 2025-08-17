@@ -1,4 +1,8 @@
 // payments/cardcom.js
+// 💡 Cardcom recurring billing implementation (2-step):
+// Step 1: User pays one-time via LowProfile
+// Step 2: On webhook → use token to call Subscription/CreateSubscription
+
 import express from "express";
 import fetch from "node-fetch";
 import { pool } from "../db.js";
@@ -187,7 +191,6 @@ router.post("/start", async (req, res) => {
     const body = {
       TerminalNumber: TERMINAL,
       ApiName: API_NAME,
-      Operation: "CreateSubscription",
       Amount: amt,
       ISOCoinId: Number(currency) || 1,
       ProductName: description,
@@ -206,7 +209,6 @@ router.post("/start", async (req, res) => {
         PeriodFrequency,
         MaxNumOfPayments: 9999,
         FirstPaymentSum: amt,
-        IsSubscription: true,   // 👈 חשוב!
       });
     }
     console.log("🟠 send body ", body);
@@ -251,7 +253,6 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     try {
       parsed = typeof rawBody === "string" ? JSON.parse(rawBody) : rawBody;
     } catch {
-      // If not JSON, try to parse as URL-encoded form
       parsed = Object.fromEntries(new URLSearchParams(rawBody));
     }
 
@@ -293,18 +294,21 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       const brand = tInfo?.Brand || null;
       const issuer = tInfo?.Issuer || null;
       const cardOwner = tInfo?.CardOwnerName || null;
+      const cardToken = tInfo?.Token || null;
 
       console.log("🔍 amount:", amount, "→ amountMinor:", amountMinor);
       console.log("💳 last4:", last4, "cardType:", cardType);
       console.log("💳 brand:", brand, "issuer:", issuer, "cardOwner:", cardOwner);
+      console.log("🪪 token:", cardToken);
 
-      // ✅ Get planDays from DB (fallback to DEFAULT_PLAN_DAYS)
+      // Get planDays from DB
       const { rows: pdRows } = await pool.query(
         `SELECT plan_days FROM payments WHERE low_profile_id = $1 LIMIT 1`,
         [lowProfileId]
       );
       const planDays = pdRows[0]?.plan_days || DEFAULT_PLAN_DAYS;
 
+      // Mark payment as successful
       await markPaid({
         lowProfileId,
         orderId,
@@ -319,11 +323,55 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
         planDays,
       });
 
+      // Create recurring subscription
+      if (cardToken) {
+        const subResult = await cardcomFetch(
+          "https://secure.cardcom.solutions/api/Subscription/CreateSubscription",
+          {
+            TerminalNumber: TERMINAL,
+            ApiName: API_NAME,
+            CardToken: cardToken,
+            MaxNumOfPayments: 9999,
+            PeriodTypeCode: getPeriodFromPlanDays(planDays).PeriodTypeCode,
+            PeriodFrequency: getPeriodFromPlanDays(planDays).PeriodFrequency,
+            Sum: amount,
+            StartDate: new Date().toISOString().split("T")[0],
+            Description: "NOMO subscription",
+          }
+        );
+
+        console.log("📦 Subscription result:", subResult);
+
+        if (subResult?.ResponseCode !== 0) {
+          await logEvent({
+            orderId,
+            lowProfileId,
+            type: "subscription_fail",
+            payload: subResult,
+          });
+        } else {
+          // ✅ Update DB with subscription_id
+          if (subResult?.SubscriptionId) {
+            await pool.query(
+              `UPDATE payments SET subscription_id = $1 WHERE low_profile_id = $2`,
+              [subResult.SubscriptionId, lowProfileId]
+            );
+          }
+
+          await logEvent({
+            orderId,
+            lowProfileId,
+            type: "subscription_created",
+            payload: subResult,
+          });
+        }
+      }
+
       console.log("✅ Webhook OK:", { lowProfileId, orderId, txId });
       return res.status(200).send("OK");
     }
 
-    // If response code not 0
+    // If transaction failed
     await markFailed({
       lowProfileId,
       orderId,
@@ -344,47 +392,6 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
 });
 
 
-router.post("/create-subscription", async (req, res) => {
-  try {
-    const {
-      cardToken,
-      amount,
-      planDays = DEFAULT_PLAN_DAYS,
-      startDate = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
-    } = req.body;
-
-    const { PeriodTypeCode, PeriodFrequency } = getPeriodFromPlanDays(planDays);
-
-    const body = {
-      TerminalNumber: TERMINAL,
-      ApiUserName: API_NAME,
-      CardToken: cardToken,
-      FirstPaymentAmount: amount,
-      RecurringChargeAmount: amount,
-      MaxNumOfPayments: 9999,
-      PeriodTypeCode,
-      PeriodFrequency,
-      StartDate: startDate
-    };
-
-    const response = await cardcomFetch(
-      "https://secure.cardcom.solutions/api/RecurringCharge/CreateSubscription",
-      body
-    );
-
-    console.log("🔁 Subscription response:", response);
-
-    if (response?.ResponseCode === 0) {
-      return res.json({ success: true, subscriptionId: response.SubscriptionId });
-    } else {
-      return res.status(400).json({ error: response?.Description || "Subscription failed" });
-    }
-
-  } catch (err) {
-    console.error("❌ /create-subscription error:", err);
-    return res.status(500).json({ error: "Internal server error" });
-  }
-});
 
 // Manual status check (GET by param) — calls Cardcom via POST under the hood
 router.get("/status/:lowProfileId", async (req, res) => {
