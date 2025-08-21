@@ -127,13 +127,20 @@ async function markFailed({ lowProfileId, orderId, reason, payload }) {
   await logEvent({ orderId, lowProfileId, type: "verify_fail", payload });
 }
 
-async function cardcomFetch(url, body) {
-  const resp = await fetch(url, {
+export async function cardcomFetch(url, data) {
+  const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    body: JSON.stringify(data),
   });
-  return await resp.json();
+
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    console.error("🔴 Failed to parse Cardcom response as JSON:", text);
+    throw new Error("Invalid JSON response from Cardcom");
+  }
 }
 
 function normalizeUrl(u, fallbackPath) {
@@ -163,82 +170,76 @@ function getPeriodFromPlanDays(planDays) {
 router.post("/start", async (req, res) => {
   try {
     const {
-      amount,
       orderId,
-      description = "NOMO payment",
-      currency = 1,
+      description = "NOMO subscription",
       userEmail,
       successUrl,
       failUrl,
-      planDays = DEFAULT_PLAN_DAYS   // ✅ read from frontend, default to 30
+      amount,                // 👈 NEW: monthly/quarterly/yearly price (float)
+      currency = 1,          // 👈 NEW: 1=ILS
+      planDays = DEFAULT_PLAN_DAYS  // 👈 NEW: 30/90/365 etc.
     } = req.body;
 
-    const amt = Number(amount);
     const oid = String(orderId || "").trim();
+    if (!oid) return res.status(400).json({ error: "Missing orderId" });
 
-    if (!Number.isFinite(amt) || amt <= 0 || !oid) {
-      return res.status(400).json({ error: "Invalid amount or orderId" });
-    }
     if (!Number.isFinite(TERMINAL) || !API_NAME) {
       return res.status(500).json({ error: "Server misconfigured: Cardcom credentials" });
     }
 
     const SuccessRedirectUrl = normalizeUrl(successUrl, "/pay/success");
-    const FailedRedirectUrl  = normalizeUrl(failUrl, "/pay/failed");
+    const FailedRedirectUrl  = normalizeUrl(failUrl,  "/pay/failed");
     const WebHookUrl         = `${API_URL}/api/pay/webhook`;
 
-
+    // LowProfile save-card only (no charge)
     const body = {
       TerminalNumber: TERMINAL,
       ApiName: API_NAME,
-      Amount: amt,
-      ISOCoinId: Number(currency) || 1,
+      Operation: 3, // save card only
       ProductName: description,
       ReturnValue: oid,
       SuccessRedirectUrl,
       FailedRedirectUrl,
       WebHookUrl,
-      Language: "EN",
+      Language: "EN"
     };
 
-        // רק אם זה מנוי – מוסיפים פרטים נוספים
-    if (true) {
-      const { PeriodTypeCode, PeriodFrequency } = getPeriodFromPlanDays(planDays);
-      Object.assign(body, {
-        PeriodTypeCode,
-        PeriodFrequency,
-        MaxNumOfPayments: 9999,
-        FirstPaymentSum: amt,
-      });
-    }
-    console.log("🟠 send body ", body);
+    console.log("🟠 Saving card only:", body);
 
     const data = await cardcomFetch(
       "https://secure.cardcom.solutions/api/v11/LowProfile/Create",
       body
     );
 
-    console.log("🟠 Cardcom Create response:", data);
+    console.log("🟠 Cardcom SaveCard response:", data);
 
     if (data?.ResponseCode === 0 && data?.Url) {
-      const amountMinor = Math.round(amt * 100);
-      await saveStart({
-        orderId: oid,
-        lowProfileId: String(data.LowProfileId),
-        userEmail,
-        amountMinor,
-        currency: Number(currency) || 1,
-        planDays // ✅ now passed into saveStart
-      });
+      // ✅ persist amount/currency/planDays for webhook → RecurringPayment
+      const amountMinor =
+        Number.isFinite(Number(amount)) && Number(amount) > 0
+          ? Math.round(Number(amount) * 100)
+          : null;
 
-      console.log("✅ Start OK:", { LowProfileId: data.LowProfileId, orderId: oid });
+      await pool.query(`
+        INSERT INTO payments (order_id, low_profile_id, user_email, amount_minor, currency, status, plan_days)
+        VALUES ($1, $2, $3, $4, $5, 'pending', $6)
+        ON CONFLICT (order_id) DO UPDATE
+        SET low_profile_id = EXCLUDED.low_profile_id,
+            user_email     = COALESCE(EXCLUDED.user_email, payments.user_email),
+            amount_minor   = COALESCE(EXCLUDED.amount_minor, payments.amount_minor),
+            currency       = COALESCE(EXCLUDED.currency, payments.currency),
+            plan_days      = COALESCE(EXCLUDED.plan_days, payments.plan_days),
+            updated_at     = now()
+      `, [oid, String(data.LowProfileId), userEmail || null, amountMinor, Number(currency) || 1, planDays]);
+
+      await logEvent({ orderId: oid, lowProfileId: String(data.LowProfileId), type: "start_ok" });
       return res.json({ url: data.Url, lowProfileId: data.LowProfileId });
     }
 
     await logEvent({ orderId: oid, lowProfileId: null, type: "start_fail", payload: data });
     return res.status(400).json({ error: data?.Description || "Cardcom error", raw: data });
   } catch (err) {
-    console.error("❌ Cardcom /start error:", err);
+    console.error("❌ Cardcom /start (SaveCard) error:", err);
     return res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -249,7 +250,6 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
   try {
     const rawBody = req.body;
     let parsed;
-
     try {
       parsed = typeof rawBody === "string" ? JSON.parse(rawBody) : rawBody;
     } catch {
@@ -260,136 +260,131 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       parsed?.LowProfileId || parsed?.lowprofileid || parsed?.lowProfileId || "";
     if (!lowProfileId) throw new Error("Missing LowProfileId in webhook");
 
+    // 1) Verify LowProfile (JSON API)
     const verifyData = await cardcomFetch(
       "https://secure.cardcom.solutions/api/v11/LowProfile/GetLpResult",
-      {
-        TerminalNumber: TERMINAL,
-        ApiName: API_NAME,
-        LowProfileId: lowProfileId,
-      }
+      { TerminalNumber: TERMINAL, ApiName: API_NAME, LowProfileId: lowProfileId }
     );
 
-    const orderId = verifyData?.ReturnValue ? String(verifyData.ReturnValue) : null;
+    const orderId  = verifyData?.ReturnValue ? String(verifyData.ReturnValue) : null;
+    const tInfo    = verifyData?.TranzactionInfo || {};
+    const cardToken = tInfo?.Token || null;
 
-    if (verifyData?.ResponseCode === 0) {
-      const txId = verifyData?.TranzactionId
-        ? String(verifyData.TranzactionId)
-        : verifyData?.TranzactionInfo?.TranzactionId
-        ? String(verifyData.TranzactionInfo.TranzactionId)
-        : null;
-
-      const tInfo = verifyData.TranzactionInfo || {};
-
-      const amount = Number(tInfo?.Amount);
-      const amountMinor =
-        Number.isFinite(amount) && amount > 0 ? Math.round(amount * 100) : null;
-
-      const cardType = tInfo?.CardName || null;
-      const last4 =
-        tInfo?.Last4CardDigitsString ||
-        (tInfo?.Last4CardDigits
-          ? String(tInfo.Last4CardDigits).padStart(4, "0")
-          : null);
-
-      const brand = tInfo?.Brand || null;
-      const issuer = tInfo?.Issuer || null;
-      const cardOwner = tInfo?.CardOwnerName || null;
-      const cardToken = tInfo?.Token || null;
-
-      console.log("🔍 amount:", amount, "→ amountMinor:", amountMinor);
-      console.log("💳 last4:", last4, "cardType:", cardType);
-      console.log("💳 brand:", brand, "issuer:", issuer, "cardOwner:", cardOwner);
-      console.log("🪪 token:", cardToken);
-
-      // Get planDays from DB
-      const { rows: pdRows } = await pool.query(
-        `SELECT plan_days FROM payments WHERE low_profile_id = $1 LIMIT 1`,
-        [lowProfileId]
-      );
-      const planDays = pdRows[0]?.plan_days || DEFAULT_PLAN_DAYS;
-
-      // Mark payment as successful
-      await markPaid({
-        lowProfileId,
-        orderId,
-        txId,
-        amountMinor,
-        cardType,
-        last4,
-        brand,
-        issuer,
-        cardOwner,
-        payload: verifyData,
-        planDays,
-      });
-
-      // Create recurring subscription
-      if (cardToken) {
-        const subResult = await cardcomFetch(
-          "https://secure.cardcom.solutions/Interface/Subscription/CreateSubscription",
-          {
-            TerminalNumber: TERMINAL,
-            ApiName: API_NAME,
-            CardToken: cardToken,
-            MaxNumOfPayments: 9999,
-            PeriodTypeCode: getPeriodFromPlanDays(planDays).PeriodTypeCode,
-            PeriodFrequency: getPeriodFromPlanDays(planDays).PeriodFrequency,
-            Sum: amount,
-            StartDate: new Date().toISOString().split("T")[0],
-            Description: "NOMO subscription",
-          }
-        );
-
-        console.log("📦 Subscription result:", subResult);
-
-        if (subResult?.ResponseCode !== 0) {
-          await logEvent({
-            orderId,
-            lowProfileId,
-            type: "subscription_fail",
-            payload: subResult,
-          });
-        } else {
-          // ✅ Update DB with subscription_id
-          if (subResult?.SubscriptionId) {
-            await pool.query(
-              `UPDATE payments SET subscription_id = $1 WHERE low_profile_id = $2`,
-              [subResult.SubscriptionId, lowProfileId]
-            );
-          }
-
-          await logEvent({
-            orderId,
-            lowProfileId,
-            type: "subscription_created",
-            payload: subResult,
-          });
-        }
-      }
-
-      console.log("✅ Webhook OK:", { lowProfileId, orderId, txId });
-      return res.status(200).send("OK");
+    if (verifyData?.ResponseCode !== 0 || !cardToken) {
+      await logEvent({ orderId, lowProfileId, type: "subscription_fail", payload: verifyData });
+      return res.status(200).send("FAIL");
     }
 
-    // If transaction failed
-    await markFailed({
-      lowProfileId,
-      orderId,
-      reason: verifyData?.Description || `code:${verifyData?.ResponseCode}`,
-      payload: verifyData,
-    });
+    // 2) Pull what we need for recurring from your DB (only existing fields)
+    const { rows } = await pool.query(
+      `SELECT amount_minor, currency, user_email, plan_days
+         FROM payments
+        WHERE low_profile_id = $1
+        LIMIT 1`,
+      [lowProfileId]
+    );
 
-    console.warn("🟡 Webhook FAIL:", {
-      lowProfileId,
-      orderId,
-      desc: verifyData?.Description,
-    });
-    return res.status(200).send("FAIL");
+    const rec = rows[0] || {};
+    const amount   = Number(rec.amount_minor || 0) / 100; // price per interval
+    const coinId   = Number(rec.currency || 1);           // 1 = ILS
+    const planDays = Number(rec.plan_days || 30);
+
+    if (!amount || amount <= 0) {
+      await logEvent({
+        orderId, lowProfileId,
+        type: "subscription_fail",
+        payload: { reason: "Missing amount (amount_minor)" }
+      });
+      return res.status(200).send("FAIL");
+    }
+
+    // 3) Map plan_days -> RecurringPayments.TimeIntervalId (+ env overrides)
+
+    const timeIntervalId = mapPlanDaysToTimeIntervalId(planDays);
+
+    // 4) Next charge date (dd/MM/yyyy). You can shift to tomorrow if you prefer.
+    const d = new Date();
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    const nextDateToBill = `${dd}/${mm}/${yyyy}`;
+
+    // 5) Build NV GET params for RecurringPayment.aspx
+    //    Minimal, using only data you have. Customer name falls back to CardOwnerName or email.
+    const customerName = tInfo?.CardOwnerName || rec.user_email || "NOMO user";
+
+    const params = {
+      TerminalNumber: TERMINAL,
+      UserName: API_NAME,
+      codepage: 65001,
+      Operation: "NewAndUpdate",
+
+      // Payment source (from LowProfile Operation=3):
+      "CreditCard.Token": cardToken,
+
+      // Account info (optional but helpful):
+      "Account.CompanyName": customerName,
+      "Account.Email": rec.user_email || "",
+
+      // Recurring details:
+      "RecurringPayments.InternalDecription": "NOMO subscription", // Cardcom often spells it 'Decription'
+      "RecurringPayments.InternalDescription": "NOMO subscription", // 👈 add both
+      // If your account expects 'InternalDescription' instead, you can add the duplicate key as well:
+      // "RecurringPayments.InternalDescription": "NOMO subscription",
+
+      "RecurringPayments.NextDateToBill": nextDateToBill,   // dd/MM/yyyy
+      "RecurringPayments.TotalNumOfBills": 999999,          // effectively endless
+      "RecurringPayments.FinalDebitCoinId": coinId,         // 1=ILS
+      "RecurringPayments.ReturnValue": orderId || "",
+
+      // The interval you wanted to send:
+      "RecurringPayments.TimeIntervalId": timeIntervalId,
+
+      // Line (price per interval):
+      "RecurringPayments.FlexItem.InvoiceDescription": "NOMO plan",
+      "RecurringPayments.FlexItem.Price": amount.toFixed(2),
+      "RecurringPayments.FlexItem.IsPriceIncludeVat": "true",
+    };
+
+    console.log("📦 RecurringPayment NV params:", params);
+
+    // 6) Call the NV GET endpoint
+    const subResult = await cardcomFetchNVGet(
+      "https://secure.cardcom.solutions/interface/RecurringPayment.aspx",
+      params
+    );
+
+    console.log("📦 RecurringPayment NV response:", subResult);
+
+    if (String(subResult?.ResponseCode) !== "0") {
+      await logEvent({ orderId, lowProfileId, type: "subscription_fail", payload: subResult });
+      return res.status(200).send("FAIL");
+    }
+
+    const recurringId = subResult?.RecurringId || subResult?.RecurringID || null;
+
+    // 7) Persist subscription result
+    await pool.query(
+      `UPDATE payments
+          SET subscription_id = $1,
+              card_token = $2,
+              status = 'subscribed',
+              updated_at = now()
+        WHERE low_profile_id = $3`,
+      [recurringId, cardToken, lowProfileId]
+    );
+
+    await logEvent({ orderId, lowProfileId, type: "subscription_created", payload: subResult });
+    return res.status(200).send("OK");
+
   } catch (err) {
     console.error("❌ Cardcom /webhook error:", err);
     return res.status(200).send("ERROR");
   }
 });
+
+
+
 
 
 
@@ -447,5 +442,44 @@ router.post("/status", express.json(), async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+async function cardcomFetchNVGet(url, params) {
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(params || {})) {
+    if (v !== undefined && v !== null && v !== "") qs.append(k, String(v));
+  }
+  const fullUrl = `${url}?${qs.toString()}`;
+
+  const res = await fetch(fullUrl, { method: "GET" });
+  const text = await res.text();
+
+  // Parse "name=value&name2=value2" (or newline-separated)
+  const out = {};
+  text.split(/[&\r\n]+/).filter(Boolean).forEach(pair => {
+    const i = pair.indexOf("=");
+    if (i > -1) out[decodeURIComponent(pair.slice(0, i))] = decodeURIComponent(pair.slice(i + 1));
+  });
+
+  // In case of HTML error page, return a hint
+  if (!out.ResponseCode && text.startsWith("<!DOCTYPE")) {
+    return { ResponseCode: "-1", Description: "HTML error page", raw: text };
+  }
+  return Object.keys(out).length ? out : { raw: text };
+}
+
+// helper: derive TimeIntervalId from plan_days with env overrides
+function mapPlanDaysToTimeIntervalId(planDays) {
+  const interval =
+    planDays >= 365 ? "yearly" :
+    planDays >= 90  ? "quarterly" :
+                      "monthly";
+
+  const cfg = {
+    monthly:   Number(process.env.CARDCOM_TIME_ID_MONTHLY   || 1),
+    quarterly: Number(process.env.CARDCOM_TIME_ID_QUARTERLY || 3),
+    yearly:    Number(process.env.CARDCOM_TIME_ID_YEARLY    || 2),
+  };
+  return cfg[interval]; // no fallback needed now that you set .env
+}
 
 export default router;

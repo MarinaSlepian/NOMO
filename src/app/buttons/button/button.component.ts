@@ -90,7 +90,6 @@ export class ButtonComponent {
     const randomIdStr = String(randomIdNum);
     this.fullVideoPath = this.videoPath + randomIdStr + 'A.mp4';
     this.isShowVideo = true;
-
   }
 
   onCancelVideo()

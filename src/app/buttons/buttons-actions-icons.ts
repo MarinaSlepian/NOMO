@@ -340,7 +340,7 @@ export const BUTTONS_ACTIONS_ICONS = [
       id: '43',//RANDOM
       name: '0',
       avatar: 'user-43.png',
-      numVideos: '10',
+      numVideos: '1',
       subtextKey:"subtext.RANDOM",
       isLocked: false
     },

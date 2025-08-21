@@ -44,7 +44,9 @@
       <button class="toggle-button" (click)="togglePlay()">
         {{ isPlaying ? '⏸️ ' : '▶️ ' }}
       </button>
-      <button class="switch-button" (click)="onSwitchVideo()">🔄</button>
+      @if(isShowSwitch){
+        <button class="switch-button" (click)="onSwitchVideo()">🔄</button>
+      }
     </div>
     
   </div>

@@ -1,4 +1,5 @@
-import { Component, EventEmitter, Output, Input, HostListener, ViewChild, ElementRef, AfterViewInit  } from '@angular/core';
+import { Component, EventEmitter, Output, Input, HostListener, 
+          ViewChild, ElementRef, AfterViewInit, OnInit  } from '@angular/core';
 
 @Component({
   selector: 'app-video',
@@ -7,13 +8,19 @@ import { Component, EventEmitter, Output, Input, HostListener, ViewChild, Elemen
   templateUrl: './video.component.html',
   styleUrls: ['./video.component.css']
 })
-export class VideoComponent implements AfterViewInit {
+export class VideoComponent implements AfterViewInit, OnInit {
   @Input({required:true}) videoPath!: string;
   @Output() cancel = new EventEmitter<void>();
   @Input({required:true}) numOfVideos!: string;
   @Input() isLoopNeeded = true;
   isPlaying = true;
   isLoading = true;
+  isShowSwitch = true;
+
+  ngOnInit(): void {
+    if(this.numOfVideos == '1')
+      this.isShowSwitch = false;
+  }
 
   ngAfterViewInit() {
     // Mark the start of the first video load
