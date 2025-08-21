@@ -361,17 +361,16 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       return res.status(200).send("FAIL");
     }
 
-    const recurringId = subResult?.RecurringId || subResult?.RecurringID || null;
-
-    // 7) Persist subscription result
+    const accountId = subResult?.AccountId || null;
     await pool.query(
       `UPDATE payments
-          SET subscription_id = $1,
-              card_token = $2,
-              status = 'subscribed',
-              updated_at = now()
-        WHERE low_profile_id = $3`,
-      [recurringId, cardToken, lowProfileId]
+        SET subscription_id = $1,
+            card_token      = $2,
+            cardcom_account_id = $3,
+            status = 'subscribed',
+            updated_at = now()
+      WHERE low_profile_id = $4`,
+      [recurringId, cardToken, accountId, lowProfileId]
     );
 
     await logEvent({ orderId, lowProfileId, type: "subscription_created", payload: subResult });
