@@ -360,13 +360,21 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       await logEvent({ orderId, lowProfileId, type: "subscription_fail", payload: subResult });
       return res.status(200).send("FAIL");
     }
-
+    const recurringId = extractRecurringId(subResult);
+    if (!recurringId) {
+      await logEvent({
+        orderId, lowProfileId, type: "subscription_fail",
+        payload: { reason: "Missing RecurringId in NV response", subResult }
+      });
+      return res.status(200).send("FAIL");
+    }
     const accountId = subResult?.AccountId || null;
+
     await pool.query(
       `UPDATE payments
         SET subscription_id = $1,
             card_token      = $2,
-            cardcom_account_id = $3,
+            cardcom_account_id = COALESCE($3, cardcom_account_id),
             status = 'subscribed',
             updated_at = now()
       WHERE low_profile_id = $4`,
@@ -481,4 +489,13 @@ function mapPlanDaysToTimeIntervalId(planDays) {
   return cfg[interval]; // no fallback needed now that you set .env
 }
 
+// helper: pick RecurringId from NV response (handles indexed keys)
+function extractRecurringId(nv) {
+  if (nv?.RecurringId) return nv.RecurringId;
+  if (nv?.RecurringID) return nv.RecurringID;
+  for (const [k, v] of Object.entries(nv || {})) {
+    if (/^Recurring\d+\.RecurringId$/i.test(k)) return v;
+  }
+  return null;
+}
 export default router;
