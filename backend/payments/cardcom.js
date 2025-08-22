@@ -406,60 +406,128 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
 
 // Recurring status webhook (Cardcom → your server)
 // In Cardcom Admin, point “דיווח למערכת חיצונית - הוראת קבע” to this URL.
-router.post("/recurring-webhook",
+router.post(
+  "/recurring-webhook",
   express.urlencoded({ extended: false }), // Cardcom posts URL-encoded form
   async (req, res) => {
     try {
       const b = req.body || {};
 
-      // 0) Verify Secret (recommended by Cardcom)
+      // 0) Verify Secret
       const secret = b.Secret || b.secret;
-      if (process.env.CARDCOM_RECURRING_WEBHOOK_SECRET &&
-          secret !== process.env.CARDCOM_RECURRING_WEBHOOK_SECRET) {
+      if (
+        process.env.CARDCOM_RECURRING_WEBHOOK_SECRET &&
+        secret !== process.env.CARDCOM_RECURRING_WEBHOOK_SECRET
+      ) {
         console.warn("❌ Recurring webhook: bad secret");
         return res.status(403).send("BAD_SECRET");
       }
 
-      const recordType = b.RecordType || b.recordtype || "";
+      const recordType =
+        b.RecordType || b.recordtype || b.recordType || "";
       const recurringId = b.RecurringId || b.recurringid || null;
-      const returnValue = b.ReturnValue || b.returnvalue || null; // your orderId if you sent it on creation
+      const returnValue = b.ReturnValue || b.returnvalue || null; // your orderId if you sent it
 
-      // Log all raw payloads for auditing
+      // Helpful: scrub secret in logs
+      const payloadForLog = { ...b };
+      if (payloadForLog.Secret) payloadForLog.Secret = "***";
+
       await logEvent({
         orderId: returnValue || null,
         lowProfileId: null,
         type: `recurring_${String(recordType || "unknown").toLowerCase()}`,
-        payload: b
+        payload: payloadForLog,
       });
 
-      // 1) Creation/changes to the recurring order
+      // --- MasterRecurring (create/update/cancel of the subscription itself) ---
       if (recordType === "MasterRecurring") {
-        // nothing to do for access—just acknowledge
+        // Optional: revoke if master canceled
+        const s = String(b.Status || b.status || "").toUpperCase();
+        if (s === "CANCELED" || s === "CANCELLED") {
+          await pool.query(
+            `UPDATE payments
+               SET status='failed',
+                   verify_payload=$1,
+                   access_until=LEAST(COALESCE(access_until, now()), now()),
+                   updated_at=now()
+             WHERE subscription_id=$2`,
+            [JSON.stringify(payloadForLog), recurringId]
+          );
+          await logEvent({
+            orderId: returnValue || null,
+            lowProfileId: null,
+            type: "recurring_master_canceled",
+            payload: { recurringId },
+          });
+        }
         return res.status(200).send("OK");
       }
 
-      // 2) A real debit or its status update
+      // --- DetailRecurring (actual debit attempt / status) ---
       if (recordType === "DetailRecurring") {
-        const status = b.Status || b.status || "";
-        // We only grant access on a successful debit
+        const status = String(b.Status || b.status || "").toUpperCase();
+
+        // Revoke on failure/non-success (with optional grace)
         if (status !== "SUCCESSFUL") {
-          // You may mark failures for visibility:
-          // await pool.query(`UPDATE payments SET status='failed', verify_payload=$1, updated_at=now() WHERE subscription_id=$2`,
-          //   [JSON.stringify(b), recurringId]);
+          const FAIL_STATUSES = new Set([
+            "FAILED",
+            "CANCELED",
+            "CANCELLED",
+            "CHARGEBACK",
+            "DECLINED",
+            "ERROR",
+          ]);
+          const isHardFail = FAIL_STATUSES.has(status);
+
+          const graceMin = Number(process.env.CARDCOM_FAIL_GRACE_MINUTES || 0);
+          const cutoff = new Date(
+            Date.now() +
+              (Number.isFinite(graceMin) && graceMin > 0
+                ? graceMin * 60 * 1000
+                : 0)
+          );
+
+          const { rowCount } = await pool.query(
+            `UPDATE payments
+                SET status         = 'failed',
+                    verify_payload = $1,
+                    access_until   = LEAST(COALESCE(access_until, now()), $2),
+                    updated_at     = now()
+              WHERE subscription_id = $3`,
+            [JSON.stringify(payloadForLog), cutoff.toISOString(), recurringId]
+          );
+
+          await logEvent({
+            orderId: returnValue || null,
+            lowProfileId: null,
+            type: isHardFail
+              ? "recurring_debit_hard_fail"
+              : "recurring_debit_non_success",
+            payload: { recurringId, status, rowCount },
+          });
+
           return res.status(200).send("OK");
         }
 
-        // Amount actually charged
+        // SUCCESSFUL: apply charge → set tx id, paid_at, extend access window idempotently
         const sum = Number(b.Sum);
         const amountMinor = Number.isFinite(sum) ? Math.round(sum * 100) : null;
 
-        // Cardcom's credit-card transaction ID (real charge)
-        const txId = b.InternalDealNumber || b.UID || null;
+        // Cardcom transaction id (names vary)
+        const txId =
+          b.InternalDealNumber || b.UID || b.Deal || b.DealNumber || null;
 
-        // Optional: parse LastBillDate (dd/MM/yyyy) if you prefer to use it
-        const paidAt = new Date(); // or parse b.LastBillDate
+        // Paid timestamp: prefer LastBillDate (dd/MM/yyyy) if present
+        const parseDDMMYYYY = (s) => {
+          const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(s || ""));
+          if (!m) return null;
+          const [_, dd, mm, yyyy] = m;
+          return new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+        };
+        const paidAt =
+          parseDDMMYYYY(b.LastBillDate) /* optional field */ || new Date();
 
-        // Pull plan_days / email from the subscription we created earlier
+        // Get plan_days & last access window to stack
         const { rows } = await pool.query(
           `SELECT id, user_email, plan_days,
                   COALESCE(access_until, now()) AS last_until
@@ -470,58 +538,76 @@ router.post("/recurring-webhook",
           [recurringId]
         );
         if (!rows[0]) {
-          console.warn("⚠️ No subscription row found for RecurringId:", recurringId);
+          console.warn(
+            "⚠️ DetailRecurring SUCCESSFUL, but no row for RecurringId:",
+            recurringId
+          );
           return res.status(200).send("OK");
         }
 
         const row = rows[0];
         const planDays = Number(row.plan_days || 30);
 
-        // Start access from the later of now() or the previous access_until (stack periods)
-        const startFrom = new Date(Math.max(Date.now(), new Date(row.last_until).getTime()));
+        // Stack onto end of any existing access
+        const startFrom = new Date(
+          Math.max(Date.now(), new Date(row.last_until).getTime())
+        );
         const until = new Date(startFrom.getTime());
         until.setDate(until.getDate() + planDays);
-        const last4 =
-        tInfo?.Last4CardDigitsString ||
-          (tInfo?.Last4CardDigits ? String(tInfo.Last4CardDigits).padStart(4, "0") : null);
-        const cardType = tInfo?.CardName || null;
-        const combinedPayload = { lp: verifyData, rp: subResult };
 
-        // Update the same row (or choose to insert a new “cycle” row if you prefer)
-        await pool.query(
+        // Idempotent: only update if we haven't processed this txId yet
+        const { rowCount } = await pool.query(
           `UPDATE payments
-            SET subscription_id     = $1,
-                card_token          = $2,
-                cardcom_account_id  = COALESCE($3, cardcom_account_id),
-                card_type           = COALESCE($4, card_type),
-                card_last4          = COALESCE($5, card_last4),
-                verify_payload      = $6,
-                status              = 'subscribed',
-                updated_at          = now()
-          WHERE low_profile_id = $7`,
-          [recurringId, cardToken, accountId, cardType, last4, JSON.stringify(combinedPayload), lowProfileId]
+              SET amount_minor   = COALESCE($1, amount_minor),
+                  verify_payload = $2,
+                  paid_at        = $3,
+                  transaction_id = $4,
+                  access_from    = $5,
+                  access_until   = $6,
+                  status         = 'paid',
+                  updated_at     = now()
+            WHERE subscription_id = $7
+              AND (transaction_id IS DISTINCT FROM $4)`,
+          [
+            amountMinor,
+            JSON.stringify(payloadForLog),
+            paidAt.toISOString(),
+            txId,
+            startFrom.toISOString(),
+            until.toISOString(),
+            recurringId,
+          ]
         );
 
-        await logEvent({
-          orderId: returnValue || null,
-          lowProfileId: null,
-          type: "recurring_debit_success",
-          payload: { recurringId, txId, amountMinor }
-        });
+        if (rowCount === 0) {
+          await logEvent({
+            orderId: returnValue || null,
+            lowProfileId: null,
+            type: "recurring_debit_duplicate",
+            payload: { recurringId, txId },
+          });
+        } else {
+          await logEvent({
+            orderId: returnValue || null,
+            lowProfileId: null,
+            type: "recurring_debit_success",
+            payload: { recurringId, txId, amountMinor },
+          });
+        }
 
         return res.status(200).send("OK");
       }
 
-      // Unknown record type → ack to prevent retries but log for analysis
+      // Unknown type → ack to avoid retries
       console.warn("ℹ️ Recurring webhook: unknown RecordType", recordType);
       return res.status(200).send("OK");
-
     } catch (err) {
       console.error("❌ /recurring-webhook error:", err);
       return res.status(200).send("ERROR");
     }
   }
 );
+
 
 
 
