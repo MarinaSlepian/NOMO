@@ -391,7 +391,124 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
 });
 
 
+// Recurring status webhook (Cardcom → your server)
+// In Cardcom Admin, point “דיווח למערכת חיצונית - הוראת קבע” to this URL.
+router.post("/recurring-webhook",
+  express.urlencoded({ extended: false }), // Cardcom posts URL-encoded form
+  async (req, res) => {
+    try {
+      const b = req.body || {};
 
+      // 0) Verify Secret (recommended by Cardcom)
+      const secret = b.Secret || b.secret;
+      if (process.env.CARDCOM_RECURRING_WEBHOOK_SECRET &&
+          secret !== process.env.CARDCOM_RECURRING_WEBHOOK_SECRET) {
+        console.warn("❌ Recurring webhook: bad secret");
+        return res.status(403).send("BAD_SECRET");
+      }
+
+      const recordType = b.RecordType || b.recordtype || "";
+      const recurringId = b.RecurringId || b.recurringid || null;
+      const returnValue = b.ReturnValue || b.returnvalue || null; // your orderId if you sent it on creation
+
+      // Log all raw payloads for auditing
+      await logEvent({
+        orderId: returnValue || null,
+        lowProfileId: null,
+        type: `recurring_${String(recordType || "unknown").toLowerCase()}`,
+        payload: b
+      });
+
+      // 1) Creation/changes to the recurring order
+      if (recordType === "MasterRecurring") {
+        // nothing to do for access—just acknowledge
+        return res.status(200).send("OK");
+      }
+
+      // 2) A real debit or its status update
+      if (recordType === "DetailRecurring") {
+        const status = b.Status || b.status || "";
+        // We only grant access on a successful debit
+        if (status !== "SUCCESSFUL") {
+          // You may mark failures for visibility:
+          // await pool.query(`UPDATE payments SET status='failed', verify_payload=$1, updated_at=now() WHERE subscription_id=$2`,
+          //   [JSON.stringify(b), recurringId]);
+          return res.status(200).send("OK");
+        }
+
+        // Amount actually charged
+        const sum = Number(b.Sum);
+        const amountMinor = Number.isFinite(sum) ? Math.round(sum * 100) : null;
+
+        // Cardcom's credit-card transaction ID (real charge)
+        const txId = b.InternalDealNumber || b.UID || null;
+
+        // Optional: parse LastBillDate (dd/MM/yyyy) if you prefer to use it
+        const paidAt = new Date(); // or parse b.LastBillDate
+
+        // Pull plan_days / email from the subscription we created earlier
+        const { rows } = await pool.query(
+          `SELECT id, user_email, plan_days,
+                  COALESCE(access_until, now()) AS last_until
+             FROM payments
+            WHERE subscription_id = $1
+            ORDER BY updated_at DESC
+            LIMIT 1`,
+          [recurringId]
+        );
+        if (!rows[0]) {
+          console.warn("⚠️ No subscription row found for RecurringId:", recurringId);
+          return res.status(200).send("OK");
+        }
+
+        const row = rows[0];
+        const planDays = Number(row.plan_days || 30);
+
+        // Start access from the later of now() or the previous access_until (stack periods)
+        const startFrom = new Date(Math.max(Date.now(), new Date(row.last_until).getTime()));
+        const until = new Date(startFrom.getTime());
+        until.setDate(until.getDate() + planDays);
+        const last4 =
+        tInfo?.Last4CardDigitsString ||
+          (tInfo?.Last4CardDigits ? String(tInfo.Last4CardDigits).padStart(4, "0") : null);
+        const cardType = tInfo?.CardName || null;
+        const combinedPayload = { lp: verifyData, rp: subResult };
+
+        // Update the same row (or choose to insert a new “cycle” row if you prefer)
+        await pool.query(
+          `UPDATE payments
+            SET subscription_id     = $1,
+                card_token          = $2,
+                cardcom_account_id  = COALESCE($3, cardcom_account_id),
+                card_type           = COALESCE($4, card_type),
+                card_last4          = COALESCE($5, card_last4),
+                verify_payload      = $6,
+                status              = 'subscribed',
+                updated_at          = now()
+          WHERE low_profile_id = $7`,
+          [recurringId, cardToken, accountId, cardType, last4, JSON.stringify(combinedPayload), lowProfileId]
+        );
+
+        await logEvent({
+          orderId: returnValue || null,
+          lowProfileId: null,
+          type: "recurring_debit_success",
+          payload: { recurringId, txId, amountMinor }
+        });
+
+        return res.status(200).send("OK");
+      }
+
+      // Unknown record type → ack to prevent retries but log for analysis
+      console.warn("ℹ️ Recurring webhook: unknown RecordType", recordType);
+      return res.status(200).send("OK");
+
+    } catch (err) {
+      console.error("❌ /recurring-webhook error:", err);
+      return res.status(200).send("ERROR");
+    }
+  }
+);
 
 
 
