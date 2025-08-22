@@ -209,3 +209,18 @@ app.get('/api/access/me', requireAuth, async (req, res) => {
     res.status(500).json({ error: 'internal' });
   }
 });
+
+// (optional) quick health check
+app.get('/healthz', (_req, res) => res.send('ok'));
+
+// Start server
+const PORT = Number(process.env.PORT) || 3000;   // Render provides PORT
+const HOST = '0.0.0.0';                          // listen on all interfaces
+
+const server = app.listen(PORT, HOST, () => {
+  console.log(`🚀 Server listening on http://${HOST}:${PORT}`);
+});
+
+server.on('error', (err) => {
+  console.error('❌ app.listen error:', err);
+});
