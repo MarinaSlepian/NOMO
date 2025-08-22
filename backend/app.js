@@ -181,19 +181,28 @@ function requireAuth(req, res, next) {
 // GET /api/access/me  -> { active: boolean, until: ISO | null }
 app.get('/api/access/me', requireAuth, async (req, res) => {
   try {
-    console.log('🔐 Access granted to user:', req.user); // ✅ Log decoded user
+    console.log('🔐 Access granted to user:', req.user);
 
-    const email = req.user.email; // trusted from auth middleware
+    const email = req.user.email; // from auth middleware
+
+    // ✅ Rely on the access window, not status
     const { rows } = await pool.query(
-      `SELECT MAX(access_until) AS until
-         FROM payments
-        WHERE user_email = $1 AND status = 'paid'`,
+      `SELECT
+         MAX(access_from)  AS from_ts,
+         MAX(access_until) AS until_ts
+       FROM payments
+       WHERE user_email = $1 AND status IN ('paid','subscribed')`,
+
       [email]
     );
-    const until = rows[0]?.until || null;
+
+    const until = rows[0]?.until_ts || null;
+    // optional: const from = rows[0]?.from_ts || null;
+
     res.json({
       active: !!until && new Date(until) > new Date(),
       until
+      // optional: from
     });
   } catch (e) {
     console.error('access/me error', e);
