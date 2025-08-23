@@ -163,6 +163,7 @@ export class ButtonComponent {
     const userEmail = this.auth.getLoggedInEmail();
     //temporary 
     amount = 1;
+    planDays = 1;
     //temporary 
     console.log("payment chosen, plan selected is ", planSelected);
     this.pay.startPayment({ amount, orderId, description, currency ,userEmail,planDays })

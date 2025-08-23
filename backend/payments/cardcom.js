@@ -757,17 +757,15 @@ async function cardcomFetchNVGet(url, params) {
 
 // helper: derive TimeIntervalId from plan_days with env overrides
 function mapPlanDaysToTimeIntervalId(planDays) {
-  const interval =
-    planDays >= 365 ? "yearly" :
-    planDays >= 90  ? "quarterly" :
-                      "monthly";
-
-  const cfg = {
-    monthly:   Number(process.env.CARDCOM_TIME_ID_MONTHLY   || 1),
-    quarterly: Number(process.env.CARDCOM_TIME_ID_QUARTERLY || 3),
-    yearly:    Number(process.env.CARDCOM_TIME_ID_YEARLY    || 2),
-  };
-  return cfg[interval]; // no fallback needed now that you set .env
+  // Prefer explicit daily when planDays <= 1
+  if (planDays <= 1) {
+    const daily = Number(process.env.CARDCOM_TIME_ID_DAILY || 0);
+    if (!daily) throw new Error("Missing CARDCOM_TIME_ID_DAILY in env");
+    return daily;
+  }
+  if (planDays >= 365) return Number(process.env.CARDCOM_TIME_ID_YEARLY    || 2);
+  if (planDays >= 90)  return Number(process.env.CARDCOM_TIME_ID_QUARTERLY || 3);
+  return Number(process.env.CARDCOM_TIME_ID_MONTHLY || 1);
 }
 
 // helper: pick RecurringId from NV response (handles indexed keys)
