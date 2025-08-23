@@ -415,8 +415,8 @@ router.post(
       const b = req.body || {};
 
       // 🔎 Basic request envelope (sanitized)
-      const recordType = String(b.RecordType || b.recordtype || b.recordType || "").toUpperCase();
-      const status     = String(b.Status || b.status || "").toUpperCase();
+      const recordType  = String(b.RecordType || b.recordtype || b.recordType || "").toUpperCase();
+      const status      = String(b.Status || b.status || "").toUpperCase();
       const recurringId = b.RecurringId || b.recurringid || null;
       const returnValue = b.ReturnValue || b.returnvalue || null; // your orderId if you sent it
       const txIdInPayload =
@@ -445,10 +445,16 @@ router.post(
         process.env.CARDCOM_RECURRING_WEBHOOK_SECRET &&
         secret !== process.env.CARDCOM_RECURRING_WEBHOOK_SECRET
       ) {
-        console.warn("❌ Recurring webhook: BAD_SECRET", {
-          recurringId, orderId: returnValue
-        });
+        console.warn("❌ Recurring webhook: BAD_SECRET", { recurringId, orderId: returnValue });
         return res.status(403).send("BAD_SECRET");
+      }
+
+      // ✅ Guard: missing RecurringId (rare but safe)
+      if (!recurringId) {
+        console.warn("⚠️ Recurring webhook without RecurringId", {
+          recordType, status, orderId: returnValue
+        });
+        return res.status(200).send("OK");
       }
 
       // Audit trail in DB
@@ -461,10 +467,9 @@ router.post(
 
       // --- MasterRecurring (create/update/cancel of the subscription itself) ---
       if (recordType === "MASTERRECURRING") {
-        const s = status;
-        console.log("ℹ️ MasterRecurring event", { recurringId, status: s });
+        console.log("ℹ️ MasterRecurring event", { recurringId, status });
         // Optional: revoke if master canceled
-        if (s === "CANCELED" || s === "CANCELLED") {
+        if (status === "CANCELED" || status === "CANCELLED") {
           await pool.query(
             `UPDATE payments
                SET status='failed',
@@ -487,17 +492,40 @@ router.post(
 
       // --- DetailRecurring (actual debit attempt / status) ---
       if (recordType === "DETAILRECURRING") {
-        // Non-success path → revoke / grace
-        if (status !== "SUCCESSFUL") {
-          const FAIL_STATUSES = new Set([
-            "FAILED","CANCELED","CANCELLED","CHARGEBACK","DECLINED","ERROR"
-          ]);
-          const isHardFail = FAIL_STATUSES.has(status);
+        const PENDING_STATUSES = new Set(["DEBTAUTOBILLING", "PENDINGFORPROCESSING", "PENDING"]);
+        const HARD_FAIL = new Set(["FAILED","CANCELED","CANCELLED","CHARGEBACK","DECLINED","ERROR","LOSTDEBT"]);
 
+        // 1) Pending → just log & keep 'subscribed'
+        if (PENDING_STATUSES.has(status)) {
+          console.log("⏳ Recurring debit pending", {
+            recurringId, orderId: returnValue, status, sum: b.Sum, lastBillDate: b.LastBillDate
+          });
+          await logEvent({
+            orderId: returnValue || null,
+            lowProfileId: null,
+            type: "recurring_debit_pending",
+            payload: payloadForLog
+          });
+          return res.status(200).send("OK");
+        }
+
+        // 2) Non-success path (failure / non-success) → only revoke on "hard" failures
+        if (status !== "SUCCESSFUL") {
+          // If it's not pending and not hard-fail, treat as soft/unknown → no revoke
+          if (!HARD_FAIL.has(status)) {
+            console.log("🟨 Non-success (non-hard) status; no revoke", { recurringId, status });
+            await logEvent({
+              orderId: returnValue || null,
+              lowProfileId: null,
+              type: "recurring_debit_non_success_pending",
+              payload: payloadForLog
+            });
+            return res.status(200).send("OK");
+          }
+
+          // Hard fail → revoke (optionally with grace)
           const graceMin = Number(process.env.CARDCOM_FAIL_GRACE_MINUTES || 0);
-          const cutoff = new Date(
-            Date.now() + (Number.isFinite(graceMin) && graceMin > 0 ? graceMin * 60 * 1000 : 0)
-          );
+          const cutoff = new Date(Date.now() + (Number.isFinite(graceMin) && graceMin > 0 ? graceMin * 60 * 1000 : 0));
 
           const { rowCount } = await pool.query(
             `UPDATE payments
@@ -509,34 +537,37 @@ router.post(
             [JSON.stringify(payloadForLog), cutoff.toISOString(), recurringId]
           );
 
-          console.warn("🚫 Recurring debit NOT successful", {
+          console.warn("🚫 Recurring debit NOT successful (hard fail)", {
             recurringId, orderId: returnValue, status, graceMin, rowCount
           });
 
           await logEvent({
             orderId: returnValue || null,
             lowProfileId: null,
-            type: isHardFail ? "recurring_debit_hard_fail" : "recurring_debit_non_success",
-            payload: { recurringId, status, rowCount },
+            type: "recurring_debit_hard_fail",
+            payload: { recurringId, status, rowCount }
           });
 
           return res.status(200).send("OK");
         }
 
-        // ✅ SUCCESSFUL debit
+        // 3) SUCCESSFUL → mark paid & extend access
         const sum = Number(b.Sum);
         const amountMinor = Number.isFinite(sum) ? Math.round(sum * 100) : null;
+        const txId = txIdInPayload;
 
-        const txId =
-          b.InternalDealNumber || b.UID || b.Deal || b.DealNumber || null;
-
-        const parseDDMMYYYY = (s) => {
-          const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(s || ""));
-          if (!m) return null;
-          const [_, dd, mm, yyyy] = m;
-          return new Date(Number(yyyy), Number(mm) - 1, Number(dd));
-        };
-        const paidAt = parseDDMMYYYY(b.LastBillDate) || new Date();
+        // Parse dd/MM/yyyy or dd/MM/yyyy HH:mm (some payloads use slash between HH/mm)
+        function parseCardcomDate(s) {
+          if (!s) return null;
+          let m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s);
+          if (m) return new Date(+m[3], +m[2]-1, +m[1]);
+          m = /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2})[:/](\d{2})$/.exec(s);
+          if (m) return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5]);
+          m = /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})$/.exec(s);
+          if (m) return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5], +m[6]);
+          return null;
+        }
+        const paidAt = parseCardcomDate(b.LastBillDate) || new Date();
 
         // Pull current window to log "before" window
         const { rows } = await pool.query(
@@ -557,9 +588,7 @@ router.post(
         const planDays = Number(row.plan_days || 30);
 
         // Compute the "after" window
-        const startFrom = new Date(
-          Math.max(Date.now(), new Date(row.access_until || Date.now()).getTime())
-        );
+        const startFrom = new Date(Math.max(Date.now(), new Date(row.access_until || Date.now()).getTime()));
         const until = new Date(startFrom.getTime());
         until.setDate(until.getDate() + planDays);
 
@@ -630,6 +659,7 @@ router.post(
     }
   }
 );
+
 
 
 

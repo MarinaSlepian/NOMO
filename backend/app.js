@@ -147,11 +147,6 @@ app.put("/app-usage", (req, res) => {
   processQueue();
 });
 
-// Start server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
 
 // Example auth guard. Replace with your JWT/session logic.
 function requireAuth(req, res, next) {
