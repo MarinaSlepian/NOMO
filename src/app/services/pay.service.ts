@@ -51,4 +51,11 @@ export class PayService {
   getStatus(lowProfileId: string): Observable<any> {
     return this.http.get<any>(`${this.api}/status/${encodeURIComponent(lowProfileId)}`);
   }
+  
+  makeOrderId(): string {
+    // Example: ORD-<timestamp>-<4char random>
+    const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+    return `ORD-${Date.now()}-${rand}`;
+  }
+
 }

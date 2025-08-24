@@ -125,11 +125,6 @@ export class ButtonComponent {
     });
   }
 
-  private makeOrderId(): string {
-    // Example: ORD-<timestamp>-<4char random>
-    const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
-    return `ORD-${Date.now()}-${rand}`;
-  }
 
   openPayDialog() {
     this.payError = '';
@@ -145,7 +140,7 @@ export class ButtonComponent {
     if (this.isPaying) return;
     this.isPaying = true;
     this.payError = '';
-    const orderId = this.makeOrderId();
+    const orderId = this.pay.makeOrderId();
     let description = 'NOMO monthly subscription';
     const currency = this.CURRENCY;
     let amount = 30;

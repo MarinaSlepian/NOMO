@@ -11,6 +11,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { PricingDialogComponent } from '../pricing-dialog/pricing-dialog.component';
+import { PayService } from '../services/pay.service';
+import { AuthService } from '../auth/auth.service';
 
 
 
@@ -28,12 +31,18 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
     MatButtonModule,
     MatCheckboxModule,
     TranslateModule,
-    MatSlideToggleModule
+    MatSlideToggleModule,
+    PricingDialogComponent
   ]
 })
 
 
 export class SettingsDialogComponent implements OnInit{
+  readonly CURRENCY = 1;     // 1 = ILS
+  isPayDialogOpen = false;
+  isPaying = false;
+  payError = '';
+
   cancelLabel = 'Cancel';
   saveLabel = 'Save';
   langLabel = 'Language';
@@ -61,7 +70,8 @@ export class SettingsDialogComponent implements OnInit{
 
   constructor(
     public dialogRef: MatDialogRef<SettingsDialogComponent>,
-    private translate: TranslateService
+    private translate: TranslateService,
+    private pay: PayService, private auth: AuthService
   ) {}
 
   ngOnInit() 
@@ -129,5 +139,53 @@ export class SettingsDialogComponent implements OnInit{
     // Logic to open user dialog
     console.log('User icon clicked - open user dialog');
   } 
-  
+    openPayDialog() {
+    this.payError = '';
+    this.isPayDialogOpen = true;
+  }
+
+  cancelPayment() {
+    if (this.isPaying) return;
+    this.isPayDialogOpen = false;
+  }
+
+  confirmPayment(planSelected: string) {
+    if (this.isPaying) return;
+    this.isPaying = true;
+    this.payError = '';
+    const orderId = this.pay.makeOrderId();
+    let description = 'NOMO monthly subscription';
+    const currency = this.CURRENCY;
+    let amount = 30;
+    let planDays = 31;//monthly
+    if(planSelected == "quarterly"){
+      planDays = 90;
+      amount = 29*3;
+      description = "NOMO quarterly subscription"
+    }
+    else if(planSelected == "yearly"){
+      planDays = 365;
+      amount = 20*12;
+      description = "NOMO yearly subscription"
+    }
+    const userEmail = this.auth.getLoggedInEmail();
+    //temporary 
+    amount = 1;
+    planDays = 1;
+    //temporary 
+    console.log("payment chosen, plan selected is ", planSelected);
+    this.pay.startPayment({ amount, orderId, description, currency ,userEmail,planDays })
+      .subscribe({
+        next: ({ url, lowProfileId }) => {
+          sessionStorage.setItem('lastLowProfileId', String(lowProfileId));
+          sessionStorage.setItem('lastOrderId', orderId);
+          window.location.href = url; // go to Cardcom hosted page
+        },
+        error: err => {
+          console.error('Payment init failed', err);
+          this.payError = err?.error?.error || 'Payment init failed';
+          this.isPaying = false; // allow retry
+        }
+      });
+  }  
 }  
