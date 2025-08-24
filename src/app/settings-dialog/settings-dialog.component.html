@@ -1,4 +1,5 @@
 <div class="controls-row">
+  <img class="header-icon" src="assets/icons/user.png" alt="User Icon" (click)="openUserDialog()" />
   <mat-form-field appearance="outline">
     <mat-select [(value)]="selectedLang" (selectionChange)="onLanguageChange($event.value)">
       @for (lang of languages; track lang.code) {

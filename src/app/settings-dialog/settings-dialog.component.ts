@@ -124,5 +124,10 @@ export class SettingsDialogComponent implements OnInit{
       });
     });
   }
+
+  openUserDialog(): void {
+    // Logic to open user dialog
+    console.log('User icon clicked - open user dialog');
+  } 
   
 }  
