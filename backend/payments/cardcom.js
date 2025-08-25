@@ -629,7 +629,7 @@ router.all(
     } catch (err) {
       console.error("❌ /recurring-webhook error:", err);
       // מחזירים 200 כדי למנוע ריטריים לא נגמרים מקארדקום
-      return res.status(200).send("ERROR");
+      return res.status(200).send("OK");
     }
   }
 );
