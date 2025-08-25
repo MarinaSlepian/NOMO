@@ -8,11 +8,10 @@ import cardcomRouter from "./payments/cardcom.js";
 import authRouter from "./auth.js"; // 👈 import auth routes
 import jwt from 'jsonwebtoken';
 
-
-
 const parser = new UAParser();
 const app = express();
 
+app.set("trust proxy", true);
 app.use(express.json());
 console.log('🧠 🧠 Middleware active');
 
@@ -24,21 +23,26 @@ app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   next();
 });
+// Fast path for preflight
+app.options("*", (_req, res) => res.sendStatus(204));
 
-// Routes
+// ─── Routes ───────────────────────────────────────────────────────────────────
 app.use("/api/pay", cardcomRouter);
+
+// Quick health checks to validate mount
+app.get("/api/pay/healthz", (_req, res) => res.send("ok"));
+
 // ✅ Success/fail pages
-app.get("/pay/success", (req, res) => {
+app.get("/pay/success", (_req, res) => {
   res.send("Payment received. You can close this window.");
 });
-
-app.get("/pay/failed", (req, res) => {
+app.get("/pay/failed", (_req, res) => {
   res.send("Payment failed or canceled.");
 });
 
 app.use("/", authRouter); // 👈 signup/login now live here
 
-app.all("/route-check", (req, res) => {
+app.all("/route-check", (_req, res) => {
   console.log("✅ /route-check handler reached!");
   res.send("Route check OK");
 });
@@ -129,7 +133,7 @@ async function processQueue() {
 }
 
 // Main routes
-app.get("/", (req, res) => {
+app.get("/", (_req, res) => {
   console.log("✅ debug-log route hit");
   res.send("Server is running");
 });
@@ -147,14 +151,13 @@ app.put("/app-usage", (req, res) => {
   processQueue();
 });
 
-
 // Example auth guard. Replace with your JWT/session logic.
 function requireAuth(req, res, next) {
   const authHeader = req.headers.authorization || '';
-  console.log('🔐 Received Authorization header:', authHeader); // 👈 Log full header (for dev only)
+  console.log('🔐 Received Authorization header:', authHeader); // dev-only
 
   const token = authHeader.replace('Bearer ', '').trim();
-  console.log('🔍 Extracted token:', token); // 👈 Token string for debugging (for dev only)
+  console.log('🔍 Extracted token:', token); // dev-only
 
   if (!token) {
     console.warn('🚫 No token provided');
@@ -162,8 +165,8 @@ function requireAuth(req, res, next) {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET); // ⬅️ make sure you're using the correct env variable
-    console.log('✅ Token verified:', decoded); // 👈 Show decoded payload
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('✅ Token verified:', decoded); // dev-only
     req.user = decoded;
     next();
   } catch (err) {
@@ -171,7 +174,6 @@ function requireAuth(req, res, next) {
     return res.status(401).json({ error: 'Invalid token' });
   }
 }
-
 
 // GET /api/access/me  -> { active: boolean, until: ISO | null }
 app.get('/api/access/me', requireAuth, async (req, res) => {
@@ -187,17 +189,14 @@ app.get('/api/access/me', requireAuth, async (req, res) => {
          MAX(access_until) AS until_ts
        FROM payments
        WHERE user_email = $1 AND status IN ('paid','subscribed')`,
-
       [email]
     );
 
     const until = rows[0]?.until_ts || null;
-    // optional: const from = rows[0]?.from_ts || null;
 
     res.json({
       active: !!until && new Date(until) > new Date(),
       until
-      // optional: from
     });
   } catch (e) {
     console.error('access/me error', e);
@@ -207,6 +206,22 @@ app.get('/api/access/me', requireAuth, async (req, res) => {
 
 // (optional) quick health check
 app.get('/healthz', (_req, res) => res.send('ok'));
+
+// ─── Debug: print mounted Cardcom sub-routes on startup ───────────────
+try {
+  const layers = (cardcomRouter && cardcomRouter.stack) ? cardcomRouter.stack : [];
+  console.log(`[Boot] Cardcom router layers: ${layers.length}`);
+  for (const l of layers) {
+    const methods = l?.route?.methods ? Object.keys(l.route.methods).join(',').toUpperCase() : 'MIDDLEWARE';
+    const path = l?.route?.path || l?.name || '(anonymous)';
+    console.log(`  • ${methods} ${path}`);
+  }
+} catch (e) {
+  console.warn("⚠️ Could not introspect cardcomRouter:", e.message);
+}
+
+// ─── 404 handler LAST ─────────────────────────────────────────────────
+app.use((req, res) => res.status(404).send(`Cannot ${req.method} ${req.originalUrl}`));
 
 // Start server
 const PORT = Number(process.env.PORT) || 3000;   // Render provides PORT
