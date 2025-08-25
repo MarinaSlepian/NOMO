@@ -38,7 +38,6 @@ import { AuthService } from '../auth/auth.service';
 
 
 export class SettingsDialogComponent implements OnInit{
-  readonly CURRENCY = 1;     // 1 = ILS
   isPayDialogOpen = false;
   isPaying = false;
   payError = '';
@@ -139,7 +138,7 @@ export class SettingsDialogComponent implements OnInit{
     // Logic to open user dialog
     console.log('User icon clicked - open user dialog');
   } 
-    openPayDialog() {
+  openPayDialog() {
     this.payError = '';
     this.isPayDialogOpen = true;
   }
@@ -153,39 +152,13 @@ export class SettingsDialogComponent implements OnInit{
     if (this.isPaying) return;
     this.isPaying = true;
     this.payError = '';
-    const orderId = this.pay.makeOrderId();
-    let description = 'NOMO monthly subscription';
-    const currency = this.CURRENCY;
-    let amount = 30;
-    let planDays = 31;//monthly
-    if(planSelected == "quarterly"){
-      planDays = 90;
-      amount = 29*3;
-      description = "NOMO quarterly subscription"
+    let email = this.auth.getLoggedInEmail()
+    if(email){
+      this.payError = this.pay.confirmPayment(planSelected,email);
     }
-    else if(planSelected == "yearly"){
-      planDays = 365;
-      amount = 20*12;
-      description = "NOMO yearly subscription"
+  
+    if(this.payError){
+      this.isPaying = false; // allow retry 
     }
-    const userEmail = this.auth.getLoggedInEmail();
-    //temporary 
-    amount = 1;
-    planDays = 1;
-    //temporary 
-    console.log("payment chosen, plan selected is ", planSelected);
-    this.pay.startPayment({ amount, orderId, description, currency ,userEmail,planDays })
-      .subscribe({
-        next: ({ url, lowProfileId }) => {
-          sessionStorage.setItem('lastLowProfileId', String(lowProfileId));
-          sessionStorage.setItem('lastOrderId', orderId);
-          window.location.href = url; // go to Cardcom hosted page
-        },
-        error: err => {
-          console.error('Payment init failed', err);
-          this.payError = err?.error?.error || 'Payment init failed';
-          this.isPaying = false; // allow retry
-        }
-      });
   }  
 }  
