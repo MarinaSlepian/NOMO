@@ -27,13 +27,26 @@ if (!API_NAME) console.error("[Cardcom] Missing CARDCOM_API_NAME");
 
 // --- helpers ---
 async function logEvent({ orderId, lowProfileId, type, payload }) {
-  await pool.query(
-    `INSERT INTO payment_events (order_id, low_profile_id, event_type, payload)
-     VALUES ($1, $2, $3, $4)`,
-    [orderId, lowProfileId || null, type, payload ? JSON.stringify(payload) : null]
-  );
-}
+  try {
+    // Build a non-null reference for order_id
+    const recurringId =
+      payload?.RecurringId || payload?.recurringid || payload?.RecurringID || null;
 
+    const orderRef =
+      (orderId && String(orderId)) ||
+      (payload?.ReturnValue && String(payload.ReturnValue)) ||
+      (recurringId ? `recurring:${recurringId}` : 'n/a');   // 👈 NEVER NULL
+
+    await pool.query(
+      `INSERT INTO payment_events (order_id, low_profile_id, event_type, payload)
+       VALUES ($1, $2, $3, $4)`,
+      [orderRef, lowProfileId || null, type, payload ? JSON.stringify(payload) : null]
+    );
+  } catch (e) {
+    console.error("⚠️ logEvent failed:", e.message);
+    // swallow error so webhooks never fail because of logging
+  }
+}
 async function saveStart({ orderId, lowProfileId, userEmail, amountMinor, currency, planDays }) {
   await pool.query(
     `INSERT INTO payments (order_id, low_profile_id, user_email, amount_minor, currency, status, plan_days)
