@@ -19,7 +19,7 @@ const API_NAME = process.env.CARDCOM_API_NAME;
 
 // FRONTEND (browser redirects) and BACKEND (server webhook)
 const APP_URL = process.env.PUBLIC_APP_URL || "http://localhost:4200";
-const API_URL = process.env.PUBLIC_API_URL || "https://nomo-cj4l.onrender.com";
+const API_URL = process.env.PUBLIC_API_URL || "https://nomo-backend.onrender.com";
 
 // --- sanity checks ---
 if (!Number.isFinite(TERMINAL)) console.error("[Cardcom] Missing/invalid CARDCOM_TERMINAL");

@@ -16,7 +16,7 @@ getMine() {
   }
 
   return this.http.get<{ active: boolean; until: string | null }>(
-    'https://nomo-cj4l.onrender.com/api/access/me',
+    'https://nomo-backend.onrender.com/api/access/me',
     {
       headers: {
         Authorization: `Bearer ${token}`,
