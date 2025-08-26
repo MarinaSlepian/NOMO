@@ -475,13 +475,30 @@ router.all(
       const b = req.method === "GET" ? req.query : (req.body || {});
 
       // ---- אימות Secret בטוח ----
-      const provided = Buffer.from(String(b.Secret || b.secret || ""), "utf8");
-      const expected = Buffer.from(String(process.env.CARDCOM_RECURRING_WEBHOOK_SECRET || ""), "utf8");
+      const rawProvided = String(b.Secret || b.secret || "");
+      const rawExpected = String(process.env.CARDCOM_RECURRING_WEBHOOK_SECRET || "");
+
+      // optional: trim whitespace (Cardcom GUI sometimes adds spaces on copy/paste)
+      const providedStr = rawProvided.trim();
+      const expectedStr = rawExpected.trim();
+
+      const mask = s => (s ? `${s.slice(0,4)}…${s.slice(-4)} (len=${s.length})` : "EMPTY");
+
+      console.log("🔎 Recurring secret check", {
+        method: req.method,
+        provided: mask(providedStr),
+        expected: mask(expectedStr),
+      });
+
+      // use the trimmed versions for equality
+      const provided = Buffer.from(providedStr, "utf8");
+      const expected = Buffer.from(expectedStr, "utf8");
 
       if (!provided.length || provided.length !== expected.length || !crypto.timingSafeEqual(provided, expected)) {
         console.warn("❌ Recurring webhook: BAD_SECRET", { ip: req.ip, method: req.method });
         return res.status(403).send("BAD_SECRET");
       }
+
 
       // 🔎 מעטפת נתונים בסיסית
       const recordType  = String(b.RecordType || b.recordtype || b.recordType || "").toUpperCase();
