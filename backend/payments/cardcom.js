@@ -353,21 +353,31 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       return res.status(200).send("OK");
     }
 
-    // NextDateToBill = paidAt + planDays (try to use Cardcom's deal time if available)
+    // ---------- NEW: helpers for date parsing/formatting ----------
+    const fmtDDMMYYYY_HHmm = (d) => {
+      const dd = String(d.getDate()).padStart(2, "0");
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const yyyy = d.getFullYear();
+      const HH = String(d.getHours()).padStart(2, "0");
+      const MM = String(d.getMinutes()).padStart(2, "0");
+      return `${dd}/${mm}/${yyyy} ${HH}:${MM}`; // <- COLON between hour and minute
+    };
     const parseMaybeDealDate = (s) => {
       if (!s) return null;
-      // try "dd/MM/yyyy HH:mm:ss"
+      // dd/MM/yyyy HH:mm:ss
       let m = /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})$/.exec(s);
       if (m) return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5], +m[6]);
-      // try "dd/MM/yyyy HH/mm"
+      // dd/MM/yyyy HH/mm (legacy)
       m = /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2})\/(\d{2})$/.exec(s);
       if (m) return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5]);
-      // try date only
+      // dd/MM/yyyy
       m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s);
       if (m) return new Date(+m[3], +m[2]-1, +m[1]);
       return null;
     };
+    // --------------------------------------------------------------
 
+    // NextDateToBill = paidAt + planDays (use Cardcom's deal time if available)
     const paidAt = parseMaybeDealDate(tInfo?.DealDate) || new Date();
     const next = new Date(paidAt);
     next.setDate(next.getDate() + planDays);
@@ -389,18 +399,22 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       "Account.Email": rec.user_email || "",
       // Recurring details
       "RecurringPayments.InternalDecription": "NOMO subscription",
-      "RecurringPayments.NextDateToBill": fmtDDMMYYYY_HH_mmSlash(next),            // 👈 include time-of-day
+      "RecurringPayments.NextDateToBill": fmtDDMMYYYY_HHmm(next),          // <-- colon format
       "RecurringPayments.TotalNumOfBills": 999999,
       "RecurringPayments.FinalDebitCoinId": coinId,
       "RecurringPayments.ReturnValue": orderId || "",
       "RecurringPayments.TimeIntervalId": timeIntervalId,
-      "RecurringPayments.ChargeInTerminal": Number(TERMINAL_RECURRING),           // 👈 explicit recurring terminal
-      "RecurringPayments.IsIncludesVAT": "true",                                  // optional header flag
       // Price line
       "RecurringPayments.FlexItem.InvoiceDescription": "NOMO plan",
       "RecurringPayments.FlexItem.Price": (price / 100).toFixed(2),
       "RecurringPayments.FlexItem.IsPriceIncludeVat": "true",
     };
+
+    // (Optional) Only include explicit recurring terminal if provided
+    if (process.env.CARDCOM_TERMINAL_RECURRING) {
+      params["RecurringPayments.ChargeInTerminal"] =
+        Number(process.env.CARDCOM_TERMINAL_RECURRING);
+    }
 
     console.log("📦 RecurringPayment NV params:", params);
 
@@ -431,14 +445,16 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     );
 
     await logEvent({ orderId, lowProfileId, type: "subscription_created", payload: subResult });
-    console.log("✅ Subscription created:", { recurringId, nextDateToBill: fmtDDMMYYYY_HH_mmSlash(next) });
+    console.log("✅ Subscription created:", { recurringId, nextDateToBill: fmtDDMMYYYY_HHmm(next) });
 
     return res.status(200).send("OK");
   } catch (err) {
     console.error("❌ Cardcom /webhook error:", err);
-    return res.status(200).send("ERROR");
+    // Always ack 200 so Cardcom won't retry forever
+    return res.status(200).send("OK");
   }
 });
+
 
 // פרסר לפוסטים מסוג form-urlencoded (רק כשבאמת POST)
 const parseForm = express.urlencoded({ extended: true });
