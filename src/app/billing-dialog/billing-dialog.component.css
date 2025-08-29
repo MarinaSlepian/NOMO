@@ -1,0 +1,132 @@
+:host {
+  --red: #e11414;
+  --green: #96b427;
+  --blue: #0d7ce6;
+  --gray: #e7e7e7;
+  --black: #0b0b0b;
+  --radius: 20px;
+  --shadow: 0 8px 24px rgba(0,0,0,.15);
+  --gap: 1.25rem;
+  display: contents;
+}
+
+/* dialog shell (same feel as your pricing dialog) */
+dialog {
+  border: none;
+  padding: 0;
+  width: min(1100px, 95vw);
+  max-height: 90vh;
+  box-shadow: var(--shadow);
+  background: transparent;
+}
+.backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); }
+.sheet { background: white; border-radius: var(--radius); overflow: clip; position: relative; }
+
+.bar {
+  background: #ffe017;             /* yellow header */
+  padding: 0.9rem 1.1rem;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.bar h2 { margin: 0; font-size: 1.4rem; }
+.icon-btn { background: transparent; border: none; font-size: 1.25rem; cursor: pointer; }
+
+.content {
+  display: grid;
+  grid-template-columns: 1.1fr .9fr;
+  gap: var(--gap);
+  padding: var(--gap);
+}
+@media (max-width: 900px) {
+  .content { grid-template-columns: 1fr; }
+}
+
+.left-col, .right-col { display: grid; gap: var(--gap); }
+
+/* Cards */
+.card, .plan-card {
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1rem;
+}
+.card.subtle { background: #fafafa; }
+
+.card h3, .plan-card h3 { margin: .2rem 0 1rem; }
+
+/* PLAN CARD (mirrors your pricing tiles) */
+.plan-card {
+  padding: 0;
+  overflow: hidden;
+}
+.plan-title {
+  color: white;
+  font-weight: 700;
+  padding: 1rem 1.2rem;
+}
+.plan-card.red .plan-title { background: var(--red); }
+.plan-card.green .plan-title { background: var(--green); }
+.plan-card.blue .plan-title { background: var(--blue); }
+.plan-card.gray .plan-title { background: #8c8c8c; }
+
+.price-panel {
+  margin: 1rem;
+  border-radius: 14px;
+  background: #6b6b6b; color: white;
+  height: 7rem;
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  justify-items: start;
+  padding: 1rem 1.2rem;
+  gap: .6rem;
+}
+.price-panel .currency { font-size: 1.6rem; opacity: .95; }
+.price-panel .price { font-size: 3rem; line-height: 1; font-weight: 800; letter-spacing: .5px; }
+.price-panel .per { align-self: end; opacity: .9; }
+
+.plan-actions {
+  display: flex; gap: .6rem; padding: .6rem 1rem 1rem;
+  flex-wrap: wrap;
+}
+
+/* Payment method line */
+.pm-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: .75rem;
+  align-items: center;
+  margin-bottom: .75rem;
+}
+.pm-row .digits { font-weight: 600; letter-spacing: .3px; }
+.pm-row .brand, .pm-row .exp { color: #444; }
+
+/* Chips */
+.chips { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: .6rem; }
+.chip { padding: .25rem .6rem; border-radius: 999px; font-size: .85rem; background: #eaeaea; }
+.chip.ok { background: #e6f6ea; color: #18794e; }
+.chip.warn { background: #fff4e5; color: #a14e00; }
+.chip.light { background: #f2f2f2; color: #333; }
+.chip.muted { opacity: .8; }
+
+.row-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+
+/* Invoices */
+.invoices { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+.invoices li {
+  display: grid; grid-template-columns: 1fr auto auto auto; align-items: center;
+  gap: .5rem; padding: .5rem .6rem; border-radius: 12px; background: #fafafa;
+}
+.i-status.ok { color: #18794e; }
+.i-status.warn { color: #a14e00; }
+
+/* Buttons */
+button { border: none; border-radius: 16px; padding: .65rem 1.1rem; cursor: pointer; }
+button.primary { background: #111; color: #fff; }
+button.ghost { background: #efefef; }
+button.ghost.small { padding: .4rem .7rem; border-radius: 12px; font-size: .9rem; }
+button.danger { background: var(--red); color: #fff; }
+button:disabled { opacity: .6; cursor: not-allowed; }
+
+.muted { color: #666; }
+dialog { border: none; padding: 0; width: min(1100px, 95vw); max-height: 90vh; background: transparent; }
+dialog::backdrop { background: rgba(0,0,0,.35); }  /* use native backdrop */

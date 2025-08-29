@@ -1,6 +1,6 @@
 <div class="controls-row">
   @if(true){
-    <img class="header-icon" src="assets/icons/user.png" alt="User Icon" (click)="openPayDialog()" />
+    <img class="header-icon" src="assets/icons/user.png" alt="User Icon" (click)="openPayOrBillingDialog()" />
   }
   <mat-form-field appearance="outline">
     <mat-select [(value)]="selectedLang" (selectionChange)="onLanguageChange($event.value)">
@@ -26,14 +26,22 @@
     <img src="assets/icons/ok-circle-button.png" alt="Save" width="40" height="40" />
   </button>
 </div>  
-<app-pricing-dialog
-  [open]="isPayDialogOpen"
-  [config]="{
-    currency: '₪',
-    monthly: 39,
-    quarterly: 29,
-    yearly: 20
-  }"
-  (planSelected)="confirmPayment($event)"
-  (closed)="isPayDialogOpen = false">
-</app-pricing-dialog>
+@if(isPayDialogOpen){
+  <app-pricing-dialog
+    [open]="isPayDialogOpen"
+    [config]="{
+      currency: '₪',
+      monthly: 39,
+      quarterly: 29,
+      yearly: 20
+    }"
+    (planSelected)="confirmPayment($event)"
+    (closed)="isPayDialogOpen = false">
+  </app-pricing-dialog>
+}
+@if(isBillingDialogOpen){
+  <app-billing-dialog
+    [open]="isBillingDialogOpen"
+    (closed)="isBillingDialogOpen = false">
+  </app-billing-dialog>
+}

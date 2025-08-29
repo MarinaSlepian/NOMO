@@ -1,0 +1,97 @@
+<dialog #dialogEl (close)="closed.emit()" (cancel)="$event.preventDefault()">
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="title">
+    <header class="bar">
+      <h2 id="title">Billing</h2>
+      <button #firstFocus class="icon-btn" (click)="close()" aria-label="Close">✕</button>
+    </header>
+
+    <div class="content">
+      <!-- left: plan + payment + status/actions -->
+      <div class="left-col">
+        <!-- Current Plan (styled like your pricing cards) -->
+        <article class="plan-card" [class.red]="view().plan.accent==='red'"
+                                   [class.green]="view().plan.accent==='green'"
+                                   [class.blue]="view().plan.accent==='blue'"
+                                   [class.gray]="view().plan.accent==='gray'">
+          <h3 class="plan-title">{{ view().plan.name }}</h3>
+
+          <div class="price-panel">
+            <div class="currency">₪</div>
+            <div class="price">{{ view().plan.priceNisPerMonth }}</div>
+            <div class="per">{{ view().plan.billingLabel }}</div>
+          </div>
+
+          <div class="plan-actions">
+            <button class="primary" (click)="onChangePlan()">Change plan</button>
+            <button class="ghost" (click)="onDowngrade()" *ngIf="view().plan.id !== 'free'">Downgrade to free</button>
+          </div>
+        </article>
+
+        <!-- Payment method -->
+        <article class="card">
+          <h3>Payment method</h3>
+          @if (view().paymentMethod; as pm) {
+            <div class="pm-row">
+              <div class="brand">{{ pm.brand | titlecase }}</div>
+              <div class="digits">•••• {{ pm.last4 }}</div>
+              <div class="exp">exp {{ pm.exp }}</div>
+            </div>
+            <button class="primary" (click)="onUpdateCard()">Update card</button>
+          } @else {
+            <p class="muted">No card on file.</p>
+            <button class="primary" (click)="onUpdateCard()">Add card</button>
+          }
+        </article>
+
+        <!-- Status & next charge -->
+        <article class="card">
+          <h3>Subscription</h3>
+          <div class="chips">
+            <span class="chip" [class.ok]="view().status==='active'"
+                               [class.warn]="view().status==='past_due'"
+                               [class.muted]="view().status!=='active' && view().status!=='past_due'">
+              {{ view().status | titlecase }}
+            </span>
+            @if (view().nextChargeDate) {
+              <span class="chip light">Next charge: {{ view().nextChargeDate | date:'mediumDate' }}</span>
+            }
+          </div>
+
+          <div class="row-actions">
+            <button class="danger" (click)="onCancel()" *ngIf="view().plan.id!=='free' && view().status!=='canceled'">
+              Cancel subscription
+            </button>
+            <button class="ghost" (click)="onChangePlan()">Switch plan</button>
+          </div>
+        </article>
+      </div>
+
+      <!-- right: invoices / history -->
+      <div class="right-col">
+        <article class="card">
+          <h3>Invoices</h3>
+          @if (view().invoices?.length) {
+            <ul class="invoices">
+              @for (inv of view().invoices; track inv.id) {
+                <li>
+                  <div class="i-date">{{ inv.date | date:'mediumDate' }}</div>
+                  <div class="i-amount">₪ {{ inv.amountNis }}</div>
+                  <div class="i-status" [class.ok]="inv.status==='paid'"
+                                         [class.warn]="inv.status==='open'">{{ inv.status }}</div>
+                  <button class="ghost small" (click)="onInvoice(inv.id)">Download</button>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="muted">No invoices yet.</p>
+          }
+        </article>
+
+        <article class="card subtle">
+          <h3>Need help?</h3>
+          <p class="muted">For billing questions contact support… or reply to your invoice email.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+</dialog>

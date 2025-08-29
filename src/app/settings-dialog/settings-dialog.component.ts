@@ -12,8 +12,10 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { PricingDialogComponent } from '../pricing-dialog/pricing-dialog.component';
+import { BillingDialogComponent } from '../billing-dialog/billing-dialog.component';
 import { PayService } from '../services/pay.service';
 import { AuthService } from '../auth/auth.service';
+import { EntitlementService } from '../services/entitlement.service';
 
 
 
@@ -32,12 +34,14 @@ import { AuthService } from '../auth/auth.service';
     MatCheckboxModule,
     TranslateModule,
     MatSlideToggleModule,
-    PricingDialogComponent
+    PricingDialogComponent,
+    BillingDialogComponent
   ]
 })
 
 
 export class SettingsDialogComponent implements OnInit{
+  isBillingDialogOpen = false;
   isPayDialogOpen = false;
   isPaying = false;
   payError = '';
@@ -70,7 +74,8 @@ export class SettingsDialogComponent implements OnInit{
   constructor(
     public dialogRef: MatDialogRef<SettingsDialogComponent>,
     private translate: TranslateService,
-    private pay: PayService, private auth: AuthService
+    private pay: PayService, private auth: AuthService, 
+    private entitlement: EntitlementService
   ) {}
 
   ngOnInit() 
@@ -138,9 +143,23 @@ export class SettingsDialogComponent implements OnInit{
     // Logic to open user dialog
     console.log('User icon clicked - open user dialog');
   } 
-  openPayDialog() {
-    this.payError = '';
-    this.isPayDialogOpen = true;
+
+  openPayOrBillingDialog() {
+    if(this.auth.isLoggedIn()){
+       this.entitlement.getMine().subscribe(e => {
+      if (e.active) {
+        // show billing details
+        this.isBillingDialogOpen = true; 
+        this.isPayDialogOpen = false; 
+      } 
+      else{
+        // show pay dialog
+        this.payError = '';
+        this.isPayDialogOpen = true;      
+        this.isBillingDialogOpen = false;}
+    });
+  }
+
   }
 
   cancelPayment() {
