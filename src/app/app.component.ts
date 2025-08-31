@@ -70,7 +70,10 @@ constructor(private translate: TranslateService, private swUpdate: SwUpdate,
 }
 
 checkPayment() {
+
   if (!this.auth.isLoggedIn()) return;
+
+  console.log('In checkPayment');
 
   this.entitlement.getMe().pipe(take(1)).subscribe(me => {
     console.log('Plan info:', me.plan);
