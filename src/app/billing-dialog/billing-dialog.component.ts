@@ -2,6 +2,7 @@ import { TitleCasePipe, NgIf, DatePipe } from '@angular/common';
 import { Component, EventEmitter, Input, Output, signal, ViewChild, ElementRef} from '@angular/core';
 
 type PlanId = 'monthly' | 'quarterly' | 'annual' | 'free';
+
 interface Plan {
   id: PlanId;
   name: string;
@@ -10,7 +11,7 @@ interface Plan {
   billingLabel: string;       // "per month", etc.
 }
 interface PaymentMethod {
-  brand: 'visa' | 'mastercard' | 'amex' | 'unknown';
+  brand: 'visa' | 'mastercard' | 'unknown';
   last4: string;
   exp: string; // "07/28"
 }
@@ -43,13 +44,12 @@ export class BillingDialogComponent {
   @Output() changePlan = new EventEmitter<void>();           // open your pricing dialog
   @Output() updateCard = new EventEmitter<void>();           // open Cardcom update flow
   @Output() cancelSubscription = new EventEmitter<void>();   // show confirm + call backend
-  @Output() downgradeToFree = new EventEmitter<void>();      // optional
   @Output() downloadInvoice = new EventEmitter<string>();    // invoice.id
 
   subscription?: SubscriptionSummary;
 
-    // Fallback demo data so the dialog renders before data arrives:
-  demo = signal<SubscriptionSummary>({
+    // Fallback planData data so the dialog renders before data arrives:
+    planData = signal<SubscriptionSummary>({
     status: 'active',
     nextChargeDate: new Date(Date.now() + 1000*60*60*24*27).toISOString(),
     createdAt: new Date(Date.now() - 1000*60*60*24*30).toISOString(),
@@ -85,10 +85,9 @@ export class BillingDialogComponent {
     this.closed.emit();
   }
 
-  view = () => this.subscription ?? this.demo();
+  view = () => this.subscription ?? this.planData();
   onChangePlan() { this.changePlan.emit(); }
   onUpdateCard() { this.updateCard.emit(); }
   onCancel() { this.cancelSubscription.emit(); }
-  onDowngrade() { this.downgradeToFree.emit(); }
   onInvoice(id: string) { this.downloadInvoice.emit(id); }
 }

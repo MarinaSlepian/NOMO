@@ -1,28 +1,74 @@
+// entitlement.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { of } from 'rxjs'; // make sure this is imported
+import { map, shareReplay } from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
+
+export type PlanStatus = 'none' | 'trialing' | 'active' | 'grace' | 'past_due' | 'canceled';
+
+
+export interface PlanInfo {
+  status: PlanStatus;
+  current_period_end: string | null;
+  next_charge_date: string | null;
+}
+
+export interface PaymentMethod {
+  brand: string;// e.g., 'visa'
+  last4: string;
+  exp_month: number | null;
+  exp_year: number | null;
+}
+
+export interface BillingSummary {
+  last_payment_sum: number | null;
+  last_charge_date: string | null;
+  next_charge_date: string | null;
+  currency?: string;
+  payment_method: PaymentMethod | null;
+}
+
+export interface MeResponse {
+  email: string;
+  plan: PlanInfo | null;
+  billing: BillingSummary | null;
+  server_time: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class EntitlementService {
-    
-  constructor(private http: HttpClient) {}
+  private http = inject(HttpClient);
 
-getMine() {
-  const token = localStorage.getItem('tokenV1');
+  private me$?: Observable<MeResponse>;  // cached
 
-  if (!token) {
-    console.warn('⛔️ No token found, skipping /api/access/me request');
-    return of({ active: false, until: null }); // Возвращаем "пустой" Observable
+  getMe(): Observable<MeResponse> {
+    const token = localStorage.getItem('tokenV1');
+    if (!token) return of(this.guest());
+
+    if (!this.me$) {
+      this.me$ = this.http.get<MeResponse>(
+        'https://nomo-backend.onrender.com/api/access/me',
+        { headers: { Authorization: `Bearer ${token}` } }
+      ).pipe(shareReplay(1));
+    }
+    return this.me$;
   }
 
-  return this.http.get<{ active: boolean; until: string | null }>(
-    'https://nomo-backend.onrender.com/api/access/me',
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-}
+  /** Force re-fetch (e.g., after returning from payment) */
+  refresh(): void { this.me$ = undefined; }
 
+  private guest(): MeResponse {
+    return {
+      email: '',
+      plan: { status: 'none', current_period_end: null, next_charge_date: null},
+      billing: {
+        last_payment_sum: null,
+        last_charge_date: null,
+        next_charge_date: null,
+        payment_method: null
+      },
+      server_time: new Date().toISOString(),
+    };
+  }
 }
+// Note: The above code defines an Angular service that manages user entitlements and subscription status.

@@ -15,11 +15,8 @@ import { AuthComponent } from './auth/auth.component';
 import { SwUpdate } from '@angular/service-worker';
 import { AuthService } from './auth/auth.service';
 import { EntitlementService } from './services/entitlement.service';
+import { take } from 'rxjs/operators';
 
-interface MyTokenPayload {
-  email: string;
-  exp: number;
-}
 
 @Component({
   selector: 'app-root',
@@ -72,22 +69,29 @@ constructor(private translate: TranslateService, private swUpdate: SwUpdate,
   });
 }
 
-checkPayment()
-{
-  //checks if active paiment and unlochk buttons if yes
-  if(this.auth.isLoggedIn()){
-    this.entitlement.getMine().subscribe(e => {
-      if (e.active) {
-        // unlock premium features
-        //this.accessUntil = e.until;
-        this.setButtonsLock(false);
-      } 
-      else{
-        console.log('not entitled for premium features');
-      }
-    });
-  }
+checkPayment() {
+  if (!this.auth.isLoggedIn()) return;
+
+  this.entitlement.getMe().pipe(take(1)).subscribe(me => {
+    console.log('Plan info:', me.plan);
+    console.log('Billing info:', me.billing);
+    console.log('Server time:', me.server_time);
+    console.log('User email:', me.email);
+
+    const endISO = me.plan?.current_period_end ?? null;
+    console.log('Plan end date:', endISO);
+    // active if we have an end date and it's in the future
+    const isActive = !!endISO && Date.parse(endISO) > Date.now();
+
+    if (isActive) {
+      this.setButtonsLock(false);
+    } else {
+      console.log('not entitled for premium features');
+    }
+  });
 }
+
+
 
 ngOnInit(): void {
 

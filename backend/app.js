@@ -7,9 +7,13 @@ import { UAParser } from 'ua-parser-js';
 import cardcomRouter from "./payments/cardcom.js";
 import authRouter from "./auth.js"; // 👈 import auth routes
 import jwt from 'jsonwebtoken';
+import accessRouter from './access.js';
+
 
 const parser = new UAParser();
 const app = express();
+
+app.use('/api/access', accessRouter);
 
 app.set("trust proxy", true);
 app.use(express.json());
@@ -175,34 +179,7 @@ function requireAuth(req, res, next) {
   }
 }
 
-// GET /api/access/me  -> { active: boolean, until: ISO | null }
-app.get('/api/access/me', requireAuth, async (req, res) => {
-  try {
-    console.log('🔐 Access granted to user:', req.user);
 
-    const email = req.user.email; // from auth middleware
-
-    // ✅ Rely on the access window, not status
-    const { rows } = await pool.query(
-      `SELECT
-         MAX(access_from)  AS from_ts,
-         MAX(access_until) AS until_ts
-       FROM payments
-       WHERE user_email = $1 AND status IN ('paid','subscribed')`,
-      [email]
-    );
-
-    const until = rows[0]?.until_ts || null;
-
-    res.json({
-      active: !!until && new Date(until) > new Date(),
-      until
-    });
-  } catch (e) {
-    console.error('access/me error', e);
-    res.status(500).json({ error: 'internal' });
-  }
-});
 
 // (optional) quick health check
 app.get('/healthz', (_req, res) => res.send('ok'));

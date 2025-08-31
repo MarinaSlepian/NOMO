@@ -16,6 +16,8 @@ import { BillingDialogComponent } from '../billing-dialog/billing-dialog.compone
 import { PayService } from '../services/pay.service';
 import { AuthService } from '../auth/auth.service';
 import { EntitlementService } from '../services/entitlement.service';
+import { take } from 'rxjs/operators';
+import { MeResponse } from '../services/entitlement.service';
 
 
 
@@ -41,6 +43,7 @@ import { EntitlementService } from '../services/entitlement.service';
 
 
 export class SettingsDialogComponent implements OnInit{
+  billingEmail = '';
   isBillingDialogOpen = false;
   isPayDialogOpen = false;
   isPaying = false;
@@ -139,35 +142,53 @@ export class SettingsDialogComponent implements OnInit{
     });
   }
 
-  openUserDialog(): void {
+openUserDialog(): void {
     // Logic to open user dialog
     console.log('User icon clicked - open user dialog');
   } 
 
-  openPayOrBillingDialog() {
-    if(this.auth.isLoggedIn()){
-       this.entitlement.getMine().subscribe(e => {
-      if (e.active) {
-        // show billing details
-        this.isBillingDialogOpen = true; 
-        this.isPayDialogOpen = false; 
-      } 
-      else{
-        // show pay dialog
-        this.payError = '';
-        this.isPayDialogOpen = true;      
-        this.isBillingDialogOpen = false;}
-    });
+openPayOrBillingDialog() {
+  if (!this.auth.isLoggedIn()) {
+    this.showPayDialog();
+    return;
   }
 
-  }
+  this.entitlement.getMe().pipe(take(1)).subscribe(me => {
+    const status = me.plan?.status ?? 'none';
+    const isEntitled = false;//temporary
 
-  cancelPayment() {
+    if (isEntitled) this.showBillingDialog(me);
+    else this.showPayDialog();
+  });
+}
+
+/* helpers (keep your existing flags and fields) */
+private showPayDialog() {
+  this.payError = '';
+  this.isPayDialogOpen = true;
+  this.isBillingDialogOpen = false;
+}
+
+private showBillingDialog(me : MeResponse) {
+  // (optional) prefill billing UI fields from the cached response
+  this.billingEmail = me.email;
+  /*this.lastPaymentSum = me.billing?.last_payment_sum ?? null;
+  this.lastChargeDate = me.billing?.last_charge_date ?? null;
+  this.nextChargeDate  = me.billing?.next_charge_date ?? me.plan?.next_charge_date ?? null;
+  this.cardLast4 = me.billing?.payment_method?.last4 ?? null;
+  this.cardBrand = me.billing?.payment_method?.brand ?? null;
+  this.cardExpMonth = me.billing?.payment_method?.exp_month ?? null;
+  this.cardExpYear  = me.billing?.payment_method?.exp_year ?? null;*/
+
+  this.isBillingDialogOpen = true;
+  this.isPayDialogOpen = false;
+}
+cancelPayment() {
     if (this.isPaying) return;
     this.isPayDialogOpen = false;
-  }
+}
 
-  confirmPayment(planSelected: string) {
+confirmPayment(planSelected: string) {
     if (this.isPaying) return;
     this.isPaying = true;
     this.payError = '';
@@ -179,5 +200,5 @@ export class SettingsDialogComponent implements OnInit{
     if(this.payError){
       this.isPaying = false; // allow retry 
     }
-  }  
+}  
 }  
