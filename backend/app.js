@@ -29,6 +29,8 @@ app.options('*', (_req, res) => res.sendStatus(204));
 
 /* ── Routers (after middleware) ──────────────── */
 app.use('/api', authRouter);            // -> /api/signup, /api/login
+app.use('/',     authRouter); // only if the router’s routes are strictly /login and /signup
+
 app.use('/api/pay', cardcomRouter);
 app.use('/api/access', accessRouter);   // -> /api/access/me
 
