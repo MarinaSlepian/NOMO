@@ -183,7 +183,6 @@ function fmtDDMMYYYY_HH_mmSlash(d) {
 }
 // Try to extract expiry from TranzactionInfo
 function getExpiryFromTInfo(ti = {}) {
-  // common names Cardcom uses in שונות גרסאות
   let mm =
     ti.CardValidityMonth ?? ti.CardExpMonth ?? ti.ExpiryMonth ??
     ti.ValidityMonth ?? ti.CardExpDateMonth ?? null;
@@ -192,18 +191,27 @@ function getExpiryFromTInfo(ti = {}) {
     ti.CardValidityYear ?? ti.CardExpYear ?? ti.ExpiryYear ??
     ti.ValidityYear ?? ti.CardExpDateYear ?? null;
 
-  // sometimes a single field like "MMYY" / "MM/YY"
+  // single-field variants
   const oneField = ti.CardExpDate || ti.CardExpiry || ti.CardExp || null;
   if ((!mm || !yy) && oneField) {
     const s = String(oneField).replace(/\s+/g, "");
-    const m1 = /^(\d{2})[\/\-]?(\d{2})$/.exec(s);      // MMYY or MM/YY
-    const m2 = /^(\d{2})[\/\-]?(\d{4})$/.exec(s);      // MMYYYY or MM/YYYY
-    if (m1) { mm = m1[1]; yy = m1[2]; }
-    else if (m2) { mm = m2[1]; yy = m2[2]; }
+    let m = /^(\d{2})[\/\-]?(\d{2})$/.exec(s) || /^(\d{2})[\/\-]?(\d{4})$/.exec(s);
+    if (!m) m = /^(\d{4})(\d{2})$/.exec(s); // YYYYMM
+    if (m) { mm = m[1].slice(-2); yy = (m[2].length === 4 ? m[2].slice(-2) : m[2]); }
+  }
+
+  // last-resort: scan all string values for MM/YY-ish
+  if ((!mm || !yy) && ti && typeof ti === "object") {
+    for (const v of Object.values(ti)) {
+      if (typeof v !== "string") continue;
+      const s = v.replace(/\s+/g, "");
+      let m = /^(\d{2})[\/\-]?(\d{2})$/.exec(s) || /^(\d{2})[\/\-]?(\d{4})$/.exec(s) || /^(\d{4})(\d{2})$/.exec(s);
+      if (m) { mm = m[1].slice(-2); yy = (m[2].length === 4 ? m[2].slice(-2) : m[2]); break; }
+    }
   }
 
   if (mm != null) mm = String(mm).padStart(2, "0");
-  if (yy != null) yy = String(yy).slice(-2);          // YY (לא YYYY)
+  if (yy != null) yy = String(yy).slice(-2);
 
   const mmyy = (mm && yy && /^\d{2}$/.test(mm) && /^\d{2}$/.test(yy)) ? `${mm}/${yy}` : null;
   return { mm, yy, mmyy };
