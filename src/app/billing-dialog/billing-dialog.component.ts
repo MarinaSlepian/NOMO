@@ -1,6 +1,7 @@
 import { TitleCasePipe, NgIf, DatePipe } from '@angular/common';
-import { Component, EventEmitter, Input, Output, signal, ViewChild, ElementRef} from '@angular/core';
+import { Component, EventEmitter, Input, Output, signal, ViewChild, ElementRef, OnInit} from '@angular/core';
 import { MeResponse } from '../services/entitlement.service';
+import { PlanInfo, PayService } from '../services/pay.service';
 
 type PlanId = 'monthly' | 'quarterly' | 'annual' | 'free';
 
@@ -39,7 +40,7 @@ interface SubscriptionSummary {
   standalone: true,
   imports: [TitleCasePipe, NgIf, DatePipe]
 })
-export class BillingDialogComponent {
+export class BillingDialogComponent implements OnInit{
   @Input() open = false;
   @Input({required:true}) meResponse!: MeResponse;
   @Output() closed = new EventEmitter<void>();
@@ -48,6 +49,7 @@ export class BillingDialogComponent {
   @Output() cancelSubscription = new EventEmitter<void>();   // show confirm + call backend
   @Output() downloadInvoice = new EventEmitter<string>();    // invoice.id
 
+  planName = '';
   subscription?: SubscriptionSummary;
 
     // Fallback planData data so the dialog renders before data arrives:
@@ -65,6 +67,13 @@ export class BillingDialogComponent {
 
   @ViewChild('dialogEl') dialogEl!: ElementRef<HTMLDialogElement>;
   @ViewChild('firstFocus') firstFocus!: ElementRef<HTMLButtonElement>;
+
+  constructor(private payService: PayService) {}
+
+  ngOnInit(): void {
+    this.planName = this.payService.getPlanName(this.meResponse.plan?.plan_days || 0); 
+  }
+
   ngOnChanges() {
     // синхронизируем состояние <dialog>
     if (this.dialogEl?.nativeElement) {

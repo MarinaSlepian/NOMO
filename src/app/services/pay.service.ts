@@ -64,6 +64,19 @@ export class PayService {
     return `ORD-${Date.now()}-${rand}`;
   }
 
+  getPlanName(numDays: number): string {
+    switch (numDays) {
+      case 1: return 'Daily';
+      case 28: return 'Monthly';
+      case 29: return 'Monthly';
+      case 30: return 'Monthly';
+      case 31: return 'Monthly';
+      case 90: return 'Quarterly';
+      case 365: return 'Yearly';
+      default: return `${numDays} days`;
+    }
+  }
+
   getPlanInfo(plan: string): PlanInfo {
     console.log("payment chosen, plan selected is ", plan);
 
