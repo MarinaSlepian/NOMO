@@ -11,6 +11,7 @@ export interface PlanInfo {
   status: PlanStatus;
   current_period_end: string | null;
   next_charge_date: string | null;
+  plan_days: number | null; // e.g., 30, 90, 365
 }
 
 export interface PaymentMethod {
@@ -60,7 +61,7 @@ export class EntitlementService {
   private guest(): MeResponse {
     return {
       email: '',
-      plan: { status: 'none', current_period_end: null, next_charge_date: null},
+      plan: { status: 'none', current_period_end: null, next_charge_date: null, plan_days: null },
       billing: {
         last_payment_sum: null,
         last_charge_date: null,

@@ -87,7 +87,20 @@ router.get('/me', requireAuth, async (req, res) => {
                    AND last_charge.charged_at IS NOT NULL
                 THEN (last_charge.charged_at + (last_charge.plan_days || ' days')::interval)
               ELSE NULL
-            END
+            END,
+          'plan_days',
+            COALESCE(
+              last_charge.plan_days,
+              CASE
+                -- derive from the specific last charge's window if available
+                WHEN last_charge.period_end IS NOT NULL AND last_charge.charged_at IS NOT NULL
+                  THEN CEIL(EXTRACT(EPOCH FROM (last_charge.period_end - last_charge.charged_at)) / 86400.0)::int
+                -- fallback: derive from the aggregated access window
+                WHEN cur.from_ts IS NOT NULL AND cur.until_ts IS NOT NULL
+                  THEN CEIL(EXTRACT(EPOCH FROM (cur.until_ts - cur.from_ts)) / 86400.0)::int
+                ELSE NULL
+              END
+            )
         ) AS plan,
         json_build_object(
           'last_payment_sum',
@@ -127,7 +140,7 @@ router.get('/me', requireAuth, async (req, res) => {
     const { rows } = await pool.query(sql, [email]);
     const r = rows[0] || {};
 
-    const plan = r.plan ?? { status: 'none', current_period_end: null, next_charge_date: null };
+    const plan = r.plan ?? { status: 'none', current_period_end: null, next_charge_date: null, plan_days: null };
     const billing = r.billing ?? {
       last_payment_sum: null,
       last_charge_date: null,
@@ -141,7 +154,8 @@ router.get('/me', requireAuth, async (req, res) => {
       plan: {
         status: plan.status ?? 'none',
         current_period_end: plan.current_period_end ?? null,
-        next_charge_date: plan.next_charge_date ?? null
+        next_charge_date: plan.next_charge_date ?? null,
+        plan_days: plan.plan_days ?? null
       },
       billing: {
         last_payment_sum: billing.last_payment_sum ?? null,
@@ -157,6 +171,7 @@ router.get('/me', requireAuth, async (req, res) => {
     res.status(500).json({ error: 'internal' });
   }
 });
+
 
 
 export default router;
