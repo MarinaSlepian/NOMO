@@ -1,5 +1,6 @@
 import { TitleCasePipe, NgIf, DatePipe } from '@angular/common';
 import { Component, EventEmitter, Input, Output, signal, ViewChild, ElementRef} from '@angular/core';
+import { MeResponse } from '../services/entitlement.service';
 
 type PlanId = 'monthly' | 'quarterly' | 'annual' | 'free';
 
@@ -40,6 +41,7 @@ interface SubscriptionSummary {
 })
 export class BillingDialogComponent {
   @Input() open = false;
+  @Input({required:true}) meResponse!: MeResponse;
   @Output() closed = new EventEmitter<void>();
   @Output() changePlan = new EventEmitter<void>();           // open your pricing dialog
   @Output() updateCard = new EventEmitter<void>();           // open Cardcom update flow

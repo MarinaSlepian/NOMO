@@ -43,7 +43,7 @@ import { MeResponse } from '../services/entitlement.service';
 
 
 export class SettingsDialogComponent implements OnInit{
-  billingEmail = '';
+  meResponse! : MeResponse;
   isBillingDialogOpen = false;
   isPayDialogOpen = false;
   isPaying = false;
@@ -78,7 +78,7 @@ export class SettingsDialogComponent implements OnInit{
     public dialogRef: MatDialogRef<SettingsDialogComponent>,
     private translate: TranslateService,
     private pay: PayService, private auth: AuthService, 
-    private entitlement: EntitlementService
+    private entitlement: EntitlementService,
   ) {}
 
   ngOnInit() 
@@ -148,18 +148,23 @@ openUserDialog(): void {
   } 
 
 openPayOrBillingDialog() {
-  if (!this.auth.isLoggedIn()) {
-    this.showPayDialog();
-    return;
-  }
+
+    if (!this.auth.isLoggedIn()) return;
+
 
   this.entitlement.getMe().pipe(take(1)).subscribe(me => {
-    const status = me.plan?.status ?? 'none';
-    const isEntitled = false;//temporary
+    const endISO = me.plan?.current_period_end ?? null;
+    console.log('Plan end date:', endISO);
+    // active if we have an end date and it's in the future
+    const isActive = !!endISO && Date.parse(endISO) > Date.now();
 
-    if (isEntitled) this.showBillingDialog(me);
-    else this.showPayDialog();
+    if (isActive) {
+      this.showBillingDialog(me)
+    } else {
+      this.showPayDialog();
+    }
   });
+
 }
 
 /* helpers (keep your existing flags and fields) */
@@ -171,7 +176,7 @@ private showPayDialog() {
 
 private showBillingDialog(me : MeResponse) {
   // (optional) prefill billing UI fields from the cached response
-  this.billingEmail = me.email;
+  this.meResponse = me;
   /*this.lastPaymentSum = me.billing?.last_payment_sum ?? null;
   this.lastChargeDate = me.billing?.last_charge_date ?? null;
   this.nextChargeDate  = me.billing?.next_charge_date ?? me.plan?.next_charge_date ?? null;

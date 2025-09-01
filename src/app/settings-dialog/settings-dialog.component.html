@@ -42,6 +42,7 @@
 @if(isBillingDialogOpen){
   <app-billing-dialog
     [open]="isBillingDialogOpen"
+    [meResponse]="meResponse"
     (closed)="isBillingDialogOpen = false">
   </app-billing-dialog>
 }
