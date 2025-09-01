@@ -182,40 +182,80 @@ function fmtDDMMYYYY_HH_mmSlash(d) {
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}/${pad(d.getMinutes())}`;
 }
 // Try to extract expiry from TranzactionInfo
+// Robust expiry extractor with clear precedence and debug output
 function getExpiryFromTInfo(ti = {}) {
-  let mm =
-    ti.CardValidityMonth ?? ti.CardExpMonth ?? ti.ExpiryMonth ??
-    ti.ValidityMonth ?? ti.CardExpDateMonth ?? null;
+  const dbg = {};
+  // Preferred explicit fields first (Cardcom variants)
+  const monthKeys = [
+    'CreditCardExpMonth','CardExpMonth','ExpiryMonth','ValidityMonth',
+    'CardValidityMonth','CardExpDateMonth'
+  ];
+  const yearKeys = [
+    'CreditCardExpYear','CardExpYear','ExpiryYear','ValidityYear',
+    'CardValidityYear','CardExpDateYear'
+  ];
+  const singleKeys = [
+    'CreditCardExpDate','CardExpDate','CardExpiry','Expiry','CardExpiration','ExpirationDate'
+  ];
 
-  let yy =
-    ti.CardValidityYear ?? ti.CardExpYear ?? ti.ExpiryYear ??
-    ti.ValidityYear ?? ti.CardExpDateYear ?? null;
+  let mm = null, yy = null, src = [];
 
-  // single-field variants
-  const oneField = ti.CardExpDate || ti.CardExpiry || ti.CardExp || null;
-  if ((!mm || !yy) && oneField) {
-    const s = String(oneField).replace(/\s+/g, "");
-    let m = /^(\d{2})[\/\-]?(\d{2})$/.exec(s) || /^(\d{2})[\/\-]?(\d{4})$/.exec(s);
-    if (!m) m = /^(\d{4})(\d{2})$/.exec(s); // YYYYMM
-    if (m) { mm = m[1].slice(-2); yy = (m[2].length === 4 ? m[2].slice(-2) : m[2]); }
+  // 1) Try explicit month/year keys in order
+  for (const k of monthKeys) {
+    if (ti[k] != null && mm == null) { mm = String(ti[k]).trim(); src.push(`mm:${k}=${mm}`); dbg[k] = ti[k]; }
+  }
+  for (const k of yearKeys) {
+    if (ti[k] != null && yy == null) { yy = String(ti[k]).trim(); src.push(`yy:${k}=${yy}`); dbg[k] = ti[k]; }
   }
 
-  // last-resort: scan all string values for MM/YY-ish
-  if ((!mm || !yy) && ti && typeof ti === "object") {
-    for (const v of Object.values(ti)) {
-      if (typeof v !== "string") continue;
-      const s = v.replace(/\s+/g, "");
-      let m = /^(\d{2})[\/\-]?(\d{2})$/.exec(s) || /^(\d{2})[\/\-]?(\d{4})$/.exec(s) || /^(\d{4})(\d{2})$/.exec(s);
-      if (m) { mm = m[1].slice(-2); yy = (m[2].length === 4 ? m[2].slice(-2) : m[2]); break; }
+  // 2) If still missing, try single-field formats (MM/YY, MMYY, MM/YYYY, YYYYMM)
+  if ((!mm || !yy)) {
+    for (const k of singleKeys) {
+      if (!ti[k]) continue;
+      const raw = String(ti[k]).replace(/\s+/g, '');
+      dbg[k] = ti[k];
+
+      let m = /^(\d{2})[\/-]?(\d{2})$/.exec(raw);        // MMYY or MM/YY
+      if (m) { mm = mm || m[1]; yy = yy || m[2]; src.push(`single:${k}=${raw}`); break; }
+
+      m = /^(\d{2})[\/-]?(\d{4})$/.exec(raw);            // MMYYYY or MM/YYYY
+      if (m) { mm = mm || m[1]; yy = yy || m[2].slice(-2); src.push(`single:${k}=${raw}`); break; }
+
+      m = /^(\d{4})(\d{2})$/.exec(raw);                  // YYYYMM
+      if (m) { mm = mm || m[2]; yy = yy || m[1].slice(-2); src.push(`single:${k}=${raw}`); break; }
     }
   }
 
-  if (mm != null) mm = String(mm).padStart(2, "0");
+  // 3) Last resort: scan any string value that looks like MM/YY-ish
+  if ((!mm || !yy)) {
+    for (const [k, v] of Object.entries(ti)) {
+      if (typeof v !== 'string') continue;
+      const s = v.replace(/\s+/g, '');
+      let m = /^(\d{2})[\/-]?(\d{2})$/.exec(s) ||
+              /^(\d{2})[\/-]?(\d{4})$/.exec(s) ||
+              /^(\d{4})(\d{2})$/.exec(s);
+      if (m) {
+        if (!mm) mm = (m[1].length === 4 ? m[2] : m[1]);
+        if (!yy) yy = (m[2].length === 4 ? m[2].slice(-2) : m[2]);
+        src.push(`scan:${k}=${v}`);
+        dbg[`scan:${k}`] = v;
+        break;
+      }
+    }
+  }
+
+  // Normalize
+  if (mm != null) mm = String(mm).padStart(2, '0');
   if (yy != null) yy = String(yy).slice(-2);
 
-  const mmyy = (mm && yy && /^\d{2}$/.test(mm) && /^\d{2}$/.test(yy)) ? `${mm}/${yy}` : null;
-  return { mm, yy, mmyy };
+  // Guard month 01..12
+  if (!(mm && /^\d{2}$/.test(mm) && +mm >= 1 && +mm <= 12)) mm = null;
+  if (!(yy && /^\d{2}$/.test(yy))) yy = null;
+
+  const mmyy = (mm && yy) ? `${mm}/${yy}` : null;
+  return { mm, yy, mmyy, source: src.join(', '), debug: dbg };
 }
+
 /**
  * POST /api/pay/start
  * Body: { amount:number, orderId:string, description?:string, currency?:number, userId?:number|string, successUrl?:string, failUrl?:string }
@@ -418,14 +458,28 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
 
     // Map planDays → TimeIntervalId from your .env mapping
     const timeIntervalId = mapPlanDaysToTimeIntervalId(planDays);
-    const expiry = getExpiryFromTInfo(tInfo);
-    const expMM = expiry?.mm ? String(expiry.mm).padStart(2, "0") : null;
-    const expYY = expiry?.yy ? String(expiry.yy).slice(-2) : null;
-    // guard month range 01..12
-    const validMM = expMM && +expMM >= 1 && +expMM <= 12 ? expMM : null;
-    const expMMYY = validMM && expYY ? `${validMM}/${expYY}` : null;
 
-    console.log("🧾 Expiry to send", { validMM, expYY, expMMYY });
+    // Extract expiry from TranzactionInfo, then allow env override if needed
+    const parsedExp = getExpiryFromTInfo(tInfo);
+    console.log("🔍 Expiry candidates from tInfo", parsedExp); // 'source/debug' may be undefined
+
+    // Optional hard override (useful when Cardcom sends misleading fields)
+    const forceMM = process.env.CARDCOM_FORCE_EXP_MM || null;   // e.g. "11"
+    const forceYY = process.env.CARDCOM_FORCE_EXP_YY || null;   // e.g. "30"
+
+    const mm = forceMM || parsedExp.mm;
+    const yy = forceYY || parsedExp.yy;
+    const mmyy = (mm && yy) ? `${mm}/${yy}` : null;
+
+    console.log("🧾 Expiry to send (after override check)", { mm, yy, mmyy });
+
+    // Build just the expiry fields when available
+    const expiryFields = {
+      ...(mm   ? { "CreditCard.ValidityMonth": mm } : {}),
+      ...(yy   ? { "CreditCard.ValidityYear":  yy } : {}),
+      ...(mmyy ? { "CreditCard.ChangeDateValidity": mmyy } : {}),
+    };
+
     // Build NV params and create the recurring order
     const customerName = cardOwner || rec.user_email || "NOMO user";
 
@@ -438,10 +492,8 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       // Source (same card as first charge):
       "CreditCard.Token": cardToken,
         // << הוספת התוקף >>
-      // >>> Expiry (send only when we have it; format MM/YY for ChangeDateValidity)
-      ...(validMM ? { "CreditCard.ValidityMonth": validMM } : {}),
-      ...(expYY   ? { "CreditCard.ValidityYear":  expYY   } : {}),
-      ...(expMMYY ? { "CreditCard.ChangeDateValidity": expMMYY } : {}),
+      // << add expiry >>
+      ...expiryFields,
       // Account info
       "Account.CompanyName": customerName,
       "Account.Email": rec.user_email || "",
@@ -457,9 +509,8 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       "RecurringPayments.FlexItem.Price": (price / 100).toFixed(2),
       "RecurringPayments.FlexItem.IsPriceIncludeVat": "true",
     };
-    console.log("📦 RecurringPayment NV params (expiry):", {
-      mm: expiry.mm, yy: expiry.yy, mmyy: expiry.mmyy
-    });
+    console.log("📦 RecurringPayment NV params (expiry):", { mm, yy, mmyy, expiryFields });
+
     // (Optional) Only include explicit recurring terminal if provided
     if (process.env.CARDCOM_TERMINAL_RECURRING) {
       params["RecurringPayments.ChargeInTerminal"] =
