@@ -185,76 +185,74 @@ function fmtDDMMYYYY_HH_mmSlash(d) {
 // Robust expiry extractor with clear precedence and debug output
 function getExpiryFromTInfo(ti = {}) {
   const dbg = {};
-  // Preferred explicit fields first (Cardcom variants)
+  const digits = v => v == null ? null : String(v).replace(/\D/g, "");
+
+  // Prefer explicit month/year fields
   const monthKeys = [
-    'CreditCardExpMonth','CardExpMonth','ExpiryMonth','ValidityMonth',
-    'CardValidityMonth','CardExpDateMonth'
+    "CardValidityMonth", "CardExpMonth", "ExpiryMonth",
+    "ValidityMonth", "CardExpDateMonth"
   ];
   const yearKeys = [
-    'CreditCardExpYear','CardExpYear','ExpiryYear','ValidityYear',
-    'CardValidityYear','CardExpDateYear'
-  ];
-  const singleKeys = [
-    'CreditCardExpDate','CardExpDate','CardExpiry','Expiry','CardExpiration','ExpirationDate'
+    "CardValidityYear", "CardExpYear", "ExpiryYear",
+    "ValidityYear", "CardExpDateYear"
   ];
 
-  let mm = null, yy = null, src = [];
+  let mm = null, yy = null, source = null;
 
-  // 1) Try explicit month/year keys in order
   for (const k of monthKeys) {
-    if (ti[k] != null && mm == null) { mm = String(ti[k]).trim(); src.push(`mm:${k}=${mm}`); dbg[k] = ti[k]; }
+    if (ti[k] != null) { dbg[k] = ti[k]; mm = digits(ti[k]); source = source || `pair:${k}`; break; }
   }
   for (const k of yearKeys) {
-    if (ti[k] != null && yy == null) { yy = String(ti[k]).trim(); src.push(`yy:${k}=${yy}`); dbg[k] = ti[k]; }
+    if (ti[k] != null) { dbg[k] = ti[k]; yy = digits(ti[k]); source = source || `pair:${k}`; break; }
   }
 
-  // 2) If still missing, try single-field formats (MM/YY, MMYY, MM/YYYY, YYYYMM)
+  // Fall back to composite strings (NO generic scan!)
   if ((!mm || !yy)) {
-    for (const k of singleKeys) {
-      if (!ti[k]) continue;
-      const raw = String(ti[k]).replace(/\s+/g, '');
-      dbg[k] = ti[k];
-
-      let m = /^(\d{2})[\/-]?(\d{2})$/.exec(raw);        // MMYY or MM/YY
-      if (m) { mm = mm || m[1]; yy = yy || m[2]; src.push(`single:${k}=${raw}`); break; }
-
-      m = /^(\d{2})[\/-]?(\d{4})$/.exec(raw);            // MMYYYY or MM/YYYY
-      if (m) { mm = mm || m[1]; yy = yy || m[2].slice(-2); src.push(`single:${k}=${raw}`); break; }
-
-      m = /^(\d{4})(\d{2})$/.exec(raw);                  // YYYYMM
-      if (m) { mm = mm || m[2]; yy = yy || m[1].slice(-2); src.push(`single:${k}=${raw}`); break; }
-    }
-  }
-
-  // 3) Last resort: scan any string value that looks like MM/YY-ish
-  if ((!mm || !yy)) {
-    for (const [k, v] of Object.entries(ti)) {
-      if (typeof v !== 'string') continue;
-      const s = v.replace(/\s+/g, '');
-      let m = /^(\d{2})[\/-]?(\d{2})$/.exec(s) ||
-              /^(\d{2})[\/-]?(\d{4})$/.exec(s) ||
-              /^(\d{4})(\d{2})$/.exec(s);
-      if (m) {
-        if (!mm) mm = (m[1].length === 4 ? m[2] : m[1]);
-        if (!yy) yy = (m[2].length === 4 ? m[2].slice(-2) : m[2]);
-        src.push(`scan:${k}=${v}`);
-        dbg[`scan:${k}`] = v;
-        break;
+    const compositeKeys = [
+      "CardExpDate", "CardExpiry", "CardExp",
+      "ExpirationDate", "ExpDate", "Expiry", "CardExpiration"
+    ];
+    for (const k of compositeKeys) {
+      if (ti[k] != null) {
+        const s = String(ti[k]).trim();
+        dbg[k] = s;
+        let m;
+        // MM/YY or MM-YY
+        m = /^(\d{2})[\/\-](\d{2})$/.exec(s);
+        if (m) { mm = m[1]; yy = m[2]; source = `composite:${k}`; break; }
+        // MM/YYYY
+        m = /^(\d{2})[\/\-](\d{4})$/.exec(s);
+        if (m) { mm = m[1]; yy = m[2].slice(-2); source = `composite:${k}`; break; }
+        // MMYY
+        m = /^(\d{2})(\d{2})$/.exec(s);
+        if (m) { mm = m[1]; yy = m[2]; source = `composite:${k}`; break; }
+        // MMYYYY
+        m = /^(\d{2})(\d{4})$/.exec(s);
+        if (m) { mm = m[1]; yy = m[2].slice(-2); source = `composite:${k}`; break; }
       }
     }
   }
 
-  // Normalize
-  if (mm != null) mm = String(mm).padStart(2, '0');
+  // Normalize to 2 digits
+  if (mm != null) mm = String(mm).padStart(2, "0");
   if (yy != null) yy = String(yy).slice(-2);
 
-  // Guard month 01..12
+  // Reject if month not 01..12
   if (!(mm && /^\d{2}$/.test(mm) && +mm >= 1 && +mm <= 12)) mm = null;
   if (!(yy && /^\d{2}$/.test(yy))) yy = null;
 
+  // Reject if it equals card last4 (e.g., 1052 → 10/52)
+  const last4 = digits(ti.Last4CardDigitsString ?? ti.Last4CardDigits ?? "");
+  if (mm && yy && last4 && last4.length === 4 && (mm + yy) === last4) {
+    dbg.rejectedBecauseMatchesLast4 = last4;
+    mm = yy = null;
+    source = "rejected:last4_match";
+  }
+
   const mmyy = (mm && yy) ? `${mm}/${yy}` : null;
-  return { mm, yy, mmyy, source: src.join(', '), debug: dbg };
+  return { mm, yy, mmyy, source, debug: dbg };
 }
+
 
 /**
  * POST /api/pay/start
@@ -460,6 +458,7 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     const timeIntervalId = mapPlanDaysToTimeIntervalId(planDays);
 
     // Extract expiry from TranzactionInfo, then allow env override if needed
+    console.log("tInfo", tInfo); // 'source/debug' may be undefined
     const parsedExp = getExpiryFromTInfo(tInfo);
     console.log("🔍 Expiry candidates from tInfo", parsedExp); // 'source/debug' may be undefined
 
