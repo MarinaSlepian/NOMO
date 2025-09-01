@@ -185,73 +185,32 @@ function fmtDDMMYYYY_HH_mmSlash(d) {
 // Robust expiry extractor with clear precedence and debug output
 function getExpiryFromTInfo(ti = {}) {
   const dbg = {};
-  const digits = v => v == null ? null : String(v).replace(/\D/g, "");
+  // Prefer the explicit fields Cardcom returns
+  const rawMM = ti.CardMonth ?? ti.cardMonth ?? null;
+  const rawYY = ti.CardYear  ?? ti.cardYear  ?? null;
+  if (rawMM != null) dbg.CardMonth = rawMM;
+  if (rawYY != null) dbg.CardYear  = rawYY;
 
-  // Prefer explicit month/year fields
-  const monthKeys = [
-    "CardValidityMonth", "CardExpMonth", "ExpiryMonth",
-    "ValidityMonth", "CardExpDateMonth"
-  ];
-  const yearKeys = [
-    "CardValidityYear", "CardExpYear", "ExpiryYear",
-    "ValidityYear", "CardExpDateYear"
-  ];
+  // Normalize
+  let mm = rawMM != null ? String(rawMM).replace(/\D/g, "") : null;
+  let yy = rawYY != null ? String(rawYY).replace(/\D/g, "") : null;
 
-  let mm = null, yy = null, source = null;
-
-  for (const k of monthKeys) {
-    if (ti[k] != null) { dbg[k] = ti[k]; mm = digits(ti[k]); source = source || `pair:${k}`; break; }
+  // Validate: month 01..12, year 2 digits (Cardcom expects YY)
+  if (!(mm && /^\d{1,2}$/.test(mm))) mm = null;
+  if (mm != null) {
+    const n = Number(mm);
+    if (n < 1 || n > 12) mm = null;
+    else mm = String(n).padStart(2, "0");
   }
-  for (const k of yearKeys) {
-    if (ti[k] != null) { dbg[k] = ti[k]; yy = digits(ti[k]); source = source || `pair:${k}`; break; }
-  }
-
-  // Fall back to composite strings (NO generic scan!)
-  if ((!mm || !yy)) {
-    const compositeKeys = [
-      "CardExpDate", "CardExpiry", "CardExp",
-      "ExpirationDate", "ExpDate", "Expiry", "CardExpiration"
-    ];
-    for (const k of compositeKeys) {
-      if (ti[k] != null) {
-        const s = String(ti[k]).trim();
-        dbg[k] = s;
-        let m;
-        // MM/YY or MM-YY
-        m = /^(\d{2})[\/\-](\d{2})$/.exec(s);
-        if (m) { mm = m[1]; yy = m[2]; source = `composite:${k}`; break; }
-        // MM/YYYY
-        m = /^(\d{2})[\/\-](\d{4})$/.exec(s);
-        if (m) { mm = m[1]; yy = m[2].slice(-2); source = `composite:${k}`; break; }
-        // MMYY
-        m = /^(\d{2})(\d{2})$/.exec(s);
-        if (m) { mm = m[1]; yy = m[2]; source = `composite:${k}`; break; }
-        // MMYYYY
-        m = /^(\d{2})(\d{4})$/.exec(s);
-        if (m) { mm = m[1]; yy = m[2].slice(-2); source = `composite:${k}`; break; }
-      }
-    }
-  }
-
-  // Normalize to 2 digits
-  if (mm != null) mm = String(mm).padStart(2, "0");
-  if (yy != null) yy = String(yy).slice(-2);
-
-  // Reject if month not 01..12
-  if (!(mm && /^\d{2}$/.test(mm) && +mm >= 1 && +mm <= 12)) mm = null;
-  if (!(yy && /^\d{2}$/.test(yy))) yy = null;
-
-  // Reject if it equals card last4 (e.g., 1052 → 10/52)
-  const last4 = digits(ti.Last4CardDigitsString ?? ti.Last4CardDigits ?? "");
-  if (mm && yy && last4 && last4.length === 4 && (mm + yy) === last4) {
-    dbg.rejectedBecauseMatchesLast4 = last4;
-    mm = yy = null;
-    source = "rejected:last4_match";
+  if (yy != null) {
+    // keep last two digits (e.g. 2030 -> "30")
+    yy = String(Number(yy) % 100).padStart(2, "0");
   }
 
   const mmyy = (mm && yy) ? `${mm}/${yy}` : null;
-  return { mm, yy, mmyy, source, debug: dbg };
+  return { mm, yy, mmyy, source: "CardMonth/CardYear", debug: dbg };
 }
+
 
 
 /**
@@ -459,26 +418,13 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
 
     // Extract expiry from TranzactionInfo, then allow env override if needed
     console.log("tInfo", tInfo); // 'source/debug' may be undefined
-    const parsedExp = getExpiryFromTInfo(tInfo);
-    console.log("🔍 Expiry candidates from tInfo", parsedExp); // 'source/debug' may be undefined
-
-    // Optional hard override (useful when Cardcom sends misleading fields)
-    const forceMM = process.env.CARDCOM_FORCE_EXP_MM || null;   // e.g. "11"
-    const forceYY = process.env.CARDCOM_FORCE_EXP_YY || null;   // e.g. "30"
-
-    const mm = forceMM || parsedExp.mm;
-    const yy = forceYY || parsedExp.yy;
-    const mmyy = (mm && yy) ? `${mm}/${yy}` : null;
-
-    console.log("🧾 Expiry to send (after override check)", { mm, yy, mmyy });
-
-    // Build just the expiry fields when available
+    const { mm, yy, mmyy } = getExpiryFromTInfo(tInfo);
+    console.log("🧾 Expiry to send (from CardMonth/CardYear)", { mm, yy, mmyy });
     const expiryFields = {
       ...(mm   ? { "CreditCard.ValidityMonth": mm } : {}),
       ...(yy   ? { "CreditCard.ValidityYear":  yy } : {}),
       ...(mmyy ? { "CreditCard.ChangeDateValidity": mmyy } : {}),
     };
-
     // Build NV params and create the recurring order
     const customerName = cardOwner || rec.user_email || "NOMO user";
 
