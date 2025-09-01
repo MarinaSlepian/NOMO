@@ -411,7 +411,13 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     // Map planDays → TimeIntervalId from your .env mapping
     const timeIntervalId = mapPlanDaysToTimeIntervalId(planDays);
     const expiry = getExpiryFromTInfo(tInfo);
+    const expMM = expiry?.mm ? String(expiry.mm).padStart(2, "0") : null;
+    const expYY = expiry?.yy ? String(expiry.yy).slice(-2) : null;
+    // guard month range 01..12
+    const validMM = expMM && +expMM >= 1 && +expMM <= 12 ? expMM : null;
+    const expMMYY = validMM && expYY ? `${validMM}/${expYY}` : null;
 
+    console.log("🧾 Expiry to send", { validMM, expYY, expMMYY });
     // Build NV params and create the recurring order
     const customerName = cardOwner || rec.user_email || "NOMO user";
 
@@ -424,9 +430,10 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       // Source (same card as first charge):
       "CreditCard.Token": cardToken,
         // << הוספת התוקף >>
-      ...(expiry.mm ? { "CreditCard.ValidityMonth": expiry.mm } : {}),
-      ...(expiry.yy ? { "CreditCard.ValidityYear":  expiry.yy } : {}),
-      ...(expiry.mmyy ? { "CreditCard.ChangeDateValidity": expiry.mmyy } : {}),
+      // >>> Expiry (send only when we have it; format MM/YY for ChangeDateValidity)
+      ...(validMM ? { "CreditCard.ValidityMonth": validMM } : {}),
+      ...(expYY   ? { "CreditCard.ValidityYear":  expYY   } : {}),
+      ...(expMMYY ? { "CreditCard.ChangeDateValidity": expMMYY } : {}),
       // Account info
       "Account.CompanyName": customerName,
       "Account.Email": rec.user_email || "",
