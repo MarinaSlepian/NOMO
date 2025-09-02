@@ -425,6 +425,8 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       ...(yy   ? { "CreditCard.ValidityYear":  yy } : {}),
       ...(mmyy ? { "CreditCard.ChangeDateValidity": mmyy } : {}),
     };
+    console.log("🧾🧾 Expiry to send expiryFields", expiryFields);
+
     // Build NV params and create the recurring order
     const customerName = cardOwner || rec.user_email || "NOMO user";
 

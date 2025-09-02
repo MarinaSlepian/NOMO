@@ -10,16 +10,13 @@
       <!-- left: plan + payment + status/actions -->
       <div class="left-col">
         <!-- Current Plan (styled like your pricing cards) -->
-        <article class="plan-card" [class.red]="view().plan.accent==='red'"
-                                   [class.green]="view().plan.accent==='green'"
-                                   [class.blue]="view().plan.accent==='blue'"
-                                   [class.gray]="view().plan.accent==='gray'">
+        <article class="plan-card" [class.blue]="true">
           <h3 class="plan-title">{{ planName }}</h3>
 
           <div class="price-panel">
             <div class="currency">₪</div>
-            <div class="price">{{ view().plan.priceNisPerMonth }}</div>
-            <div class="per">{{ view().plan.billingLabel }}</div>
+            <div class="price">{{ meResponse.billing?.last_payment_sum }}</div>
+            <div class="price">per month</div>
           </div>
 
           <div class="plan-actions">
@@ -30,11 +27,11 @@
         <!-- Payment method -->
         <article class="card">
           <h3>Payment method</h3>
-          @if (view().paymentMethod; as pm) {
+          @if (meResponse.billing?.payment_method) {
             <div class="pm-row">
-              <div class="brand">{{ pm.brand | titlecase }}</div>
-              <div class="digits">•••• {{ pm.last4 }}</div>
-              <div class="exp">exp {{ pm.exp }}</div>
+              <div class="brand">{{ meResponse.billing?.payment_method?.brand }}</div>
+              <div class="digits">•••• {{ meResponse.billing?.payment_method?.last4 }}</div>
+              <div class="exp">exp {{ meResponse.billing?.payment_method?.exp_month }} / {{ meResponse.billing?.payment_method?.exp_year}}</div>
             </div>
             <button class="primary" (click)="onUpdateCard()">Update card</button>
           } @else {
@@ -52,13 +49,13 @@
                                [class.muted]="view().status!=='active' && view().status!=='past_due'">
               {{ view().status | titlecase }}
             </span>
-            @if (view().nextChargeDate) {
-              <span class="chip light">Next charge: {{ view().nextChargeDate | date:'mediumDate' }}</span>
+            @if (meResponse.billing?.next_charge_date) {
+              <span class="chip light">Next charge: {{ meResponse.billing?.next_charge_date| date:'mediumDate' }}</span>
             }
           </div>
 
           <div class="row-actions">
-            <button class="danger" (click)="onCancel()" *ngIf="view().plan.id!=='free' && view().status!=='canceled'">
+            <button class="danger" (click)="onCancel()">
               Cancel subscription
             </button>
             <button class="ghost" (click)="onChangePlan()">Switch plan</button>

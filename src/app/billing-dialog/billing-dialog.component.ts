@@ -5,18 +5,8 @@ import { PlanInfo, PayService } from '../services/pay.service';
 
 type PlanId = 'monthly' | 'quarterly' | 'annual' | 'free';
 
-interface Plan {
-  id: PlanId;
-  name: string;
-  priceNisPerMonth: number;   // free = 0
-  accent: 'red' | 'green' | 'blue' | 'gray';
-  billingLabel: string;       // "per month", etc.
-}
-interface PaymentMethod {
-  brand: 'visa' | 'mastercard' | 'unknown';
-  last4: string;
-  exp: string; // "07/28"
-}
+
+
 interface Invoice {
   id: string;
   date: string;     // ISO
@@ -26,10 +16,7 @@ interface Invoice {
 }
 interface SubscriptionSummary {
   status: 'active' | 'canceled' | 'past_due' | 'trialing' | 'paused';
-  nextChargeDate?: string; // ISO
   createdAt?: string;      // ISO
-  plan: Plan;
-  paymentMethod?: PaymentMethod;
   invoices?: Invoice[];
 }
 
@@ -50,15 +37,13 @@ export class BillingDialogComponent implements OnInit{
   @Output() downloadInvoice = new EventEmitter<string>();    // invoice.id
 
   planName = '';
+
   subscription?: SubscriptionSummary;
 
     // Fallback planData data so the dialog renders before data arrives:
     planData = signal<SubscriptionSummary>({
     status: 'active',
-    nextChargeDate: new Date(Date.now() + 1000*60*60*24*27).toISOString(),
     createdAt: new Date(Date.now() - 1000*60*60*24*30).toISOString(),
-    plan: { id: 'annual', name: 'annual payment', priceNisPerMonth: 20, accent: 'blue', billingLabel: 'per month' },
-    paymentMethod: { brand: 'visa', last4: '1234', exp: '07/28' },
     invoices: [
       { id: 'inv_001', date: new Date().toISOString(), amountNis: 240, status: 'paid' },
       { id: 'inv_000', date: new Date(Date.now()-1000*60*60*24*30).toISOString(), amountNis: 240, status: 'paid' },
