@@ -1,4 +1,4 @@
-import { TitleCasePipe, NgIf, DatePipe } from '@angular/common';
+import { TitleCasePipe, DatePipe } from '@angular/common';
 import { Component, EventEmitter, Input, Output, signal, ViewChild, ElementRef, OnInit} from '@angular/core';
 import { MeResponse } from '../services/entitlement.service';
 import { PlanInfo, PayService } from '../services/pay.service';
@@ -25,8 +25,9 @@ interface SubscriptionSummary {
   templateUrl: './billing-dialog.component.html',
   styleUrls: ['./billing-dialog.component.css'],
   standalone: true,
-  imports: [TitleCasePipe, NgIf, DatePipe]
+  imports: [TitleCasePipe, DatePipe]
 })
+
 export class BillingDialogComponent implements OnInit{
   @Input() open = false;
   @Input({required:true}) meResponse!: MeResponse;
@@ -37,6 +38,7 @@ export class BillingDialogComponent implements OnInit{
   @Output() downloadInvoice = new EventEmitter<string>();    // invoice.id
 
   planName = '';
+  pricePerMonth = 0;
 
   subscription?: SubscriptionSummary;
 
@@ -57,6 +59,9 @@ export class BillingDialogComponent implements OnInit{
 
   ngOnInit(): void {
     this.planName = this.payService.getPlanName(this.meResponse.plan?.plan_days || 0); 
+    const planDays = this.meResponse.plan?.plan_days || 0;
+    this.pricePerMonth = this.meResponse.billing?.last_payment_sum? this.meResponse.billing?.last_payment_sum : 0;
+    this.pricePerMonth = Math.round((this.pricePerMonth / (planDays / 30)) * 100) / 100;
   }
 
   ngOnChanges() {

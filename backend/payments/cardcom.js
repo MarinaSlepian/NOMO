@@ -184,31 +184,29 @@ function fmtDDMMYYYY_HH_mmSlash(d) {
 // Try to extract expiry from TranzactionInfo
 // Robust expiry extractor with clear precedence and debug output
 function getExpiryFromTInfo(ti = {}) {
-  const dbg = {};
-  // Prefer the explicit fields Cardcom returns
-  const rawMM = ti.CardMonth ?? ti.cardMonth ?? null;
-  const rawYY = ti.CardYear  ?? ti.cardYear  ?? null;
-  if (rawMM != null) dbg.CardMonth = rawMM;
-  if (rawYY != null) dbg.CardYear  = rawYY;
+  // Cardcom typically returns CardMonth (MM) and CardYear (YY)
+  let mm = ti.CardMonth ?? ti.CardValidityMonth ?? ti.CardExpMonth ?? ti.ExpiryMonth ?? ti.ValidityMonth ?? ti.CardExpDateMonth ?? null;
+  let yy = ti.CardYear  ?? ti.CardValidityYear  ?? ti.CardExpYear  ?? ti.ExpiryYear  ?? ti.ValidityYear  ?? ti.CardExpDateYear  ?? null;
 
-  // Normalize
-  let mm = rawMM != null ? String(rawMM).replace(/\D/g, "") : null;
-  let yy = rawYY != null ? String(rawYY).replace(/\D/g, "") : null;
+  // Also accept a single field (MMYY / MM/YY / MMYYYY / MM/YYYY)
+  const one = ti.CardExpDate || ti.CardExpiry || ti.CardExp || null;
+  if ((!mm || !yy) && one) {
+    const s = String(one).replace(/\s+/g, "");
+    let m = /^(\d{2})[\/\-]?(\d{2})$/.exec(s);      // MMYY or MM/YY
+    if (m) { mm = m[1]; yy = m[2]; }
+    m = m || /^(\d{2})[\/\-]?(\d{4})$/.exec(s);     // MMYYYY or MM/YYYY
+    if (m && !yy) { mm = m[1]; yy = m[2]; }
+  }
 
-  // Validate: month 01..12, year 2 digits (Cardcom expects YY)
-  if (!(mm && /^\d{1,2}$/.test(mm))) mm = null;
-  if (mm != null) {
-    const n = Number(mm);
-    if (n < 1 || n > 12) mm = null;
-    else mm = String(n).padStart(2, "0");
-  }
-  if (yy != null) {
-    // keep last two digits (e.g. 2030 -> "30")
-    yy = String(Number(yy) % 100).padStart(2, "0");
-  }
+  // Normalize: MM two digits (01..12), YY last two digits
+  if (mm != null) mm = String(mm).padStart(2, "0");
+  if (yy != null) yy = String(yy).slice(-2);
+
+  // Guard month range
+  if (mm && (+mm < 1 || +mm > 12)) mm = null;
 
   const mmyy = (mm && yy) ? `${mm}/${yy}` : null;
-  return { mm, yy, mmyy, source: "CardMonth/CardYear", debug: dbg };
+  return { mm, yy, mmyy, source: "tInfo" };
 }
 
 
@@ -384,14 +382,14 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       return res.status(200).send("OK");
     }
 
-    // ---------- NEW: helpers for date parsing/formatting ----------
+    // ---------- helpers for date parsing/formatting ----------
     const fmtDDMMYYYY_HHmm = (d) => {
       const dd = String(d.getDate()).padStart(2, "0");
       const mm = String(d.getMonth() + 1).padStart(2, "0");
       const yyyy = d.getFullYear();
       const HH = String(d.getHours()).padStart(2, "0");
       const MM = String(d.getMinutes()).padStart(2, "0");
-      return `${dd}/${mm}/${yyyy} ${HH}:${MM}`; // <- COLON between hour and minute
+      return `${dd}/${mm}/${yyyy} ${HH}:${MM}`; // colon
     };
     const parseMaybeDealDate = (s) => {
       if (!s) return null;
@@ -406,62 +404,65 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       if (m) return new Date(+m[3], +m[2]-1, +m[1]);
       return null;
     };
-    // --------------------------------------------------------------
+    // --------------------------------------------------------
 
-    // NextDateToBill = paidAt + planDays (use Cardcom's deal time if available)
-    const paidAt = parseMaybeDealDate(tInfo?.DealDate) || new Date();
-    const next = new Date(paidAt);
-    next.setDate(next.getDate() + planDays);
-
-    // Map planDays → TimeIntervalId from your .env mapping
+    // Map plan -> interval & compute next charge once (no duplicates)
     const timeIntervalId = mapPlanDaysToTimeIntervalId(planDays);
+    const paidAt = parseMaybeDealDate(tInfo?.DealDate) || new Date();
+    const next   = new Date(paidAt); next.setDate(next.getDate() + planDays);
 
-    // Extract expiry from TranzactionInfo, then allow env override if needed
-    console.log("tInfo", tInfo); // 'source/debug' may be undefined
-    const { mm, yy, mmyy } = getExpiryFromTInfo(tInfo);
-    console.log("🧾 Expiry to send (from CardMonth/CardYear)", { mm, yy, mmyy });
-    const expiryFields = {
-      ...(mm   ? { "CreditCard.ValidityMonth": mm } : {}),
-      ...(yy   ? { "CreditCard.ValidityYear":  yy } : {}),
-      ...(mmyy ? { "CreditCard.ChangeDateValidity": mmyy } : {}),
+    // Expiry (MM/YY) from tInfo, with optional env override
+    const parsedExp = getExpiryFromTInfo(tInfo);
+    const forceMM   = process.env.CARDCOM_FORCE_EXP_MM || null; // e.g. "11"
+    const forceYY   = process.env.CARDCOM_FORCE_EXP_YY || null; // e.g. "30"
+    const mm        = forceMM || parsedExp.mm || null;
+    const yy        = forceYY || parsedExp.yy || null;
+    const mmyy      = (mm && yy) ? `${mm}/${yy}` : null;
+
+    // Build ONLY the NV fields Cardcom documents for Direct Debit NV:
+    const expiryFieldsNV = {
+      ...(mm   ? { "CardValidityMonth": mm } : {}),
+      ...(yy   ? { "CardValidityYear":  yy } : {}),
+      // (Do NOT send ChangeDateValidity in NV; Cardcom said it's not a NV param)
     };
-    console.log("🧾🧾 Expiry to send expiryFields", expiryFields);
 
-    // Build NV params and create the recurring order
+    console.log("📦 NV expiry being sent:", { mm, yy, mmyy });
+
+    // --- final NV params for RecurringPayment.aspx (Name-to-Value) ---
     const customerName = cardOwner || rec.user_email || "NOMO user";
 
     const params = {
-       // prefer recurring terminal if set, otherwise fall back to the main one
       TerminalNumber: Number.isFinite(TERMINAL_RECURRING) ? TERMINAL_RECURRING : TERMINAL,
       UserName: API_NAME,
       codepage: 65001,
       Operation: "NewAndUpdate",
-      // Source (same card as first charge):
+
+      // Source card (token from first charge)
       "CreditCard.Token": cardToken,
-        // << הוספת התוקף >>
-      // << add expiry >>
-      ...expiryFields,
+
+      // Correct NV expiry fields (no "CreditCard.*" keys here)
+      ...expiryFieldsNV,
+
       // Account info
       "Account.CompanyName": customerName,
       "Account.Email": rec.user_email || "",
+
       // Recurring details
       "RecurringPayments.InternalDecription": "NOMO subscription",
-      "RecurringPayments.NextDateToBill": fmtDDMMYYYY_HHmm(next),          // <-- colon format
+      "RecurringPayments.NextDateToBill": fmtDDMMYYYY_HHmm(next), // dd/MM/yyyy HH:mm
       "RecurringPayments.TotalNumOfBills": 999999,
       "RecurringPayments.FinalDebitCoinId": coinId,
       "RecurringPayments.ReturnValue": orderId || "",
       "RecurringPayments.TimeIntervalId": timeIntervalId,
-      // Price line
+
+      // Line
       "RecurringPayments.FlexItem.InvoiceDescription": "NOMO plan",
       "RecurringPayments.FlexItem.Price": (price / 100).toFixed(2),
       "RecurringPayments.FlexItem.IsPriceIncludeVat": "true",
     };
-    console.log("📦 RecurringPayment NV params (expiry):", { mm, yy, mmyy, expiryFields });
 
-    // (Optional) Only include explicit recurring terminal if provided
     if (process.env.CARDCOM_TERMINAL_RECURRING) {
-      params["RecurringPayments.ChargeInTerminal"] =
-        Number(process.env.CARDCOM_TERMINAL_RECURRING);
+      params["RecurringPayments.ChargeInTerminal"] = Number(process.env.CARDCOM_TERMINAL_RECURRING);
     }
 
     console.log("📦 RecurringPayment NV params:", params);
@@ -475,7 +476,7 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
 
     if (String(subResult?.ResponseCode) !== "0") {
       await logEvent({ orderId, lowProfileId, type: "subscription_fail", payload: subResult });
-      // keep access for first paid cycle regardless
+      // keep access for the first paid cycle regardless
       return res.status(200).send("OK");
     }
 
@@ -502,6 +503,7 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     return res.status(200).send("OK");
   }
 });
+
 
 
 // פרסר לפוסטים מסוג form-urlencoded (רק כשבאמת POST)
