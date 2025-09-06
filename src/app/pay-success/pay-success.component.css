@@ -1,0 +1,91 @@
+.pay-success {
+  display: grid;
+  place-items: center;
+  min-height: 70vh;
+  padding: 24px;
+  color: #0b0d12;
+}
+
+.card {
+  width: min(640px, 92vw);
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px 24px 32px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.message {
+  margin: 0 0 20px;
+  color: #4b5563;
+}
+
+.center {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+}
+
+.spinner {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 4px solid #e5e7eb;
+  border-top-color: #111827;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 1.25rem;
+}
+.icon.success { background: #d1fae5; color: #065f46; }
+.icon.error   { background: #fee2e2; color: #991b1b; }
+.icon.info    { background: #e0e7ff; color: #3730a3; }
+
+.btn {
+  appearance: none;
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 16px;
+  background: #111827;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn:hover { opacity: 0.95; }
+.btn.primary { background: #0f172a; }
+.btn.link { background: transparent; color: #0f172a; text-decoration: underline; }
+
+.hint {
+  color: #6b7280;
+}
+.pay-success{display:grid;place-items:center;min-height:70vh;padding:24px;color:#0b0d12}
+.card{width:min(640px,92vw);background:#fff;border-radius:16px;padding:24px 24px 32px;box-shadow:0 10px 30px rgba(0,0,0,.08)}
+h1{margin:0 0 8px;font-size:1.5rem;font-weight:700}
+.message{margin:0 0 20px;color:#4b5563}
+.center{display:grid;justify-items:center;gap:16px}
+.spinner{width:42px;height:42px;border-radius:50%;border:4px solid #e5e7eb;border-top-color:#111827;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.icon{display:grid;place-items:center;width:56px;height:56px;border-radius:50%;font-weight:800;font-size:1.25rem}
+.icon.success{background:#d1fae5;color:#065f46}
+.icon.error{background:#fee2e2;color:#991b1b}
+.icon.info{background:#e0e7ff;color:#3730a3}
+.btn{appearance:none;border:0;border-radius:10px;padding:10px 16px;background:#111827;color:#fff;font-weight:600;cursor:pointer;text-decoration:none}
+.btn:hover{opacity:.95}
+.btn.primary{background:#0f172a}
+.btn.link{background:transparent;color:#0f172a;text-decoration:underline}
+.hint{color:#6b7280}

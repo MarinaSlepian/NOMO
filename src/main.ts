@@ -6,10 +6,13 @@ import { provideTranslate } from './app/translate.provider';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { isDevMode } from '@angular/core';
 import { provideServiceWorker } from '@angular/service-worker'; // ✅ Import this
+import { routes } from './app/app.routes';
+import { provideRouter } from '@angular/router';
 
 
 bootstrapApplication(AppComponent, {
   providers: [
+    provideRouter(routes),
     provideHttpClient(),
     provideAnimations(),
     provideTranslate(), provideAnimationsAsync(), provideAnimationsAsync(), provideServiceWorker('ngsw-worker.js', {

@@ -16,13 +16,14 @@ import { SwUpdate } from '@angular/service-worker';
 import { AuthService } from './auth/auth.service';
 import { EntitlementService } from './services/entitlement.service';
 import { take } from 'rxjs/operators';
+import { RouterOutlet } from '@angular/router';
 
 
 @Component({
   selector: 'app-root',
   standalone: true,
   imports: [HeaderComponent, ButtonComponent, DashboardComponent,
-            SequenceChooserComponent, AuthComponent],
+            SequenceChooserComponent, AuthComponent, RouterOutlet],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })

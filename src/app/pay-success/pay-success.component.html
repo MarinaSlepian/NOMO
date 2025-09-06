@@ -1,0 +1,29 @@
+<section class="pay-success">
+  <div class="card">
+    <h1>Payment confirmation</h1>
+    <p class="message" aria-live="polite">{{ message }}</p>
+
+    <div *ngIf="state === 'checking'" class="center">
+      <div class="spinner" role="status" aria-label="Checking payment..."></div>
+      <small class="hint">This can take up to ~90 seconds while we receive the server confirmation.</small>
+    </div>
+
+    <div *ngIf="state === 'ok'" class="center">
+      <div class="icon success" aria-hidden="true">✓</div>
+      <a class="btn primary" href="/app">Continue</a>
+    </div>
+
+    <div *ngIf="state === 'timeout'" class="center">
+    <div class="icon info" aria-hidden="true">i</div>
+    <div class="actions">
+        <button class="btn" type="button" (click)="reload()">Refresh</button>
+        <a class="btn link" routerLink="/pricing">Try again</a>
+    </div>
+    </div>
+
+    <div *ngIf="state === 'failed'" class="center">
+      <div class="icon error" aria-hidden="true">!</div>
+      <a class="btn" href="/pricing">Back to plans</a>
+    </div>
+  </div>
+</section>
