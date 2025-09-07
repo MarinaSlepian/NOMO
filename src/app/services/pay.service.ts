@@ -169,6 +169,9 @@ export class PayService {
     throw new Error(`Unknown plan: ${plan}`);
   }
 getPlanInfo(plan: string): PlanInfo {
+  //temporary
+  return { days: 1, label: 'NOMO daily subscription', amount: 1 }
+    //temporary
     const key = this.normalizePlan(plan);
     switch (key) {
       case 'yearly':
