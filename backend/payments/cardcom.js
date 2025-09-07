@@ -496,6 +496,7 @@ async function cardcomFetchJsonGET(url, params) {
 
 // ===== /webhook  (LowProfile result) =====
 // ===== /webhook  (LowProfile result) =====
+// ===== /webhook (LowProfile result) =====
 router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
   try {
     const rawBody = req.body;
@@ -517,34 +518,45 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     const verifyParams = {
       TerminalNumber: Number(TERMINAL),
       ApiName: API_NAME,
+      ...(API_PASSWORD ? { ApiPassword: API_PASSWORD } : {}),
       LowProfileId: String(lowProfileId),
     };
 
-    let verifyData;
-    // 1) Try GET (as in the docs)
+    let verifyData = null;
+    let lastErrMsg = "";
+
+    // 1) Try GET (per docs)
     try {
       verifyData = await cardcomFetchJsonGET(verifyUrl, verifyParams);
+      console.log("🔎 GetLpResult via GET OK");
     } catch (e) {
-      const msg = (e && String(e.message || e)) || "";
-      if (!/does not support http method/i.test(msg)) {
-        console.warn("ℹ️ GET GetLpResult failed; trying POST(JSON):", msg);
-      }
+      lastErrMsg = e?.message || String(e);
+      console.warn("🔎 GetLpResult via GET failed:", lastErrMsg);
     }
 
     // 2) Try POST(JSON)
     if (!verifyData) {
       try {
         verifyData = await cardcomFetch(verifyUrl, verifyParams);
+        console.log("🔎 GetLpResult via POST(JSON) OK");
       } catch (e2) {
-        console.warn("ℹ️ POST(JSON) GetLpResult failed; trying POST(NV):", e2?.message || e2);
+        lastErrMsg = e2?.message || String(e2);
+        console.warn("🔎 GetLpResult via POST(JSON) failed:", lastErrMsg);
       }
     }
 
-    // 3) Try POST(NV form) and coerce into JSON object
+    // 3) Try POST(NV)
     if (!verifyData) {
-      verifyData = await cardcomFetchNVPost(verifyUrl, verifyParams);
-      if (verifyData && typeof verifyData.ResponseCode === "string" && /^\d+$/.test(verifyData.ResponseCode)) {
-        verifyData.ResponseCode = Number(verifyData.ResponseCode);
+      try {
+        const nv = await cardcomFetchNVPost(verifyUrl, verifyParams);
+        if (nv && typeof nv.ResponseCode === "string" && /^\d+$/.test(nv.ResponseCode)) {
+          nv.ResponseCode = Number(nv.ResponseCode);
+        }
+        verifyData = nv;
+        console.log("🔎 GetLpResult via POST(NV) OK");
+      } catch (e3) {
+        lastErrMsg = e3?.message || String(e3);
+        console.warn("🔎 GetLpResult via POST(NV) failed:", lastErrMsg);
       }
     }
 
@@ -567,21 +579,25 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       } catch {}
     }
 
-    // Non-successful verify → mark failed (reason from server), then ACK 200
-    if (verifyData?.ResponseCode !== 0) {
+    // If verify didn't return anything useful, mark failure with a clear reason
+    if (!verifyData || typeof verifyData.ResponseCode === "undefined") {
+      await markFailed({
+        lowProfileId,
+        orderId,
+        reason: lastErrMsg || "GetLpResult failed (no ResponseCode)",
+        payload: verifyData || { message: lastErrMsg },
+      });
+      console.warn("🟡 Webhook FAIL (no verify data):", { lowProfileId, orderId, desc: lastErrMsg });
+      return res.status(200).send("FAIL");
+    }
+
+    if (verifyData.ResponseCode !== 0) {
       const reason =
         verifyData?.Description ||
         verifyData?.ResponseDescription ||
         verifyData?.Reason ||
         `code:${verifyData?.ResponseCode}`;
-
-      await markFailed({
-        lowProfileId,
-        orderId,
-        reason,               // writes into 'fail_reason' column in your DB
-        payload: verifyData,
-      });
-
+      await markFailed({ lowProfileId, orderId, reason, payload: verifyData });
       console.warn("🟡 Webhook FAIL:", { lowProfileId, orderId, desc: reason });
       return res.status(200).send("FAIL");
     }
@@ -664,35 +680,23 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       return res.status(200).send("OK");
     }
 
-    // ---------- helpers for date parsing/formatting ----------
-    const fmtDDMMYYYY_HHmm = (d) => {
-      const dd = String(d.getDate()).padStart(2, "0");
-      const mm = String(d.getMonth() + 1).padStart(2, "0");
-      const yyyy = d.getFullYear();
-      const HH = String(d.getHours()).padStart(2, "0");
-      const MM = String(d.getMinutes()).padStart(2, "0");
-      return `${dd}/${mm}/${yyyy} ${HH}:${MM}`;
-    };
+    // helpers
     const fmtDDMMYYYY = (d) => {
       const dd = String(d.getDate()).padStart(2, "0");
       const mm = String(d.getMonth() + 1).padStart(2, "0");
       const yyyy = d.getFullYear();
-      return `${dd}/${mm}/${yyyy}`; // date-only, as Cardcom expects
+      return `${dd}/${mm}/${yyyy}`;
     };
     const parseMaybeDealDate = (s) => {
       if (!s) return null;
-      // dd/MM/yyyy HH:mm:ss
       let m = /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})$/.exec(s);
       if (m) return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5], +m[6]);
-      // dd/MM/yyyy HH/mm (legacy)
       m = /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2})\/(\d{2})$/.exec(s);
       if (m) return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5]);
-      // dd/MM/yyyy
       m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s);
       if (m) return new Date(+m[3], +m[2]-1, +m[1]);
       return null;
     };
-    // --------------------------------------------------------
 
     const timeIntervalId = mapPlanDaysToTimeIntervalId(planDays);
     const paidAt = parseMaybeDealDate(tInfo?.DealDate) || new Date();
@@ -703,13 +707,11 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     const forceYY   = process.env.CARDCOM_FORCE_EXP_YY || null;
     const mm        = forceMM || parsedExp.mm || null;
     const yy        = forceYY || parsedExp.yy || null;
-    const mmyy      = (mm && yy) ? `${mm}/${yy}` : null;
 
     const expiryFieldsNV = {
       ...(mm ? { "CardValidityMonth": mm } : {}),
       ...(yy ? { "CardValidityYear":  yy } : {}),
     };
-    console.log("📦 NV expiry being sent:", { mm, yy, mmyy });
 
     const customerName = cardOwner || rec.user_email || "NOMO user";
     const params = {
@@ -743,19 +745,14 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       params["RecurringPayments.ChargeInTerminal"] = Number(process.env.CARDCOM_TERMINAL_RECURRING);
     }
 
-    console.log("📦 RecurringPayment NV params:", params);
-
     const subResult = await cardcomFetchNVPost(
       "https://secure.cardcom.solutions/interface/RecurringPayment.aspx",
       params
     );
 
-    console.log("📦 RecurringPayment NV response:", subResult);
-
     if (String(subResult?.ResponseCode) !== "0") {
       await logEvent({ orderId, lowProfileId, type: "subscription_fail", payload: subResult });
-      // keep access for the first paid cycle regardless
-      return res.status(200).send("OK");
+      return res.status(200).send("OK"); // first payment remains granted
     }
 
     const recurringId = extractRecurringId(subResult);
@@ -777,10 +774,10 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     return res.status(200).send("OK");
   } catch (err) {
     console.error("❌ Cardcom /webhook error:", err);
-    // Always ack 200 so Cardcom won't retry forever
-    return res.status(200).send("OK");
+    return res.status(200).send("OK"); // always ACK
   }
 });
+
 
 
 // ===== Recurring status webhook (Cardcom → your server) =====
