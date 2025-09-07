@@ -276,6 +276,40 @@ function getExpiryFromTInfo(ti = {}) {
 }
 
 // ===== NV helpers (GET/POST) =====
+// put near your other helpers
+async function getLowProfileResult({ terminal, apiName, lowProfileId }) {
+  const url = "https://secure.cardcom.solutions/api/v11/LowProfile/GetLpResult";
+  const params = {
+    TerminalNumber: Number(terminal),
+    ApiName: apiName,
+    LowProfileId: String(lowProfileId),
+  };
+
+  // 1) Try GET (as in docs)
+  try {
+    return await cardcomFetchJsonGET(url, params);
+  } catch (e) {
+    const msg = (e && String(e.message || e)) || "";
+    if (!/does not support http method/i.test(msg)) {
+      console.warn("ℹ️ GET GetLpResult failed, will try POST JSON:", msg);
+    }
+  }
+
+  // 2) Try POST JSON
+  try {
+    return await cardcomFetch(url, params); // your existing JSON POST helper
+  } catch (e2) {
+    console.warn("ℹ️ POST(JSON) GetLpResult failed, will try POST NV:", e2?.message || e2);
+  }
+
+  // 3) Try POST NV (x-www-form-urlencoded) — parse NV into an object
+  const nv = await cardcomFetchNVPost(url, params);
+  // ensure ResponseCode is numeric where possible
+  if (nv && typeof nv.ResponseCode === "string" && /^\d+$/.test(nv.ResponseCode)) {
+    nv.ResponseCode = Number(nv.ResponseCode);
+  }
+  return nv;
+}
 async function cardcomFetchNVGet(url, params) {
   const qs = new URLSearchParams();
   for (const [k, v] of Object.entries(params || {})) {
@@ -461,9 +495,12 @@ async function cardcomFetchJsonGET(url, params) {
 }
 
 // ===== /webhook  (LowProfile result) =====
+// ===== /webhook  (LowProfile result) =====
 router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
   try {
     const rawBody = req.body;
+
+    // Parse Cardcom webhook payload: JSON or x-www-form-urlencoded
     let parsed;
     try {
       parsed = typeof rawBody === "string" ? JSON.parse(rawBody) : rawBody;
@@ -475,26 +512,81 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       parsed?.LowProfileId || parsed?.lowprofileid || parsed?.lowProfileId || "";
     if (!lowProfileId) throw new Error("Missing LowProfileId in webhook");
 
-    // 1) Verify result of the first payment
-    const verifyData = await cardcomFetchJsonGET(
-      "https://secure.cardcom.solutions/api/v11/LowProfile/GetLpResult",
-      { TerminalNumber: Number(TERMINAL), ApiName: API_NAME, LowProfileId: String(lowProfileId) }
-    );
+    // ---------- Verify LowProfile result with robust fallback ----------
+    const verifyUrl = "https://secure.cardcom.solutions/api/v11/LowProfile/GetLpResult";
+    const verifyParams = {
+      TerminalNumber: Number(TERMINAL),
+      ApiName: API_NAME,
+      LowProfileId: String(lowProfileId),
+    };
 
-    const orderId = verifyData?.ReturnValue ? String(verifyData.ReturnValue) : null;
+    let verifyData;
+    // 1) Try GET (as in the docs)
+    try {
+      verifyData = await cardcomFetchJsonGET(verifyUrl, verifyParams);
+    } catch (e) {
+      const msg = (e && String(e.message || e)) || "";
+      if (!/does not support http method/i.test(msg)) {
+        console.warn("ℹ️ GET GetLpResult failed; trying POST(JSON):", msg);
+      }
+    }
 
+    // 2) Try POST(JSON)
+    if (!verifyData) {
+      try {
+        verifyData = await cardcomFetch(verifyUrl, verifyParams);
+      } catch (e2) {
+        console.warn("ℹ️ POST(JSON) GetLpResult failed; trying POST(NV):", e2?.message || e2);
+      }
+    }
+
+    // 3) Try POST(NV form) and coerce into JSON object
+    if (!verifyData) {
+      verifyData = await cardcomFetchNVPost(verifyUrl, verifyParams);
+      if (verifyData && typeof verifyData.ResponseCode === "string" && /^\d+$/.test(verifyData.ResponseCode)) {
+        verifyData.ResponseCode = Number(verifyData.ResponseCode);
+      }
+    }
+
+    console.log("🟢 Verify response", {
+      LowProfileId: lowProfileId,
+      ResponseCode: verifyData?.ResponseCode,
+      Description: verifyData?.Description || verifyData?.ResponseDescription,
+      ReturnValue: verifyData?.ReturnValue,
+    });
+
+    // ---------- Ensure we have orderId (ReturnValue) ----------
+    let orderId = verifyData?.ReturnValue ? String(verifyData.ReturnValue) : null;
+    if (!orderId) {
+      try {
+        const { rows } = await pool.query(
+          "SELECT order_id FROM payments WHERE low_profile_id = $1 LIMIT 1",
+          [lowProfileId]
+        );
+        orderId = rows?.[0]?.order_id || null;
+      } catch {}
+    }
+
+    // Non-successful verify → mark failed (reason from server), then ACK 200
     if (verifyData?.ResponseCode !== 0) {
+      const reason =
+        verifyData?.Description ||
+        verifyData?.ResponseDescription ||
+        verifyData?.Reason ||
+        `code:${verifyData?.ResponseCode}`;
+
       await markFailed({
         lowProfileId,
         orderId,
-        reason: verifyData?.Description || `code:${verifyData?.ResponseCode}`,
+        reason,               // writes into 'fail_reason' column in your DB
         payload: verifyData,
       });
-      console.warn("🟡 Webhook FAIL:", { lowProfileId, orderId, desc: verifyData?.Description });
+
+      console.warn("🟡 Webhook FAIL:", { lowProfileId, orderId, desc: reason });
       return res.status(200).send("FAIL");
     }
 
-    // Extract payment details
+    // ---------- Success path ----------
     const tInfo = verifyData.TranzactionInfo || {};
     const txId = tInfo?.TranzactionId ? String(tInfo.TranzactionId) : null;
 
@@ -509,11 +601,10 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     const cardToken = tInfo?.Token || null;
     const cardOwner = tInfo?.CardOwnerName || null;
 
-    // Get plan/currency and invoice prefs from DB (if columns exist)
+    // Read plan/currency + invoice prefs from DB if present
     const hasIssue = await hasColumn("payments", "issue_invoice");
     const hasInvoiceJson = await hasColumn("payments", "invoice_json");
 
-    // Build a dynamic select so we don't error on missing columns
     let selectSql = `SELECT amount_minor, currency, user_email, plan_days, subscription_id`;
     if (hasIssue) selectSql += `, issue_invoice`;
     if (hasInvoiceJson) selectSql += `, invoice_json`;
@@ -525,11 +616,10 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     const planDays = Number(rec.plan_days || DEFAULT_PLAN_DAYS);
     const price    = amountMinor ?? Number(rec.amount_minor || 0);
 
-    // Load meta from event if columns are missing
+    // Load /start metadata if columns were absent
     let issueInvoice = hasIssue ? !!rec.issue_invoice : undefined;
     let invoiceMeta  = hasInvoiceJson ? (rec.invoice_json || null) : null;
     if (issueInvoice === undefined) {
-      // fall back to latest start_meta event
       const { rows: ev } = await pool.query(
         `SELECT payload FROM payment_events
          WHERE low_profile_id = $1 AND event_type = 'start_meta'
@@ -546,7 +636,7 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     }
     if (issueInvoice === undefined) issueInvoice = ISSUE_INVOICE_DEFAULT;
 
-    // 2) Mark the first payment as PAID & grant access
+    // 2) Mark first payment as PAID & grant access
     const paidRow = await markPaid({
       lowProfileId,
       orderId,
@@ -558,10 +648,12 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       planDays,
     });
     console.log("✅ First charge marked as paid:", {
-      user: paidRow?.user_email, access_from: paidRow?.access_from, access_until: paidRow?.access_until
+      user: paidRow?.user_email,
+      access_from: paidRow?.access_from,
+      access_until: paidRow?.access_until
     });
 
-    // 3) Create recurring subscription (if not already created)
+    // 3) Create recurring subscription (if token exists and not yet created)
     if (!cardToken) {
       console.warn("⚠️ No CardToken on first charge; cannot create subscription.");
       await logEvent({ orderId, lowProfileId, type: "subscription_skip_no_token", payload: verifyData });
@@ -579,7 +671,13 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       const yyyy = d.getFullYear();
       const HH = String(d.getHours()).padStart(2, "0");
       const MM = String(d.getMinutes()).padStart(2, "0");
-      return `${dd}/${mm}/${yyyy} ${HH}:${MM}`; // colon
+      return `${dd}/${mm}/${yyyy} ${HH}:${MM}`;
+    };
+    const fmtDDMMYYYY = (d) => {
+      const dd = String(d.getDate()).padStart(2, "0");
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const yyyy = d.getFullYear();
+      return `${dd}/${mm}/${yyyy}`; // date-only, as Cardcom expects
     };
     const parseMaybeDealDate = (s) => {
       if (!s) return null;
@@ -596,77 +694,57 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     };
     // --------------------------------------------------------
 
-    // Map plan -> interval & compute next charge once (no duplicates)
     const timeIntervalId = mapPlanDaysToTimeIntervalId(planDays);
     const paidAt = parseMaybeDealDate(tInfo?.DealDate) || new Date();
     const next   = new Date(paidAt); next.setDate(next.getDate() + planDays);
 
-    // Expiry (MM/YY) from tInfo, with optional env override
     const parsedExp = getExpiryFromTInfo(tInfo);
-    const forceMM   = process.env.CARDCOM_FORCE_EXP_MM || null; // e.g. "11"
-    const forceYY   = process.env.CARDCOM_FORCE_EXP_YY || null; // e.g. "30"
+    const forceMM   = process.env.CARDCOM_FORCE_EXP_MM || null;
+    const forceYY   = process.env.CARDCOM_FORCE_EXP_YY || null;
     const mm        = forceMM || parsedExp.mm || null;
     const yy        = forceYY || parsedExp.yy || null;
     const mmyy      = (mm && yy) ? `${mm}/${yy}` : null;
 
-    // Build ONLY the NV fields Cardcom documents for Direct Debit NV:
     const expiryFieldsNV = {
-      ...(mm   ? { "CardValidityMonth": mm } : {}),
-      ...(yy   ? { "CardValidityYear":  yy } : {}),
-      // (Do NOT send ChangeDateValidity in NV; Cardcom said it's not a NV param)
+      ...(mm ? { "CardValidityMonth": mm } : {}),
+      ...(yy ? { "CardValidityYear":  yy } : {}),
     };
-
     console.log("📦 NV expiry being sent:", { mm, yy, mmyy });
 
-    // --- final NV params for RecurringPayment.aspx (Name-to-Value) ---
     const customerName = cardOwner || rec.user_email || "NOMO user";
-
     const params = {
       TerminalNumber: Number.isFinite(TERMINAL_RECURRING) ? TERMINAL_RECURRING : TERMINAL,
       UserName: API_NAME,
       codepage: 65001,
       Operation: "NewAndUpdate",
 
-      // Source card (token from first charge)
       "CreditCard.Token": cardToken,
-
-      // Correct NV expiry fields (no "CreditCard.*" keys here)
       ...expiryFieldsNV,
 
-      // Account info
       "Account.CompanyName": customerName,
       "Account.Email": rec.user_email || "",
 
-      // Recurring details
       "RecurringPayments.InternalDecription": "NOMO subscription",
-      // Cardcom expects date-only here
-      "RecurringPayments.NextDateToBill": fmtDDMMYYYY(next), // dd/MM/yyyy (no time)
+      "RecurringPayments.NextDateToBill": fmtDDMMYYYY(next),
       "RecurringPayments.TotalNumOfBills": 999999,
       "RecurringPayments.FinalDebitCoinId": coinId,
       "RecurringPayments.ReturnValue": orderId || "",
       "RecurringPayments.TimeIntervalId": timeIntervalId,
 
-      // Line
       "RecurringPayments.FlexItem.InvoiceDescription": "NOMO plan",
       "RecurringPayments.FlexItem.Price": (price / 100).toFixed(2),
       "RecurringPayments.FlexItem.IsPriceIncludeVat": "true",
     };
 
-    // Honor persisted invoice preference: ask Cardcom to create a doc per debit
     if (issueInvoice) {
       params["RecurringPayments.DocTypeToCreate"] = DOC_TYPE_DEFAULT; // 1 = InvoiceReceipt
-      // For recurring, Cardcom builds the document from the FlexItem line per debit.
-      // If you want to include more per-customer head fields (like CompID), these must be set on the account in Cardcom.
-      // You could also pass some InvoiceHead fields if the API supports them at master creation (varies by setup).
     }
-
     if (process.env.CARDCOM_TERMINAL_RECURRING) {
       params["RecurringPayments.ChargeInTerminal"] = Number(process.env.CARDCOM_TERMINAL_RECURRING);
     }
 
     console.log("📦 RecurringPayment NV params:", params);
 
-    // Prefer POST for NV to avoid leaking sensitive info in logs
     const subResult = await cardcomFetchNVPost(
       "https://secure.cardcom.solutions/interface/RecurringPayment.aspx",
       params
@@ -703,6 +781,7 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     return res.status(200).send("OK");
   }
 });
+
 
 // ===== Recurring status webhook (Cardcom → your server) =====
 // פרסר לפוסטים מסוג form-urlencoded (רק כשבאמת POST)
