@@ -288,21 +288,28 @@ async function getLowProfileResult({ terminal, apiName, lowProfileId }) {
   };
 
   // 1) Try GET (as in docs)
-  try {
-    return await cardcomFetchJsonGET(url, params);
-  } catch (e) {
-    const msg = (e && String(e.message || e)) || "";
-    if (!/does not support http method/i.test(msg)) {
-      console.warn("ℹ️ GET GetLpResult failed, will try POST JSON:", msg);
+  // GET /status/:lowProfileId
+  const data = await cardcomFetch(
+    "https://secure.cardcom.solutions/api/v11/LowProfile/GetLpResult",
+    {
+      TerminalNumber: Number(TERMINAL),
+      ApiName: API_NAME,
+      ...(API_PASSWORD ? { ApiPassword: API_PASSWORD } : {}),
+      LowProfileId: String(lowProfileId),
     }
-  }
+  );
 
   // 2) Try POST JSON
-  try {
-    return await cardcomFetch(url, params); // your existing JSON POST helper
-  } catch (e2) {
-    console.warn("ℹ️ POST(JSON) GetLpResult failed, will try POST NV:", e2?.message || e2);
-  }
+  // POST /status
+  const data = await cardcomFetch(
+    "https://secure.cardcom.solutions/api/v11/LowProfile/GetLpResult",
+    {
+      TerminalNumber: Number(TERMINAL),
+      ApiName: API_NAME,
+      ...(API_PASSWORD ? { ApiPassword: API_PASSWORD } : {}),
+      LowProfileId: lowProfileId,
+    }
+  );
 
   // 3) Try POST NV (x-www-form-urlencoded) — parse NV into an object
   const nv = await cardcomFetchNVPost(url, params);
@@ -480,24 +487,38 @@ router.post("/start", async (req, res) => {
 });
 
 // helper: GET JSON (Cardcom sometimes allows GET for LowProfile/GetLpResult)
+// helper: GET JSON (Cardcom sometimes returns NV or HTML; be tolerant)
 async function cardcomFetchJsonGET(url, params) {
   const qs = new URLSearchParams();
   for (const [k, v] of Object.entries(params || {})) {
     if (v !== undefined && v !== null && v !== "") qs.append(k, String(v));
   }
   const full = `${url}?${qs.toString()}`;
-  const res  = await fetch(full, { method: "GET" });
+  const res  = await fetch(full, { method: "GET", headers: { accept: "application/json" } });
   const text = await res.text();
+
+  // Try JSON first
   try {
-    return JSON.parse(text);
-  } catch {
-    console.error("🔴 Cardcom GET JSON parse fail:", text);
-    throw new Error("Invalid JSON from Cardcom");
+    const j = JSON.parse(text);
+    if (j && typeof j === "object") return j;
+  } catch {}
+
+  // Fallback: parse name=value (& or newline separated)
+  const out = {};
+  text.split(/[&\r\n]+/).filter(Boolean).forEach(pair => {
+    const i = pair.indexOf("=");
+    if (i > -1) out[decodeURIComponent(pair.slice(0, i))] = decodeURIComponent(pair.slice(i + 1));
+  });
+  if (Object.keys(out).length) return out;
+
+  // HTML page? surface a hint
+  if (/^\s*<!DOCTYPE/i.test(text) || /<html/i.test(text)) {
+    return { ResponseCode: "-1", Description: "HTML error page", raw: text.slice(0, 400) };
   }
+
+  throw new Error("Cardcom GET returned unparseable body");
 }
 
-// ===== /webhook  (LowProfile result) =====
-// ===== /webhook  (LowProfile result) =====
 // ===== /webhook (LowProfile result) =====
 router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
   try {
@@ -527,6 +548,9 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     let verifyData = null;
     let lastErrMsg = "";
 
+    const hasUsefulFields = (v) =>
+      v && (typeof v.ResponseCode !== "undefined" || typeof v.ReturnValue !== "undefined");
+
     // 1) Try GET (per docs)
     try {
       verifyData = await cardcomFetchJsonGET(verifyUrl, verifyParams);
@@ -536,8 +560,9 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       console.warn("🔎 GetLpResult via GET failed:", lastErrMsg);
     }
 
-    // 2) Try POST(JSON)
-    if (!verifyData) {
+    // If GET returned but lacks useful fields, fall back
+    if (!hasUsefulFields(verifyData)) {
+      // 2) Try POST(JSON)
       try {
         verifyData = await cardcomFetch(verifyUrl, verifyParams);
         console.log("🔎 GetLpResult via POST(JSON) OK");
@@ -548,7 +573,7 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     }
 
     // 3) Try POST(NV)
-    if (!verifyData) {
+    if (!hasUsefulFields(verifyData)) {
       try {
         const nv = await cardcomFetchNVPost(verifyUrl, verifyParams);
         if (nv && typeof nv.ResponseCode === "string" && /^\d+$/.test(nv.ResponseCode)) {
@@ -568,6 +593,7 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       Description: verifyData?.Description || verifyData?.ResponseDescription,
       ReturnValue: verifyData?.ReturnValue,
     });
+
 
     // ---------- Ensure we have orderId (ReturnValue) ----------
     let orderId = verifyData?.ReturnValue ? String(verifyData.ReturnValue) : null;
@@ -971,7 +997,7 @@ router.all(
         // Get current window (to stack periods neatly)
         const { rows } = await pool.query(
           `SELECT id, user_email, plan_days, access_from, access_until
-             FROM payments
+             FROM payments  
             WHERE subscription_id = $1
             ORDER BY updated_at DESC
             LIMIT 1`,
