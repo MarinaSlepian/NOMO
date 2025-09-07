@@ -140,37 +140,40 @@ export class PayService {
     }
   }
 
-  
-  
+  /** FIXED: robust, anchored mapping so "monthly" is NOT misread as "yearly". */
   private normalizePlan(plan: string): 'daily'|'monthly'|'quarterly'|'yearly' {
     const p = (plan || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
     if (!p) throw new Error('Empty plan key');
 
-    // yearly
-    if (/(year|annual|12m|yr|y$)/.test(p)) return 'yearly';
+    // YEARLY — exact/clear aliases only
+    if (/(?:^year$|^yearly$|^annual$|^12m$|^yr$)/.test(p)) return 'yearly';
 
-    // quarterly
-    if (/(quarter|3m|qtr|q$)/.test(p)) return 'quarterly';
+    // QUARTERLY
+    if (/(?:^quarter$|^quarterly$|^qtr$|^3m$|^q$)/.test(p)) return 'quarterly';
 
-    // monthly (default when it clearly mentions month/30/31)
-    if (/(month|mnth|mo|30d|31d|mon|mth)/.test(p)) return 'monthly';
+    // MONTHLY
+    if (/(?:^month$|^monthly$|^mnth$|^mon$|^mth$|^mo$|^1m$|^30d$|^31d$)/.test(p)) return 'monthly';
 
-    // daily
-    if (/(day|1d|daily|24h|d$)/.test(p)) return 'daily';
+    // DAILY
+    if (/(?:^day$|^daily$|^1d$|^24h$|^d$)/.test(p)) return 'daily';
 
-    // common aliases
+    // Common aliases fallback
     switch (p) {
-      case 'monthly': case 'month': case 'm': return 'monthly';
-      case 'quarterly': case 'quarter': case 'q': case '3months': return 'quarterly';
-      case 'yearly': case 'annual': case 'year': case 'y': return 'yearly';
-      case 'daily': case 'day': case 'd': return 'daily';
+      case 'monthly': case 'month': case 'mnth': case 'mon': case 'mth': case 'mo': case '1m': case '30d': case '31d':
+        return 'monthly';
+      case 'quarterly': case 'quarter': case 'qtr': case '3m': case 'q':
+        return 'quarterly';
+      case 'yearly': case 'year': case 'annual': case 'yr': case '12m':
+        return 'yearly';
+      case 'daily': case 'day': case '1d': case '24h': case 'd':
+        return 'daily';
     }
-    // If it's a custom marketing name, map here if needed
     throw new Error(`Unknown plan: ${plan}`);
   }
-getPlanInfo(plan: string): PlanInfo {
-  //temporary
-  return { days: 1, label: 'NOMO daily subscription', amount: 1 }
+
+  getPlanInfo(plan: string): PlanInfo {
+    //temporary
+    return { days: 1, label: 'NOMO daily subscription', amount: 1 }
     //temporary
     const key = this.normalizePlan(plan);
     switch (key) {
@@ -187,62 +190,58 @@ getPlanInfo(plan: string): PlanInfo {
     }
   }
 
-
   confirmPayment(planSelected: string, userEmail: string): Observable<void> {
     return this.beginHostedPayment(planSelected, userEmail);
   }
 
-beginHostedPayment(planSelected: string, userEmail: string): Observable<void> {
-  const { days, label, amount } = this.getPlanInfo(planSelected);
-  const orderId = this.makeOrderId();
+  beginHostedPayment(planSelected: string, userEmail: string): Observable<void> {
+    const { days, label, amount } = this.getPlanInfo(planSelected);
+    const orderId = this.makeOrderId();
 
-  const req: StartPaymentRequest = {
-    amount,
-    orderId,
-    description: label,
-    currency: 1,
-    userEmail,
-    planDays: days
-  };
+    const req: StartPaymentRequest = {
+      amount,
+      orderId,
+      description: label,
+      currency: 1,
+      userEmail,
+      planDays: days
+    };
 
-  return this.startPayment(req).pipe(
-    tap((resp: any) => {
-      console.log('[start] response:', resp); // <- see the actual shape
-      const { url, lowProfileId } = resp || {};
-      if (!url || typeof url !== 'string') {
-        throw new Error('Cardcom did not return a payment URL');
+    return this.startPayment(req).pipe(
+      tap((resp: any) => {
+        console.log('[start] response:', resp);
+        const { url, lowProfileId } = resp || {};
+        if (!url || typeof url !== 'string') {
+          throw new Error('Cardcom did not return a payment URL');
+        }
+        sessionStorage.setItem('pay.orderId', orderId);
+        sessionStorage.setItem('pay.lowProfileId', String(lowProfileId ?? ''));
+        this.safeNavigate(url);
+      }),
+      map(() => void 0),
+      catchError((e) => {
+        const msg = e?.error?.error || e?.message || 'Payment init failed';
+        console.error('start failed:', e);
+        return throwError(() => new Error(msg));
+      })
+    );
+  }
+
+  private safeNavigate(url: string) {
+    try { if (typeof window !== 'undefined') window.location.assign(url); } catch {}
+    try {
+      if (typeof document !== 'undefined') {
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_self';
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
       }
-      sessionStorage.setItem('pay.orderId', orderId);
-      sessionStorage.setItem('pay.lowProfileId', String(lowProfileId ?? ''));
-      this.safeNavigate(url); // robust redirect
-    }),
-    map(() => void 0),
-    catchError((e) => {
-      const msg = e?.error?.error || e?.message || 'Payment init failed';
-      console.error('start failed:', e);
-      return throwError(() => new Error(msg));
-    })
-  );
-}
-private safeNavigate(url: string) {
-  // 1) normal way
-  try { if (typeof window !== 'undefined') window.location.assign(url); } catch {}
+    } catch {}
+    try { if (typeof window !== 'undefined') window.location.href = url; } catch {}
+  }
 
-  // 2) anchor fallback
-  try {
-    if (typeof document !== 'undefined') {
-      const a = document.createElement('a');
-      a.href = url;
-      a.target = '_self';
-      a.rel = 'noopener';
-      document.body.appendChild(a);
-      a.click();
-    }
-  } catch {}
-
-  // 3) hard replace
-  try { if (typeof window !== 'undefined') window.location.href = url; } catch {}
-}
   // Extract Cardcom hosted URL from various possible response shapes
   private extractUrl(resp: any): string | undefined {
     if (!resp) return undefined;
