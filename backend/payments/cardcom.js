@@ -301,7 +301,7 @@ async function getLowProfileResult({ terminal, apiName, lowProfileId }) {
 
   // 2) Try POST JSON
   // POST /status
-  const data = await cardcomFetch(
+  data = await cardcomFetch(
     "https://secure.cardcom.solutions/api/v11/LowProfile/GetLpResult",
     {
       TerminalNumber: Number(TERMINAL),
