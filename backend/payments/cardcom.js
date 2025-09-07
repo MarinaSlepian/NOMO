@@ -10,6 +10,7 @@ import fetch from "node-fetch";
 import { pool } from "../db.js";
 import crypto from "node:crypto";
 
+
 const DEFAULT_PLAN_DAYS = 30; // adjust as needed
 
 const router = express.Router();
@@ -17,7 +18,8 @@ const router = express.Router();
 // === Required envs ===
 const TERMINAL = Number(process.env.CARDCOM_TERMINAL);
 const TERMINAL_RECURRING = Number(process.env.CARDCOM_TERMINAL_RECURRING) || TERMINAL; // 👈 explicit recurring terminal
-const API_NAME = process.env.CARDCOM_API_NAME;
+const API_NAME     = process.env.CARDCOM_API_NAME || "";
+const API_PASSWORD = process.env.CARDCOM_API_PASSWORD || "";
 
 // FRONTEND (browser redirects) and BACKEND (server webhook)
 const APP_URL = process.env.PUBLIC_APP_URL || "http://localhost:4200";
