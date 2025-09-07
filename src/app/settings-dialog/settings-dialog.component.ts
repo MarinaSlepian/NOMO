@@ -193,17 +193,28 @@ cancelPayment() {
     this.isPayDialogOpen = false;
 }
 
-confirmPayment(planSelected: string) {
-    if (this.isPaying) return;
-    this.isPaying = true;
-    this.payError = '';
-    let email = this.auth.getLoggedInEmail()
-    if(email){
-      this.payError = this.pay.confirmPayment(planSelected,email);
+  confirmPayment(planSelected: string) {
+  if (this.isPaying) return;
+
+  this.isPaying = true;
+  this.payError = '';
+
+  const email = this.auth.getLoggedInEmail();
+  if (!email) {
+    this.isPaying = false;
+    this.payError = 'Please sign in to continue.';
+    return;
+  }
+
+  this.pay.confirmPayment(planSelected, email).subscribe({
+    next: () => {
+      // Redirect happens inside the service (beginHostedPayment -> safeNavigate).
+      // No-op here; the page will navigate to Cardcom.
+    },
+    error: (e) => {
+      this.isPaying = false; // allow retry
+      this.payError = e?.message || e?.error?.error || 'Payment init failed';
     }
-  
-    if(this.payError){
-      this.isPaying = false; // allow retry 
-    }
-}  
+  });
+  }
 }  

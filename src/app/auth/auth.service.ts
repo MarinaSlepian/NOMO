@@ -9,7 +9,7 @@ export class AuthService {
   isLoggedIn$ = new BehaviorSubject<boolean>(false);
 
   // ✅ Your actual Render backend URL
-  private apiUrl = 'https://nomo-backend.onrender.com';
+  private apiUrl = 'https://nomo-cj4l.onrender.com';
 
   constructor(private http: HttpClient) {}
 

@@ -231,7 +231,7 @@ ngOnInit(): void {
     const eMail = this.authService.getLoggedInEmail();
     if(eMail)
     {
-      this.httpClient.put('https://nomo-backend.onrender.com/app-usage',{
+      this.httpClient.put('https://nomo-cj4l.onrender.com/app-usage',{
       appId: this.currentConfig.selectedApp,
       deviceId: this.deviceId,
       email: eMail
