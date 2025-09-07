@@ -190,7 +190,7 @@ async function markFailed({ lowProfileId, orderId, reason, payload }) {
   await pool.query(
     `UPDATE payments
        SET status='failed',
-           failure_reason=$1,
+           fail_reason=$1,
            verify_payload=$2,
            updated_at=now()
      WHERE low_profile_id=$3`,
