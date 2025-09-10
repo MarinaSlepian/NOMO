@@ -594,7 +594,6 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       ReturnValue: verifyData?.ReturnValue,
     });
 
-
     // ---------- Ensure we have orderId (ReturnValue) ----------
     let orderId = verifyData?.ReturnValue ? String(verifyData.ReturnValue) : null;
     if (!orderId) {
@@ -730,16 +729,31 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     const paidAt = parseMaybeDealDate(tInfo?.DealDate) || new Date();
     const next   = new Date(paidAt); next.setDate(next.getDate() + planDays);
 
+    // ====== NEW: robust expiry fields for RecurringPayment NV ======
     const parsedExp = getExpiryFromTInfo(tInfo);
-    const forceMM   = process.env.CARDCOM_FORCE_EXP_MM || null;
-    const forceYY   = process.env.CARDCOM_FORCE_EXP_YY || null;
-    const mm        = forceMM || parsedExp.mm || null;
-    const yy        = forceYY || parsedExp.yy || null;
+    const forceMM   = process.env.CARDCOM_FORCE_EXP_MM || null;   // e.g. "09"
+    const forceYY   = process.env.CARDCOM_FORCE_EXP_YY || null;   // e.g. "29"
+    const yearFmt   = (process.env.CARDCOM_EXP_YEAR_FORMAT || "YY").toUpperCase(); // 'YY' | 'YYYY'
 
+    const mmRaw = forceMM || parsedExp.mm || null;                // 2-digit
+    const yy2   = forceYY || parsedExp.yy || null;                // 2-digit (from tInfo)
+    const yyyy  = yy2 ? `20${yy2}` : null;                        // naive 20YY→YYYY
+
+    const expMonth = mmRaw ? String(Number(mmRaw)).padStart(2, "0") : null;
+    const expYear  = yy2 ? (yearFmt === "YYYY" ? yyyy : yy2) : null;
+
+    console.log("📦 NV expiry being sent:", { expMonth, expYear, yearFmt });
+
+    // Send both sets of keys + flag so Cardcom updates the validity
     const expiryFieldsNV = {
-      ...(mm ? { "CardValidityMonth": mm } : {}),
-      ...(yy ? { "CardValidityYear":  yy } : {}),
+      ...(expMonth ? { "CardValidityMonth": expMonth } : {}),
+      ...(expYear  ? { "CardValidityYear" : expYear  } : {}),
+
+      ...(expMonth ? { "CreditCard.CardValidityMonth": expMonth } : {}),
+      ...(expYear  ? { "CreditCard.CardValidityYear"  : expYear  } : {}),
+      ...((expMonth && expYear) ? { "CreditCard.ChangeDateValidity": "true" } : {}),
     };
+    // ==============================================================
 
     const customerName = cardOwner || rec.user_email || "NOMO user";
     const params = {
@@ -749,7 +763,7 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       Operation: "NewAndUpdate",
 
       "CreditCard.Token": cardToken,
-      ...expiryFieldsNV,
+      ...expiryFieldsNV, // <-- important
 
       "Account.CompanyName": customerName,
       "Account.Email": rec.user_email || "",
@@ -805,6 +819,7 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     return res.status(200).send("OK"); // always ACK
   }
 });
+
 
 
 
