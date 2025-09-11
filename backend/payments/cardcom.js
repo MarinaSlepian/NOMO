@@ -560,9 +560,8 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       console.warn("🔎 GetLpResult via GET failed:", lastErrMsg);
     }
 
-    // If GET returned but lacks useful fields, fall back
+    // 2) Try POST(JSON) if GET lacked useful fields
     if (!hasUsefulFields(verifyData)) {
-      // 2) Try POST(JSON)
       try {
         verifyData = await cardcomFetch(verifyUrl, verifyParams);
         console.log("🔎 GetLpResult via POST(JSON) OK");
@@ -606,7 +605,7 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       } catch {}
     }
 
-    // If verify didn't return anything useful, mark failure with a clear reason
+    // If verify didn't return anything useful, mark failure
     if (!verifyData || typeof verifyData.ResponseCode === "undefined") {
       await markFailed({
         lowProfileId,
@@ -729,31 +728,33 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     const paidAt = parseMaybeDealDate(tInfo?.DealDate) || new Date();
     const next   = new Date(paidAt); next.setDate(next.getDate() + planDays);
 
-    // ====== NEW: robust expiry fields for RecurringPayment NV ======
-    const parsedExp = getExpiryFromTInfo(tInfo);
-    const forceMM   = process.env.CARDCOM_FORCE_EXP_MM || null;   // e.g. "09"
-    const forceYY   = process.env.CARDCOM_FORCE_EXP_YY || null;   // e.g. "29"
-    const yearFmt   = (process.env.CARDCOM_EXP_YEAR_FORMAT || "YY").toUpperCase(); // 'YY' | 'YYYY'
+    // ====== Robust expiry fields for RecurringPayment NV (pure JS) ======
+    const parsedExp = getExpiryFromTInfo(tInfo); // -> { mm, yy } (yy is 2-digit)
+    const forceMMRaw = process.env.CARDCOM_FORCE_EXP_MM || null; // e.g. "09"
+    const forceYYRaw = process.env.CARDCOM_FORCE_EXP_YY || null; // e.g. "29" or "2029"
 
-    const mmRaw = forceMM || parsedExp.mm || null;                // 2-digit
-    const yy2   = forceYY || parsedExp.yy || null;                // 2-digit (from tInfo)
-    const yyyy  = yy2 ? `20${yy2}` : null;                        // naive 20YY→YYYY
+    let mm = forceMMRaw ?? parsedExp.mm ?? null;
+    if (mm) mm = String(mm).padStart(2, "0");
 
-    const expMonth = mmRaw ? String(Number(mmRaw)).padStart(2, "0") : null;
-    const expYear  = yy2 ? (yearFmt === "YYYY" ? yyyy : yy2) : null;
+    let yy2 = parsedExp.yy || null;   // 2-digit
+    let yyyy = null;                  // 4-digit
 
-    console.log("📦 NV expiry being sent:", { expMonth, expYear, yearFmt });
+    if (forceYYRaw) {
+      const s = String(forceYYRaw);
+      if (s.length === 4) { yyyy = s; yy2 = s.slice(-2); }
+      else { yy2 = s.slice(-2).padStart(2, "0"); yyyy = `20${yy2}`; }
+    } else if (yy2) {
+      yyyy = `20${yy2}`;
+    }
 
-    // Send both sets of keys + flag so Cardcom updates the validity
-    const expiryFieldsNV = {
-      ...(expMonth ? { "CardValidityMonth": expMonth } : {}),
-      ...(expYear  ? { "CardValidityYear" : expYear  } : {}),
+    console.log("📦 Expiry being sent for recurring:", { mm, yy2, yyyy });
 
-      ...(expMonth ? { "CreditCard.CardValidityMonth": expMonth } : {}),
-      ...(expYear  ? { "CreditCard.CardValidityYear"  : expYear  } : {}),
-      ...((expMonth && expYear) ? { "CreditCard.ChangeDateValidity": "true" } : {}),
-    };
-    // ==============================================================
+    const expiryFieldsNV = {};
+    if (mm)   { expiryFieldsNV["CardValidityMonth"] = mm; expiryFieldsNV["CreditCard.CardValidityMonth"] = mm; }
+    if (yyyy) { expiryFieldsNV["CardValidityYear"]  = yyyy; }
+    if (yy2)  { expiryFieldsNV["CreditCard.CardValidityYear"] = yy2; }
+    if (mm && yy2) { expiryFieldsNV["CreditCard.CardValidity"] = `${mm}/${yy2}`; }
+    // ===================================================================
 
     const customerName = cardOwner || rec.user_email || "NOMO user";
     const params = {
@@ -763,7 +764,7 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       Operation: "NewAndUpdate",
 
       "CreditCard.Token": cardToken,
-      ...expiryFieldsNV, // <-- important
+      ...expiryFieldsNV,
 
       "Account.CompanyName": customerName,
       "Account.Email": rec.user_email || "",
@@ -819,6 +820,8 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     return res.status(200).send("OK"); // always ACK
   }
 });
+
+
 
 
 
