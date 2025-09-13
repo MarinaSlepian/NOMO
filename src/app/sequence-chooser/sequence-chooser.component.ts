@@ -30,6 +30,7 @@ export class SequenceChooserComponent  {
   pathsArray: string[] = [];
   chosenThumbPath: string = '';
   videoPath: string = '';
+  waitingGifPath = 'assets/spinner.gif';
   
 
 
@@ -75,6 +76,10 @@ export class SequenceChooserComponent  {
     console.log('onShowVideoClicked video path', videoPath);
     this.videoPath = videoPath;
     this.currentSeqState = this.STATES.VIDEO;
+    if (this.videoPath.includes('failure'))
+      this.waitingGifPath = 'assets/spinner.gif';
+    else
+      this.waitingGifPath = 'assets/fireworks.gif';
     this.isShowDashboard.emit(true); // Emit false to hide the dashboard
 
   }

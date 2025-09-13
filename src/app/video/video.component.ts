@@ -13,6 +13,8 @@ export class VideoComponent implements AfterViewInit, OnInit {
   @Output() cancel = new EventEmitter<void>();
   @Input({required:true}) numOfVideos!: string;
   @Input() isLoopNeeded = true;
+  @Input() waitingGifPath = 'assets/spinner.gif';
+  
   isPlaying = true;
   isLoading = true;
   isShowSwitch = true;

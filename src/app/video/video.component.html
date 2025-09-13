@@ -6,7 +6,7 @@
     
     @if (isLoading) {
       <div class="spinner-overlay">
-        <img src="assets/spinner.gif" alt="Loading..." class="gif-spinner" />
+        <img [src]= "waitingGifPath" alt="Loading..." class="gif-spinner" />
       </div>
     }
 

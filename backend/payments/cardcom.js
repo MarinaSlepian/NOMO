@@ -251,31 +251,46 @@ function fmtDDMMYYYY_HH_mmSlash(d) {
 }
 // Try to extract expiry from TranzactionInfo
 // Robust expiry extractor with clear precedence and debug output
+// Try to extract expiry from TranzactionInfo (MM + YYYY)
 function getExpiryFromTInfo(ti = {}) {
-  // Cardcom typically returns CardMonth (MM) and CardYear (YY)
-  let mm = ti.CardMonth ?? ti.CardValidityMonth ?? ti.CardExpMonth ?? ti.ExpiryMonth ?? ti.ValidityMonth ?? ti.CardExpDateMonth ?? null;
-  let yy = ti.CardYear  ?? ti.CardValidityYear  ?? ti.CardExpYear  ?? ti.ExpiryYear  ?? ti.ValidityYear  ?? ti.CardExpDateYear  ?? null;
+  // common keys Cardcom returns
+  let mm = ti.CardMonth ?? ti.CardValidityMonth ?? ti.CardExpMonth ??
+           ti.ExpiryMonth ?? ti.ValidityMonth ?? ti.CardExpDateMonth ?? null;
 
-  // Also accept a single field (MMYY / MM/YY / MMYYYY / MM/YYYY)
+  let yr = ti.CardYear ?? ti.CardValidityYear ?? ti.CardExpYear ??
+           ti.ExpiryYear ?? ti.ValidityYear ?? ti.CardExpDateYear ?? null;
+
+  // Fallback: single combined field (MMYY / MM/YY / MMYYYY / MM/YYYY)
   const one = ti.CardExpDate || ti.CardExpiry || ti.CardExp || null;
-  if ((!mm || !yy) && one) {
+  if ((!mm || !yr) && one) {
     const s = String(one).replace(/\s+/g, "");
     let m = /^(\d{2})[\/\-]?(\d{2})$/.exec(s);      // MMYY or MM/YY
-    if (m) { mm = m[1]; yy = m[2]; }
-    m = m || /^(\d{2})[\/\-]?(\d{4})$/.exec(s);     // MMYYYY or MM/YYYY
-    if (m && !yy) { mm = m[1]; yy = m[2]; }
+    if (m) { mm = m[1]; yr = m[2]; }
+    if (!m) {
+      m = /^(\d{2})[\/\-]?(\d{4})$/.exec(s);        // MMYYYY or MM/YYYY
+      if (m) { mm = m[1]; yr = m[2]; }
+    }
   }
 
-  // Normalize: MM two digits (01..12), YY last two digits
-  if (mm != null) mm = String(mm).padStart(2, "0");
-  if (yy != null) yy = String(yy).slice(-2);
+  // Normalize month to 2 digits and validate range
+  if (mm != null) {
+    mm = String(mm).padStart(2, "0");
+    const mnum = Number(mm);
+    if (!Number.isFinite(mnum) || mnum < 1 || mnum > 12) mm = null;
+  }
 
-  // Guard month range
-  if (mm && (+mm < 1 || +mm > 12)) mm = null;
+  // Normalize year to **YYYY**
+  let yyyy = null;
+  if (yr != null) {
+    const y = String(yr).trim();
+    if (/^\d{4}$/.test(y))        yyyy = y;
+    else if (/^\d{2}$/.test(y))   yyyy = `20${y}`;      // assume 20YY
+    else if (/^\d{1}$/.test(y))   yyyy = `200${y}`;
+  }
 
-  const mmyy = (mm && yy) ? `${mm}/${yy}` : null;
-  return { mm, yy, mmyy, source: "tInfo" };
+  return { mm, yyyy }; // <-- YYYY guaranteed when present
 }
+
 
 // ===== NV helpers (GET/POST) =====
 // put near your other helpers
@@ -560,8 +575,9 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       console.warn("🔎 GetLpResult via GET failed:", lastErrMsg);
     }
 
-    // 2) Try POST(JSON) if GET lacked useful fields
+    // If GET returned but lacks useful fields, fall back
     if (!hasUsefulFields(verifyData)) {
+      // 2) Try POST(JSON)
       try {
         verifyData = await cardcomFetch(verifyUrl, verifyParams);
         console.log("🔎 GetLpResult via POST(JSON) OK");
@@ -605,7 +621,7 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       } catch {}
     }
 
-    // If verify didn't return anything useful, mark failure
+    // If verify didn't return anything useful, mark failure with a clear reason
     if (!verifyData || typeof verifyData.ResponseCode === "undefined") {
       await markFailed({
         lowProfileId,
@@ -728,33 +744,39 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     const paidAt = parseMaybeDealDate(tInfo?.DealDate) || new Date();
     const next   = new Date(paidAt); next.setDate(next.getDate() + planDays);
 
-    // ====== Robust expiry fields for RecurringPayment NV (pure JS) ======
-    const parsedExp = getExpiryFromTInfo(tInfo); // -> { mm, yy } (yy is 2-digit)
-    const forceMMRaw = process.env.CARDCOM_FORCE_EXP_MM || null; // e.g. "09"
-    const forceYYRaw = process.env.CARDCOM_FORCE_EXP_YY || null; // e.g. "29" or "2029"
+    // ====== Expiry (Cardcom requires YYYY) ======
+    const toYYYY = (y) => {
+      if (y === null || y === undefined) return null;
+      const s = String(y).trim();
+      if (/^\d{4}$/.test(s)) return s;
+      if (/^\d{2}$/.test(s)) return `20${s}`;
+      return null;
+    };
 
-    let mm = forceMMRaw ?? parsedExp.mm ?? null;
-    if (mm) mm = String(mm).padStart(2, "0");
+    // Try to use existing helper if present; otherwise parse basics
+    const expFromTI = (typeof getExpiryFromTInfo === "function")
+      ? getExpiryFromTInfo(tInfo)
+      : { mm: tInfo.CardMonth || tInfo.CardValidityMonth || null,
+          yy: tInfo.CardYear  || tInfo.CardValidityYear  || null };
 
-    let yy2 = parsedExp.yy || null;   // 2-digit
-    let yyyy = null;                  // 4-digit
+    const mmEnv   = process.env.CARDCOM_FORCE_EXP_MM   || null;   // e.g. "09"
+    const yyyyEnv = process.env.CARDCOM_FORCE_EXP_YYYY || null;   // e.g. "2030"
+    const yyEnv   = process.env.CARDCOM_FORCE_EXP_YY   || null;   // legacy "30"
 
-    if (forceYYRaw) {
-      const s = String(forceYYRaw);
-      if (s.length === 4) { yyyy = s; yy2 = s.slice(-2); }
-      else { yy2 = s.slice(-2).padStart(2, "0"); yyyy = `20${yy2}`; }
-    } else if (yy2) {
-      yyyy = `20${yy2}`;
-    }
+    let expMonth = mmEnv || expFromTI?.mm || null;
+    if (expMonth) expMonth = String(Number(expMonth)).padStart(2, "0");
 
-    console.log("📦 Expiry being sent for recurring:", { mm, yy2, yyyy });
+    let expYear = yyyyEnv || toYYYY(yyEnv) || expFromTI?.yyyy || toYYYY(expFromTI?.yy);
+    console.log("📦 NV expiry being sent (YYYY):", { expMonth, expYear });
 
-    const expiryFieldsNV = {};
-    if (mm)   { expiryFieldsNV["CardValidityMonth"] = mm; expiryFieldsNV["CreditCard.CardValidityMonth"] = mm; }
-    if (yyyy) { expiryFieldsNV["CardValidityYear"]  = yyyy; }
-    if (yy2)  { expiryFieldsNV["CreditCard.CardValidityYear"] = yy2; }
-    if (mm && yy2) { expiryFieldsNV["CreditCard.CardValidity"] = `${mm}/${yy2}`; }
-    // ===================================================================
+    const expiryFieldsNV = {
+      ...(expMonth ? { "CardValidityMonth": expMonth } : {}),
+      ...(expYear  ? { "CardValidityYear":  expYear  } : {}),
+      ...(expMonth ? { "CreditCard.CardValidityMonth": expMonth } : {}),
+      ...(expYear  ? { "CreditCard.CardValidityYear":  expYear  } : {}),
+      ...((expMonth && expYear) ? { "CreditCard.ChangeDateValidity": "true" } : {}),
+    };
+    // =============================================================
 
     const customerName = cardOwner || rec.user_email || "NOMO user";
     const params = {
@@ -820,8 +842,6 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     return res.status(200).send("OK"); // always ACK
   }
 });
-
-
 
 
 
