@@ -656,7 +656,7 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       tInfo?.Last4CardDigitsString ||
       (tInfo?.Last4CardDigits ? String(tInfo.Last4CardDigits).padStart(4, "0") : null);
 
-    const cardToken = tInfo?.Token || null;
+    const cardToken = tInfo?.Token || null;         // still capture for DB if available
     const cardOwner = tInfo?.CardOwnerName || null;
 
     // Read plan/currency + invoice prefs from DB if present
@@ -711,12 +711,7 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       access_until: paidRow?.access_until
     });
 
-    // 3) Create recurring subscription (if token exists and not yet created)
-    if (!cardToken) {
-      console.warn("⚠️ No CardToken on first charge; cannot create subscription.");
-      await logEvent({ orderId, lowProfileId, type: "subscription_skip_no_token", payload: verifyData });
-      return res.status(200).send("OK");
-    }
+    // 3) Create recurring subscription USING LOW PROFILE CODE (per Cardcom guidance)
     if (rec.subscription_id) {
       console.log("ℹ️ Subscription already exists, skipping creation:", rec.subscription_id);
       return res.status(200).send("OK");
@@ -744,49 +739,16 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     const paidAt = parseMaybeDealDate(tInfo?.DealDate) || new Date();
     const next   = new Date(paidAt); next.setDate(next.getDate() + planDays);
 
-    // ====== Expiry (Cardcom requires YYYY) ======
-    const toYYYY = (y) => {
-      if (y === null || y === undefined) return null;
-      const s = String(y).trim();
-      if (/^\d{4}$/.test(s)) return s;
-      if (/^\d{2}$/.test(s)) return `20${s}`;
-      return null;
-    };
-
-    // Try to use existing helper if present; otherwise parse basics
-    const expFromTI = (typeof getExpiryFromTInfo === "function")
-      ? getExpiryFromTInfo(tInfo)
-      : { mm: tInfo.CardMonth || tInfo.CardValidityMonth || null,
-          yy: tInfo.CardYear  || tInfo.CardValidityYear  || null };
-
-    const mmEnv   = process.env.CARDCOM_FORCE_EXP_MM   || null;   // e.g. "09"
-    const yyyyEnv = process.env.CARDCOM_FORCE_EXP_YYYY || null;   // e.g. "2030"
-    const yyEnv   = process.env.CARDCOM_FORCE_EXP_YY   || null;   // legacy "30"
-
-    let expMonth = mmEnv || expFromTI?.mm || null;
-    if (expMonth) expMonth = String(Number(expMonth)).padStart(2, "0");
-
-    let expYear = yyyyEnv || toYYYY(yyEnv) || expFromTI?.yyyy || toYYYY(expFromTI?.yy);
-    console.log("📦 NV expiry being sent (YYYY):", { expMonth, expYear });
-
-    const expiryFieldsNV = {
-      ...(expMonth ? { "CardValidityMonth": expMonth } : {}),
-      ...(expYear  ? { "CardValidityYear":  expYear  } : {}),
-      ...(expMonth ? { "CreditCard.CardValidityMonth": expMonth } : {}),
-      ...(expYear  ? { "CreditCard.CardValidityYear":  expYear  } : {}),
-      ...((expMonth && expYear) ? { "CreditCard.ChangeDateValidity": "true" } : {}),
-    };
-    // =============================================================
-
     const customerName = cardOwner || rec.user_email || "NOMO user";
+
+    // ✅ No expiry fields. Use LowProfileCode so Cardcom uses the saved card details.
     const params = {
       TerminalNumber: Number.isFinite(TERMINAL_RECURRING) ? TERMINAL_RECURRING : TERMINAL,
       UserName: API_NAME,
       codepage: 65001,
       Operation: "NewAndUpdate",
 
-      "CreditCard.Token": cardToken,
-      ...expiryFieldsNV,
+      LowProfileCode: String(lowProfileId),
 
       "Account.CompanyName": customerName,
       "Account.Email": rec.user_email || "",
@@ -834,7 +796,7 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     );
 
     await logEvent({ orderId, lowProfileId, type: "subscription_created", payload: subResult });
-    console.log("✅ Subscription created:", { recurringId, nextDateToBill: fmtDDMMYYYY(next), issueInvoice });
+    console.log("✅ Subscription created (LP):", { recurringId, nextDateToBill: fmtDDMMYYYY(next), issueInvoice });
 
     return res.status(200).send("OK");
   } catch (err) {
@@ -842,6 +804,7 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     return res.status(200).send("OK"); // always ACK
   }
 });
+
 
 
 
