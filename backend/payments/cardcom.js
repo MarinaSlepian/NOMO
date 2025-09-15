@@ -1,23 +1,21 @@
 // payments/cardcom.js
-// 💡 Cardcom recurring billing implementation (2-step):
-// Step 1: User pays one-time via LowProfile
-// Step 2: On webhook → use token to call Subscription/CreateSubscription
-// Plus: Token charge/refund endpoint with optional invoice creation (NV).
-// NEW: Persist issueInvoice from /start → use in DD creation (RecurringPayment.aspx).
+// 💡 Cardcom recurring billing (2-step):
+// Step 1: User pays one-time via LowProfile (ChargeAndCreateToken)
+// Step 2: Webhook verifies → create Direct Debit using RecurringPayments.LowProfileCode
+// Also: token charge/refund endpoint with optional invoice creation (NV).
 
 import express from "express";
 import fetch from "node-fetch";
 import { pool } from "../db.js";
 import crypto from "node:crypto";
 
-
-const DEFAULT_PLAN_DAYS = 30; // adjust as needed
+const DEFAULT_PLAN_DAYS = 30;
 
 const router = express.Router();
 
 // === Required envs ===
 const TERMINAL = Number(process.env.CARDCOM_TERMINAL);
-const TERMINAL_RECURRING = Number(process.env.CARDCOM_TERMINAL_RECURRING) || TERMINAL; // 👈 explicit recurring terminal
+const TERMINAL_RECURRING = Number(process.env.CARDCOM_TERMINAL_RECURRING) || TERMINAL;
 const API_NAME     = process.env.CARDCOM_API_NAME || "";
 const API_PASSWORD = process.env.CARDCOM_API_PASSWORD || "";
 
@@ -36,14 +34,13 @@ if (!API_NAME) console.error("[Cardcom] Missing CARDCOM_API_NAME");
 // --- helpers ---
 async function logEvent({ orderId, lowProfileId, type, payload }) {
   try {
-    // Build a non-null reference for order_id
     const recurringId =
       payload?.RecurringId || payload?.recurringid || payload?.RecurringID || null;
 
     const orderRef =
       (orderId && String(orderId)) ||
       (payload?.ReturnValue && String(payload.ReturnValue)) ||
-      (recurringId ? `recurring:${recurringId}` : 'n/a');   // 👈 NEVER NULL
+      (recurringId ? `recurring:${recurringId}` : "n/a");
 
     await pool.query(
       `INSERT INTO payment_events (order_id, low_profile_id, event_type, payload)
@@ -52,7 +49,6 @@ async function logEvent({ orderId, lowProfileId, type, payload }) {
     );
   } catch (e) {
     console.error("⚠️ logEvent failed:", e.message);
-    // swallow error so webhooks never fail because of logging
   }
 }
 
@@ -75,7 +71,6 @@ async function hasColumn(table, column) {
 }
 
 async function saveStart({ orderId, lowProfileId, userEmail, amountMinor, currency, planDays, issueInvoice, invoice }) {
-  // Dynamically include optional columns if they exist
   const hasIssue = await hasColumn("payments", "issue_invoice");
   const hasInvoiceJson = await hasColumn("payments", "invoice_json");
 
@@ -97,7 +92,7 @@ async function saveStart({ orderId, lowProfileId, userEmail, amountMinor, curren
     cols.push("issue_invoice");
     vals.push(`$${++argi}`);
     updates.push("issue_invoice = COALESCE(EXCLUDED.issue_invoice, payments.issue_invoice)");
-    args.push(issueInvoice === true || issueInvoice === "true" ? true : false);
+    args.push(issueInvoice === true || issueInvoice === "true");
   }
   if (hasInvoiceJson) {
     cols.push("invoice_json");
@@ -112,18 +107,16 @@ async function saveStart({ orderId, lowProfileId, userEmail, amountMinor, curren
     ON CONFLICT (order_id) DO UPDATE SET
       ${updates.join(", ")}
   `;
-
   await pool.query(sql, args);
 
-  // Log a meta event so we still persist preferences even if DB doesn't have columns
   await logEvent({
     orderId,
     lowProfileId,
-    type: 'start_meta',
-    payload: { issueInvoice: !!issueInvoice, invoice: invoice || null }
+    type: "start_meta",
+    payload: { issueInvoice: !!issueInvoice, invoice: invoice || null },
   });
 
-  await logEvent({ orderId, lowProfileId, type: 'start_ok' });
+  await logEvent({ orderId, lowProfileId, type: "start_ok" });
 }
 
 async function markPaid({
@@ -211,7 +204,7 @@ export async function cardcomFetch(url, data) {
   const text = await res.text();
   try {
     return JSON.parse(text);
-  } catch (err) {
+  } catch {
     console.error("🔴 Failed to parse Cardcom response as JSON:", text);
     throw new Error("Invalid JSON response from Cardcom");
   }
@@ -220,7 +213,7 @@ export async function cardcomFetch(url, data) {
 function normalizeUrl(u, fallbackPath) {
   try {
     if (!u) throw new Error("missing");
-    const parsed = new URL(u); // throws if invalid
+    const parsed = new URL(u);
     if (!/^https?:$/.test(parsed.protocol)) throw new Error("protocol");
     return parsed.toString();
   } catch {
@@ -228,142 +221,18 @@ function normalizeUrl(u, fallbackPath) {
   }
 }
 
-// (kept for future use if needed)
-function getPeriodFromPlanDays(planDays) {
-  if (planDays >= 365) {
-    return { PeriodTypeCode: 4, PeriodFrequency: 1 }; // שנה
-  }
-  if (planDays >= 90) {
-    return { PeriodTypeCode: 3, PeriodFrequency: 3 }; // רבעון
-  }
-  return { PeriodTypeCode: 3, PeriodFrequency: 1 }; // ברירת מחדל: חודש
-}
-
 // format: dd/MM/yyyy (for Recurring NextDateToBill)
 function fmtDDMMYYYY(d) {
   const pad = (n) => String(n).padStart(2, "0");
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
 }
-// format: dd/MM/yyyy HH/mm  (legacy helper kept where relevant)
-function fmtDDMMYYYY_HH_mmSlash(d) {
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}/${pad(d.getMinutes())}`;
-}
-// Try to extract expiry from TranzactionInfo
-// Robust expiry extractor with clear precedence and debug output
-// Try to extract expiry from TranzactionInfo (MM + YYYY)
-function getExpiryFromTInfo(ti = {}) {
-  // common keys Cardcom returns
-  let mm = ti.CardMonth ?? ti.CardValidityMonth ?? ti.CardExpMonth ??
-           ti.ExpiryMonth ?? ti.ValidityMonth ?? ti.CardExpDateMonth ?? null;
 
-  let yr = ti.CardYear ?? ti.CardValidityYear ?? ti.CardExpYear ??
-           ti.ExpiryYear ?? ti.ValidityYear ?? ti.CardExpDateYear ?? null;
-
-  // Fallback: single combined field (MMYY / MM/YY / MMYYYY / MM/YYYY)
-  const one = ti.CardExpDate || ti.CardExpiry || ti.CardExp || null;
-  if ((!mm || !yr) && one) {
-    const s = String(one).replace(/\s+/g, "");
-    let m = /^(\d{2})[\/\-]?(\d{2})$/.exec(s);      // MMYY or MM/YY
-    if (m) { mm = m[1]; yr = m[2]; }
-    if (!m) {
-      m = /^(\d{2})[\/\-]?(\d{4})$/.exec(s);        // MMYYYY or MM/YYYY
-      if (m) { mm = m[1]; yr = m[2]; }
-    }
-  }
-
-  // Normalize month to 2 digits and validate range
-  if (mm != null) {
-    mm = String(mm).padStart(2, "0");
-    const mnum = Number(mm);
-    if (!Number.isFinite(mnum) || mnum < 1 || mnum > 12) mm = null;
-  }
-
-  // Normalize year to **YYYY**
-  let yyyy = null;
-  if (yr != null) {
-    const y = String(yr).trim();
-    if (/^\d{4}$/.test(y))        yyyy = y;
-    else if (/^\d{2}$/.test(y))   yyyy = `20${y}`;      // assume 20YY
-    else if (/^\d{1}$/.test(y))   yyyy = `200${y}`;
-  }
-
-  return { mm, yyyy }; // <-- YYYY guaranteed when present
-}
-
-
-// ===== NV helpers (GET/POST) =====
-// put near your other helpers
-async function getLowProfileResult({ terminal, apiName, lowProfileId }) {
-  const url = "https://secure.cardcom.solutions/api/v11/LowProfile/GetLpResult";
-  const params = {
-    TerminalNumber: Number(terminal),
-    ApiName: apiName,
-    LowProfileId: String(lowProfileId),
-  };
-
-  // 1) Try GET (as in docs)
-  // GET /status/:lowProfileId
-  const data = await cardcomFetch(
-    "https://secure.cardcom.solutions/api/v11/LowProfile/GetLpResult",
-    {
-      TerminalNumber: Number(TERMINAL),
-      ApiName: API_NAME,
-      ...(API_PASSWORD ? { ApiPassword: API_PASSWORD } : {}),
-      LowProfileId: String(lowProfileId),
-    }
-  );
-
-  // 2) Try POST JSON
-  // POST /status
-  data = await cardcomFetch(
-    "https://secure.cardcom.solutions/api/v11/LowProfile/GetLpResult",
-    {
-      TerminalNumber: Number(TERMINAL),
-      ApiName: API_NAME,
-      ...(API_PASSWORD ? { ApiPassword: API_PASSWORD } : {}),
-      LowProfileId: lowProfileId,
-    }
-  );
-
-  // 3) Try POST NV (x-www-form-urlencoded) — parse NV into an object
-  const nv = await cardcomFetchNVPost(url, params);
-  // ensure ResponseCode is numeric where possible
-  if (nv && typeof nv.ResponseCode === "string" && /^\d+$/.test(nv.ResponseCode)) {
-    nv.ResponseCode = Number(nv.ResponseCode);
-  }
-  return nv;
-}
-async function cardcomFetchNVGet(url, params) {
-  const qs = new URLSearchParams();
-  for (const [k, v] of Object.entries(params || {})) {
-    if (v !== undefined && v !== null && v !== "") qs.append(k, String(v));
-  }
-  const fullUrl = `${url}?${qs.toString()}`;
-
-  const res = await fetch(fullUrl, { method: "GET" });
-  const text = await res.text();
-
-  // Parse "name=value&name2=value2" (or newline-separated)
-  const out = {};
-  text.split(/[&\r\n]+/).filter(Boolean).forEach(pair => {
-    const i = pair.indexOf("=");
-    if (i > -1) out[decodeURIComponent(pair.slice(0, i))] = decodeURIComponent(pair.slice(i + 1));
-  });
-
-  // In case of HTML error page, return a hint
-  if (!out.ResponseCode && text.startsWith("<!DOCTYPE")) {
-    return { ResponseCode: "-1", Description: "HTML error page", raw: text };
-  }
-  return Object.keys(out).length ? out : { raw: text };
-}
-
+// ===== NV POST helper =====
 async function cardcomFetchNVPost(url, params) {
   const body = new URLSearchParams();
   for (const [k, v] of Object.entries(params || {})) {
     if (v !== undefined && v !== null && v !== "") body.append(k, String(v));
   }
-  // codepage is required for Hebrew / Unicode in NV
   if (!body.has("codepage")) body.append("codepage", "65001");
 
   const res = await fetch(url, {
@@ -373,29 +242,19 @@ async function cardcomFetchNVPost(url, params) {
   });
   const text = await res.text();
 
-  // Parse "name=value&name2=value2" (or newline-separated) into object
   const out = {};
-  text.split(/[&\r\n]+/).filter(Boolean).forEach(pair => {
-    const i = pair.indexOf("=");
-    if (i > -1) out[decodeURIComponent(pair.slice(0, i))] = decodeURIComponent(pair.slice(i + 1));
-  });
+  text
+    .split(/[&\r\n]+/)
+    .filter(Boolean)
+    .forEach((pair) => {
+      const i = pair.indexOf("=");
+      if (i > -1) out[decodeURIComponent(pair.slice(0, i))] = decodeURIComponent(pair.slice(i + 1));
+    });
 
-  if (!Object.keys(out).length) return { raw: text };
-  return out;
+  return Object.keys(out).length ? out : { raw: text };
 }
 
 // ===== LowProfile: Create payment page + first charge + token =====
-/**
- * POST /api/pay/start
- * Body: {
- *   amount:number, orderId:string, description?:string, currency?:number,
- *   userEmail?:string, planDays?:number,
- *   successUrl?:string, failUrl?:string,
- *   issueInvoice?: boolean,           // NEW: persist user's invoice preference
- *   invoice?: object                  // NEW: optional invoice head/line overrides
- * }
- * Returns: { url, lowProfileId }
- */
 router.post("/start", async (req, res) => {
   try {
     const {
@@ -404,11 +263,11 @@ router.post("/start", async (req, res) => {
       userEmail,
       successUrl,
       failUrl,
-      amount,                 // First charge sum
-      currency = 1,           // 1 = ILS
+      amount,
+      currency = 1,
       planDays = DEFAULT_PLAN_DAYS,
       issueInvoice = ISSUE_INVOICE_DEFAULT,
-      invoice = null
+      invoice = null,
     } = req.body || {};
 
     const oid = String(orderId || "").trim();
@@ -422,7 +281,6 @@ router.post("/start", async (req, res) => {
       return res.status(400).json({ error: "Invalid amount" });
     }
 
-    // require external https URLs (no localhost)
     function requireExternalHttps(u, fieldName) {
       const parsed = new URL(u);
       if (parsed.protocol !== "https:") {
@@ -439,20 +297,16 @@ router.post("/start", async (req, res) => {
       normalizeUrl(successUrl, "/pay/success"),
       "SuccessRedirectUrl"
     );
-    const FailedRedirectUrl  = requireExternalHttps(
-      normalizeUrl(failUrl,  "/pay/failed"),
+    const FailedRedirectUrl = requireExternalHttps(
+      normalizeUrl(failUrl, "/pay/failed"),
       "FailedRedirectUrl"
     );
-    const WebHookUrl         = requireExternalHttps(
-      `${API_URL}/api/pay/webhook`,
-      "WebHookUrl"
-    );
+    const WebHookUrl = requireExternalHttps(`${API_URL}/api/pay/webhook`, "WebHookUrl");
 
-    // JSON v11: string Operation. For subscription flow we use charge + token
     const body = {
       TerminalNumber: Number(TERMINAL),
       ApiName: API_NAME,
-      Operation: "ChargeAndCreateToken",   // 🔴 new
+      Operation: "ChargeAndCreateToken",
       ReturnValue: oid,
       Amount: amt,
       ISOCoinId: Number(currency) || 1,
@@ -461,11 +315,12 @@ router.post("/start", async (req, res) => {
       FailedRedirectUrl,
       WebHookUrl,
       Language: "en",
-      // (optional) prefill/validation on hosted page
-      UIDefinition: userEmail ? {
-        CardOwnerEmailValue: userEmail,
-        IsCardOwnerEmailRequired: true
-      } : undefined
+      UIDefinition: userEmail
+        ? {
+            CardOwnerEmailValue: userEmail,
+            IsCardOwnerEmailRequired: true,
+          }
+        : undefined,
     };
 
     console.log("🟠 First charge (LowProfile Create):", body);
@@ -487,7 +342,7 @@ router.post("/start", async (req, res) => {
         currency: Number(currency) || 1,
         planDays,
         issueInvoice: !!issueInvoice,
-        invoice: invoice || null
+        invoice: invoice || null,
       });
 
       return res.json({ url: data.Url, lowProfileId: data.LowProfileId });
@@ -501,32 +356,31 @@ router.post("/start", async (req, res) => {
   }
 });
 
-// helper: GET JSON (Cardcom sometimes allows GET for LowProfile/GetLpResult)
-// helper: GET JSON (Cardcom sometimes returns NV or HTML; be tolerant)
+// helper: GET JSON (tolerant)
 async function cardcomFetchJsonGET(url, params) {
   const qs = new URLSearchParams();
   for (const [k, v] of Object.entries(params || {})) {
     if (v !== undefined && v !== null && v !== "") qs.append(k, String(v));
   }
   const full = `${url}?${qs.toString()}`;
-  const res  = await fetch(full, { method: "GET", headers: { accept: "application/json" } });
+  const res = await fetch(full, { method: "GET", headers: { accept: "application/json" } });
   const text = await res.text();
 
-  // Try JSON first
   try {
     const j = JSON.parse(text);
     if (j && typeof j === "object") return j;
   } catch {}
 
-  // Fallback: parse name=value (& or newline separated)
   const out = {};
-  text.split(/[&\r\n]+/).filter(Boolean).forEach(pair => {
-    const i = pair.indexOf("=");
-    if (i > -1) out[decodeURIComponent(pair.slice(0, i))] = decodeURIComponent(pair.slice(i + 1));
-  });
+  text
+    .split(/[&\r\n]+/)
+    .filter(Boolean)
+    .forEach((pair) => {
+      const i = pair.indexOf("=");
+      if (i > -1) out[decodeURIComponent(pair.slice(0, i))] = decodeURIComponent(pair.slice(i + 1));
+    });
   if (Object.keys(out).length) return out;
 
-  // HTML page? surface a hint
   if (/^\s*<!DOCTYPE/i.test(text) || /<html/i.test(text)) {
     return { ResponseCode: "-1", Description: "HTML error page", raw: text.slice(0, 400) };
   }
@@ -566,7 +420,6 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     const hasUsefulFields = (v) =>
       v && (typeof v.ResponseCode !== "undefined" || typeof v.ReturnValue !== "undefined");
 
-    // 1) Try GET (per docs)
     try {
       verifyData = await cardcomFetchJsonGET(verifyUrl, verifyParams);
       console.log("🔎 GetLpResult via GET OK");
@@ -575,9 +428,7 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       console.warn("🔎 GetLpResult via GET failed:", lastErrMsg);
     }
 
-    // If GET returned but lacks useful fields, fall back
     if (!hasUsefulFields(verifyData)) {
-      // 2) Try POST(JSON)
       try {
         verifyData = await cardcomFetch(verifyUrl, verifyParams);
         console.log("🔎 GetLpResult via POST(JSON) OK");
@@ -587,7 +438,6 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       }
     }
 
-    // 3) Try POST(NV)
     if (!hasUsefulFields(verifyData)) {
       try {
         const nv = await cardcomFetchNVPost(verifyUrl, verifyParams);
@@ -621,7 +471,7 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       } catch {}
     }
 
-    // If verify didn't return anything useful, mark failure with a clear reason
+    // If verify didn't return anything useful, mark failure
     if (!verifyData || typeof verifyData.ResponseCode === "undefined") {
       await markFailed({
         lowProfileId,
@@ -656,7 +506,7 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
       tInfo?.Last4CardDigitsString ||
       (tInfo?.Last4CardDigits ? String(tInfo.Last4CardDigits).padStart(4, "0") : null);
 
-    const cardToken = tInfo?.Token || null;         // still capture for DB if available
+    const cardToken = tInfo?.Token || null;
     const cardOwner = tInfo?.CardOwnerName || null;
 
     // Read plan/currency + invoice prefs from DB if present
@@ -670,13 +520,13 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
 
     const { rows: recRows } = await pool.query(selectSql, [lowProfileId]);
     const rec = recRows[0] || {};
-    const coinId   = Number(rec.currency || 1);
+    const coinId = Number(rec.currency || 1);
     const planDays = Number(rec.plan_days || DEFAULT_PLAN_DAYS);
-    const price    = amountMinor ?? Number(rec.amount_minor || 0);
+    const price = amountMinor ?? Number(rec.amount_minor || 0);
 
     // Load /start metadata if columns were absent
     let issueInvoice = hasIssue ? !!rec.issue_invoice : undefined;
-    let invoiceMeta  = hasInvoiceJson ? (rec.invoice_json || null) : null;
+    let invoiceMeta = hasInvoiceJson ? rec.invoice_json || null : null;
     if (issueInvoice === undefined) {
       const { rows: ev } = await pool.query(
         `SELECT payload FROM payment_events
@@ -688,7 +538,7 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
         try {
           const meta = typeof ev[0].payload === "string" ? JSON.parse(ev[0].payload) : ev[0].payload;
           issueInvoice = !!meta.issueInvoice;
-          invoiceMeta  = meta.invoice || null;
+          invoiceMeta = meta.invoice || null;
         } catch {}
       }
     }
@@ -708,47 +558,42 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     console.log("✅ First charge marked as paid:", {
       user: paidRow?.user_email,
       access_from: paidRow?.access_from,
-      access_until: paidRow?.access_until
+      access_until: paidRow?.access_until,
     });
 
-    // 3) Create recurring subscription USING LOW PROFILE CODE (per Cardcom guidance)
+    // 3) Create recurring subscription USING LOW PROFILE CODE
     if (rec.subscription_id) {
       console.log("ℹ️ Subscription already exists, skipping creation:", rec.subscription_id);
       return res.status(200).send("OK");
     }
 
     // helpers
-    const fmtDDMMYYYY = (d) => {
-      const dd = String(d.getDate()).padStart(2, "0");
-      const mm = String(d.getMonth() + 1).padStart(2, "0");
-      const yyyy = d.getFullYear();
-      return `${dd}/${mm}/${yyyy}`;
-    };
     const parseMaybeDealDate = (s) => {
       if (!s) return null;
       let m = /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})$/.exec(s);
-      if (m) return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5], +m[6]);
+      if (m) return new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5], +m[6]);
       m = /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2})\/(\d{2})$/.exec(s);
-      if (m) return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5]);
+      if (m) return new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5]);
       m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s);
-      if (m) return new Date(+m[3], +m[2]-1, +m[1]);
+      if (m) return new Date(+m[3], +m[2] - 1, +m[1]);
       return null;
     };
 
     const timeIntervalId = mapPlanDaysToTimeIntervalId(planDays);
     const paidAt = parseMaybeDealDate(tInfo?.DealDate) || new Date();
-    const next   = new Date(paidAt); next.setDate(next.getDate() + planDays);
+    const next = new Date(paidAt);
+    next.setDate(next.getDate() + planDays);
 
     const customerName = cardOwner || rec.user_email || "NOMO user";
 
-    // ✅ No expiry fields. Use LowProfileCode so Cardcom uses the saved card details.
     const params = {
       TerminalNumber: Number.isFinite(TERMINAL_RECURRING) ? TERMINAL_RECURRING : TERMINAL,
       UserName: API_NAME,
       codepage: 65001,
       Operation: "NewAndUpdate",
 
-      LowProfileCode: String(lowProfileId),
+      // 👇 as per Cardcom support: copy card from the low profile deal
+      "RecurringPayments.LowProfileCode": String(lowProfileId),
 
       "Account.CompanyName": customerName,
       "Account.Email": rec.user_email || "",
@@ -783,7 +628,7 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     }
 
     const recurringId = extractRecurringId(subResult);
-    const accountId   = subResult?.AccountId || null;
+    const accountId = subResult?.AccountId || null;
 
     await pool.query(
       `UPDATE payments
@@ -796,7 +641,11 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
     );
 
     await logEvent({ orderId, lowProfileId, type: "subscription_created", payload: subResult });
-    console.log("✅ Subscription created (LP):", { recurringId, nextDateToBill: fmtDDMMYYYY(next), issueInvoice });
+    console.log("✅ Subscription created (LP):", {
+      recurringId,
+      nextDateToBill: fmtDDMMYYYY(next),
+      issueInvoice,
+    });
 
     return res.status(200).send("OK");
   } catch (err) {
@@ -805,33 +654,24 @@ router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
   }
 });
 
-
-
-
-
 // ===== Recurring status webhook (Cardcom → your server) =====
-// פרסר לפוסטים מסוג form-urlencoded (רק כשבאמת POST)
 const parseForm = express.urlencoded({ extended: true });
 
-// In Cardcom Admin, point “דיווח למערכת חיצונית - הוראת קבע” to this URL.
 router.all(
   "/recurring-webhook",
   (req, res, next) => {
-    // If POST → parse application/x-www-form-urlencoded into req.body
     if (req.method === "POST") return parseForm(req, res, next);
     return next();
   },
   async (req, res) => {
     const recvAt = new Date();
     try {
-      // For GETs use querystring; for POSTs use parsed body
-      const b = req.method === "GET" ? req.query : (req.body || {});
+      const b = req.method === "GET" ? req.query : req.body || {};
 
-      // -------- Secret check (timing safe, trimmed) --------
       const providedStr = String(b.Secret || b.secret || "").trim();
       const expectedStr = String(process.env.CARDCOM_RECURRING_WEBHOOK_SECRET || "").trim();
 
-      const mask = s => (s ? `${s.slice(0,4)}…${s.slice(-4)} (len=${s.length})` : "EMPTY");
+      const mask = (s) => (s ? `${s.slice(0, 4)}…${s.slice(-4)} (len=${s.length})` : "EMPTY");
       console.log("🔎 Recurring secret check", {
         method: req.method,
         provided: mask(providedStr),
@@ -841,22 +681,23 @@ router.all(
       const provided = Buffer.from(providedStr, "utf8");
       const expected = Buffer.from(expectedStr, "utf8");
 
-      if (!provided.length || provided.length !== expected.length || !crypto.timingSafeEqual(provided, expected)) {
+      if (
+        !provided.length ||
+        provided.length !== expected.length ||
+        !crypto.timingSafeEqual(provided, expected)
+      ) {
         console.warn("❌ Recurring webhook: BAD_SECRET", { ip: req.ip, method: req.method });
         return res.status(403).send("BAD_SECRET");
       }
 
-      // -------- Envelope --------
-      const recordType  = String(b.RecordType || b.recordtype || b.recordType || "").toUpperCase();
-      const status      = String(b.Status || b.status || "").toUpperCase();
+      const recordType = String(b.RecordType || b.recordtype || b.recordType || "").toUpperCase();
+      const status = String(b.Status || b.status || "").toUpperCase();
       const recurringId = b.RecurringId || b.recurringid || null;
-      const returnValue = b.ReturnValue || b.returnvalue || null; // your orderId if you sent it
+      const returnValue = b.ReturnValue || b.returnvalue || null;
 
-      // Cardcom sends different keys for the same value. Normalize the tx id:
       const txIdInPayload =
         b.InternalDealNumber || b.UID || b.Deal || b.DealNumber || b.UniqueId || null;
 
-      // Scrub secret before logging to DB
       const payloadForLog = { ...b };
       if (payloadForLog.Secret) payloadForLog.Secret = "***";
 
@@ -880,12 +721,11 @@ router.all(
           orderId: returnValue || null,
           lowProfileId: null,
           type: "recurring_missing_id",
-          payload: payloadForLog
+          payload: payloadForLog,
         });
         return res.status(200).send("OK");
       }
 
-      // Persist raw event for audit
       await logEvent({
         orderId: returnValue || null,
         lowProfileId: null,
@@ -895,7 +735,6 @@ router.all(
 
       // ===================== MASTER =====================
       if (recordType === "MASTERRECURRING") {
-        // If master got canceled – revoke access immediately
         if (status === "CANCELED" || status === "CANCELLED") {
           await pool.query(
             `UPDATE payments
@@ -919,43 +758,50 @@ router.all(
 
       // ===================== DETAIL (charge attempt) =====================
       if (recordType === "DETAILRECURRING") {
-        // Per Cardcom: DEBTAUTOBILLING = a failed attempt now queued in arrears.
         const PENDING_STATUSES = new Set(["PENDINGFORPROCESSING", "PENDING"]);
         const HARD_FAIL = new Set([
-          "FAILED","CANCELED","CANCELLED","CHARGEBACK","DECLINED","ERROR","LOSTDEBT",
-          "DEBTAUTOBILLING" // 👈 treat as hard failure (support's guidance)
+          "FAILED",
+          "CANCELED",
+          "CANCELLED",
+          "CHARGEBACK",
+          "DECLINED",
+          "ERROR",
+          "LOSTDEBT",
+          "DEBTAUTOBILLING",
         ]);
 
-        // 1) "Pending" → just log. Keep whatever status you had (e.g. 'subscribed').
         if (PENDING_STATUSES.has(status)) {
           console.log("⏳ Recurring debit pending", {
-            recurringId, orderId: returnValue, status, sum: b.Sum, lastBillDate: b.LastBillDate
+            recurringId,
+            orderId: returnValue,
+            status,
+            sum: b.Sum,
+            lastBillDate: b.LastBillDate,
           });
           await logEvent({
             orderId: returnValue || null,
             lowProfileId: null,
             type: "recurring_debit_pending",
-            payload: payloadForLog
+            payload: payloadForLog,
           });
           return res.status(200).send("OK");
         }
 
-        // 2) Non-success path
         if (status !== "SUCCESSFUL") {
           if (!HARD_FAIL.has(status)) {
-            // Non-success but not hard → log & wait (do not revoke)
             await logEvent({
               orderId: returnValue || null,
               lowProfileId: null,
               type: "recurring_debit_non_success_pending",
-              payload: payloadForLog
+              payload: payloadForLog,
             });
             return res.status(200).send("OK");
           }
 
-          // Hard fail → revoke immediately (or after small grace)
           const graceMin = Number(process.env.CARDCOM_FAIL_GRACE_MINUTES || 0);
-          const cutoff = new Date(Date.now() + (Number.isFinite(graceMin) && graceMin > 0 ? graceMin * 60 * 1000 : 0));
+          const cutoff = new Date(
+            Date.now() + (Number.isFinite(graceMin) && graceMin > 0 ? graceMin * 60 * 1000 : 0)
+          );
 
           const { rowCount } = await pool.query(
             `UPDATE payments
@@ -972,30 +818,28 @@ router.all(
             orderId: returnValue || null,
             lowProfileId: null,
             type: "recurring_debit_hard_fail",
-            payload: { recurringId, status, rowCount }
+            payload: { recurringId, status, rowCount },
           });
           return res.status(200).send("OK");
         }
 
-        // 3) SUCCESSFUL → mark paid & extend access idempotently
+        // SUCCESSFUL → extend access
         const sum = Number(String(b.Sum ?? "").replace(",", "."));
         const amountMinor = Number.isFinite(sum) ? Math.round(sum * 100) : null;
         const txId = txIdInPayload;
 
-        // Parse 'dd/MM/yyyy', 'dd/MM/yyyy HH:mm' or 'dd/MM/yyyy HH:mm:ss'
         function parseCardcomDate(s) {
           if (!s) return null;
           let m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s);
-          if (m) return new Date(+m[3], +m[2]-1, +m[1]);
-          m = /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2})[:/](\d{2})$/.exec(s);      // 31/08/2025 05/12
-          if (m) return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5]);
-          m = /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})$/.exec(s); // 31/08/2025 05:12:30
-          if (m) return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5], +m[6]);
+          if (m) return new Date(+m[3], +m[2] - 1, +m[1]);
+          m = /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2})[:/](\d{2})$/.exec(s);
+          if (m) return new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5]);
+          m = /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})$/.exec(s);
+          if (m) return new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5], +m[6]);
           return null;
         }
         const paidAt = parseCardcomDate(b.LastBillDate) || new Date();
 
-        // Get current window (to stack periods neatly)
         const { rows } = await pool.query(
           `SELECT id, user_email, plan_days, access_from, access_until
              FROM payments  
@@ -1012,8 +856,9 @@ router.all(
         const row = rows[0];
         const planDays = Number(row.plan_days || 30);
 
-        // Start next window after the later of now() or current access_until
-        const startFrom = new Date(Math.max(Date.now(), new Date(row.access_until || Date.now()).getTime()));
+        const startFrom = new Date(
+          Math.max(Date.now(), new Date(row.access_until || Date.now()).getTime())
+        );
         const until = new Date(startFrom.getTime());
         until.setDate(until.getDate() + planDays);
 
@@ -1025,10 +870,9 @@ router.all(
           txId,
           paidAt: paidAt.toISOString(),
           window_before: { from: row.access_from, until: row.access_until },
-          window_after:  { from: startFrom.toISOString(), until: until.toISOString() }
+          window_after: { from: startFrom.toISOString(), until: until.toISOString() },
         });
 
-        // Idempotent update: skip if same txId already applied
         const { rowCount } = await pool.query(
           `UPDATE payments
               SET amount_minor   = COALESCE($1, amount_minor),
@@ -1062,7 +906,9 @@ router.all(
           });
         } else {
           console.log("✅ DB updated for successful debit", {
-            recurringId, txId, new_until: until.toISOString()
+            recurringId,
+            txId,
+            new_until: until.toISOString(),
           });
           await logEvent({
             orderId: returnValue || null,
@@ -1075,12 +921,10 @@ router.all(
         return res.status(200).send("OK");
       }
 
-      // Unknown type → ack to avoid Cardcom retries
       console.warn("ℹ️ Recurring webhook: unknown RecordType", { recordType, recurringId });
       return res.status(200).send("OK");
     } catch (err) {
       console.error("❌ /recurring-webhook error:", err);
-      // Always 200 to avoid infinite retries
       return res.status(200).send("OK");
     }
   }
@@ -1130,7 +974,7 @@ router.post("/status", express.json(), async (req, res) => {
     console.log("🛰️ Manual status check (POST):", {
       LowProfileId: lowProfileId,
       ResponseCode: data?.ResponseCode,
-      Description: data?.Description
+      Description: data?.Description,
     });
 
     res.json(data);
@@ -1142,14 +986,13 @@ router.post("/status", express.json(), async (req, res) => {
 
 // ===== Helpers: map plan days → TimeIntervalId; extract RecurringId =====
 function mapPlanDaysToTimeIntervalId(planDays) {
-  // Prefer explicit daily when planDays <= 1
   if (planDays <= 1) {
     const daily = Number(process.env.CARDCOM_TIME_ID_DAILY || 0);
     if (!daily) throw new Error("Missing CARDCOM_TIME_ID_DAILY in env");
     return daily;
   }
-  if (planDays >= 365) return Number(process.env.CARDCOM_TIME_ID_YEARLY    || 2);
-  if (planDays >= 90)  return Number(process.env.CARDCOM_TIME_ID_QUARTERLY || 3);
+  if (planDays >= 365) return Number(process.env.CARDCOM_TIME_ID_YEARLY || 2);
+  if (planDays >= 90) return Number(process.env.CARDCOM_TIME_ID_QUARTERLY || 3);
   return Number(process.env.CARDCOM_TIME_ID_MONTHLY || 1);
 }
 
@@ -1163,12 +1006,6 @@ function extractRecurringId(nv) {
 }
 
 // ===== Invoice builder (NV) + Token charge/refund endpoint =====
-/**
- * Build Name-to-Value invoice params according to Cardcom docs:
- * "יצירת מסמך ... לעסקת פ.נמוך ראשונית או חיוב אסימון"
- * We always create a single line matching the charged amount.
- * Docs: InvoiceHead.* and InvoiceLines N.*
- */
 function buildInvoiceNV({
   issueInvoice,
   amount,
@@ -1216,40 +1053,6 @@ function buildInvoiceNV({
   return { ...head, ...lines };
 }
 
-/**
- * POST /api/pay/token-charge
- * Body:
- * {
- *   token: string,                 // required - Cardcom token to charge
- *   amount: number,                // required - amount in major currency (e.g. 49.90)
- *   currency?: number,             // CoinID (1=ILS, 2=USD, 978=EUR). default 1
- *   orderId?: string,              // your id - will be sent as UniqAsmachta and in invoice ExternalId
- *   description?: string,          // for invoice line
- *   isRefund?: boolean,            // if true -> RefundInsteadOfCharge
- *   userEmail?: string,            // used both for invoice & log
- *   customerName?: string,         // invoice CustName fallback
- *   issueInvoice?: boolean,        // if true -> auto add DocTypeToCreate + InvoiceHead / InvoiceLines params
- *   invoice?: {                    // optional overrides for invoice head/line (all optional)
- *     custName?: string,
- *     sendByEmail?: boolean,
- *     email?: string,
- *     language?: 'he'|'en',
- *     addressLine1?: string,
- *     addressLine2?: string,
- *     city?: string,
- *     phone?: string,
- *     mobile?: string,
- *     compId?: string,             // ת.ז./ח.פ
- *     departmentId?: number,
- *     isVatFree?: boolean,         // whole document
- *     lineDescription?: string,
- *     lineIsVatFree?: boolean,     // this single line only
- *     productId?: string
- *   }
- * }
- * Returns: Cardcom NV response (parsed) incl. DealResponse_*, maybe InvoiceResponse_*
- * Docs: ChargeToken.aspx (NV) + invoice params (InvoiceHead.*, InvoiceLines N.*)
- */
 router.post("/token-charge", express.json(), async (req, res) => {
   try {
     const {
@@ -1262,7 +1065,7 @@ router.post("/token-charge", express.json(), async (req, res) => {
       userEmail,
       customerName,
       issueInvoice = ISSUE_INVOICE_DEFAULT,
-      invoice = {}
+      invoice = {},
     } = req.body || {};
 
     if (!token || typeof token !== "string") {
@@ -1274,7 +1077,6 @@ router.post("/token-charge", express.json(), async (req, res) => {
     }
     const coinId = Number(currency) || 1;
 
-    // Build base NV for ChargeToken.aspx
     const params = {
       TerminalNumber: Number.isFinite(TERMINAL_RECURRING) ? TERMINAL_RECURRING : Number(TERMINAL),
       UserName: API_NAME,
@@ -1286,21 +1088,23 @@ router.post("/token-charge", express.json(), async (req, res) => {
       ...(orderId ? { "TokenToCharge.UniqAsmachta": String(orderId) } : {}),
     };
 
-    // Auto add invoice parameters if requested
     if (issueInvoice) {
-      params["DocTypeToCreate"] = DOC_TYPE_DEFAULT;                 // some setups expect generic
-      params["TokenToCharge.DocTypeToCreate"] = DOC_TYPE_DEFAULT;   // others expect nested
+      params["DocTypeToCreate"] = DOC_TYPE_DEFAULT;
+      params["TokenToCharge.DocTypeToCreate"] = DOC_TYPE_DEFAULT;
     }
-    Object.assign(params, buildInvoiceNV({
-      issueInvoice,
-      amount: amt,
-      currency: coinId,
-      description,
-      orderId,
-      customerName,
-      userEmail,
-      invoice
-    }));
+    Object.assign(
+      params,
+      buildInvoiceNV({
+        issueInvoice,
+        amount: amt,
+        currency: coinId,
+        description,
+        orderId,
+        customerName,
+        userEmail,
+        invoice,
+      })
+    );
 
     console.log("💳 ChargeToken NV params:", params);
 
@@ -1309,15 +1113,20 @@ router.post("/token-charge", express.json(), async (req, res) => {
       params
     );
 
-    // Normalize ResponseCode to number when possible
     const respCode = Number(result.ResponseCode);
     const ok = respCode === 0;
 
     await logEvent({
       orderId: orderId || null,
       lowProfileId: null,
-      type: ok ? (isRefund ? "token_refund_ok" : "token_charge_ok") : (isRefund ? "token_refund_fail" : "token_charge_fail"),
-      payload: result
+      type: ok
+        ? isRefund
+          ? "token_refund_ok"
+          : "token_charge_ok"
+        : isRefund
+        ? "token_refund_fail"
+        : "token_charge_fail",
+      payload: result,
     });
 
     if (!ok) {
