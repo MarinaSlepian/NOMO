@@ -6,7 +6,7 @@ export const BUTTONS_ACTIONS_ICONS = [
       avatar: 'user-1.png',
       numVideos: '5',
       subtextKey:"subtext.LAUGH",
-      isLocked: true
+      isLocked: false
     },
     {
       id: '2', //CRY
@@ -14,7 +14,7 @@ export const BUTTONS_ACTIONS_ICONS = [
       avatar: 'user-2.png',
       numVideos: '4',
       subtextKey:"subtext.CRY",
-      isLocked: true
+      isLocked: false
     },
     {
       id: '3',//DRINK
